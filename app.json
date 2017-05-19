@@ -1,0 +1,37 @@
+{
+	"id": "com.gruijter.insights2csv",
+  "name": {
+      "en": "Export Insights",
+			"nl": "Exporteer Insights"
+  },
+  "tags": {
+    "en": [ "export", "insights", "backup" ],
+    "nl": [ "export", "insights", "backup" ]
+  },
+  "category": ["tools"],
+  "version": "0.0.1",
+  "compatibility": ">= 1.2.0",
+  "author": {
+    "name": "Robin Gruijter",
+    "email": "gruijter@hotmail.com"
+  },
+  "description": {
+    "en": "Make backups of all insights",
+    "nl": "Maak backups van alle insights"
+  },
+  "images": {
+    "large": "./assets/images/large.jpg",
+    "small": "./assets/images/small.jpg"
+  },
+	"flow": {
+		"actions": [
+	    {
+	      "id": "archive_all",
+	      "title": {
+	          "en": "Export all insights",
+						"nl": "Exporteer alle insights"
+	      }
+	    }
+    ]
+	}
+}

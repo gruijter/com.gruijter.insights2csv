@@ -1,0 +1,100 @@
+<!doctype html>
+<html>
+    <head>
+      <script type="text/javascript" src="/manager/webserver/assets/js/jquery.js"></script>
+    </head>
+    <body>
+        <h1 data-i18n="Backup Insights settings page"> </h1>
+
+				<fieldset>
+						<legend data-i18n='Bearer token settings'> </legend>
+						<label for="bearer_token" data-i18n="Bearer token"> </label>
+						<input id="bearer_token" size="45" type="text" value="" />
+				</fieldset>
+
+        <fieldset>
+            <legend data-i18n='WebDAV settings'> </legend>
+            <label for="webdav_url" data-i18n="WebDAV url"> </label>
+						<input id="webdav_url" size="70" type="text" placeholder="e.g. https://mynas:443/webdav/HomeyBackups" value="" />
+
+						<label for="username" data-i18n="Username"> </label>
+            <input id="username" size="45" type="text" value="" />
+
+            <label for="password" data-i18n="Password"> </label>
+            <input id="password" size="45" type="password" value="" />
+
+        </fieldset>
+
+				<div id="testresult"></div>
+  			<button class="left" id="button_save" onclick="save()" data-i18n="Save"> </button>
+        <button class="right" id="button_backup" onclick="backup()" data-i18n="Backup"> </button>
+
+        <script type="text/javascript">
+
+        var saveData;
+
+        // triggered when user opens settings page
+        function onHomeyReady(){
+          document.getElementById('testresult').innerHTML = " ";
+          button_save.disabled = true; // Disable save button until settings have been loaded
+					button_backup.disabled = true; // Disable backup button until settings have been loaded
+          Homey.get('settings', function(err, storedData) {
+            if (err) {
+              console.log(err)
+            } else {
+              //console.log('got data: ', storedData);
+              if (storedData != (null || undefined)) {
+                document.getElementById('bearer_token').value = storedData.bearer_token;
+                document.getElementById('webdav_url').value = storedData.webdav_url;
+                document.getElementById('username').value = storedData.username;
+                document.getElementById('password').value = storedData.password;
+								button_backup.disabled = false;
+              }
+            }
+            button_save.disabled = false;
+						button_backup.disabled = false;
+            Homey.ready();  //ready to show the settings page
+          });
+        }
+
+        function save() {
+          document.getElementById('testresult').innerHTML = " ";
+          saveData = {
+            bearer_token: document.getElementById('bearer_token').value,
+						webdav_url  : document.getElementById('webdav_url').value,
+            username    : document.getElementById('username').value,
+            password    : document.getElementById('password').value
+          };
+					//save settings and trigger event in app.js to start test bearer
+          Homey.set('settings',saveData, function (error, settings) {
+            if (error) {return console.error(error)};
+          });
+					// receive testresults back from app.js
+          Homey.on( 'testing_ready', function( data ){
+            //console.log(data);
+            if (!data.error) {
+              document.getElementById('testresult').innerHTML = 'success: '+ data.result;
+            } else {
+              document.getElementById('testresult').innerHTML = 'error: '+data.error+data.result;
+            };
+          });
+        }
+
+				function backup() {
+					document.getElementById('testresult').innerHTML = " ";
+					saveData = {
+						bearer_token: document.getElementById('bearer_token').value,
+						webdav_url  : document.getElementById('webdav_url').value,
+						username    : document.getElementById('username').value,
+						password    : document.getElementById('password').value
+					};
+					//triggers an event in app.js to start backup
+          Homey.set('backup',saveData, function (error, settings) {
+            if (error) {return console.error(error)};
+          });
+
+				}
+
+        </script>
+    </body>
+</html>
