@@ -7,11 +7,10 @@ excel and create all kinds of statistics and charts.
 Backups can be easily scheduled by using the trigger card in a flow.
 
 Note: making a backup can take a long time (more than 10 minutes), depending on
-how many insights you have :). It is not possible to restore a backup into Homey.
+how many insights you have. It is not possible to restore a backup into Homey.
 
 ##### Donate: #####
-If you like the app you can donate. The proceeds will go to my son who made this
-app (the first one ever).
+If you like the app you can donate.
 
 [![Paypal donate][pp-donate-image]][pp-donate-link]
 ===============================================================================
