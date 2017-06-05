@@ -9,22 +9,66 @@ const fs = require('fs');
 let settings;
 
 Homey.log('app.js started');
-// debug show what files are in userdata
-// fs.readdir('/userdata', (err, res) => { Homey.log(err); Homey.log(res); });
-deleteAllFiles();
 
 module.exports.init = init;
 
 function init() {
 	Homey.log('app.js init started');
 	settings = Homey.manager('settings').get('settings');
+	deleteAllFiles();
 }
 
+function deleteAllFiles() {
+	fs.readdir('./userdata/', (err, res) => {
+		// Homey.log(res);
+		if (err) {
+			Homey.log(err);
+		}
+		res.forEach(elem => {
+			fs.unlink(`./userdata/${elem}`, err => {
+				if (err) { Homey.log(err); } else { Homey.log(`deleted ${elem}`); }
+			});
+		});
+	});
+}
+
+// ==============FLOW CARD STUFF======================================
 Homey.manager('flow').on('action.archive_all', (callback, args) => {
 	archiveAll();
 	callback(null, true); // we've fired successfully
 });
 
+Homey.manager('flow').on('action.archive_app', (callback, args) => {
+	// Homey.log(args);
+	archiveApp(args.selectedApp.name);
+	callback(null, true); //  we've fired successfully
+});
+
+Homey.manager('flow').on('action.archive_app.selectedApp.autocomplete', (callback, args) => {
+	collectAppsArray(myItems => {
+		// filter items to match the search query
+		myItems = myItems.filter(function (item) {
+			return (item.name.toLowerCase().indexOf(args.query.toLowerCase()) > -1);
+		});
+		callback(null, myItems); // err, results
+	});
+});
+
+// make a list for autocomplete flow
+function collectAppsArray(cb) {
+	const appsArray = [];
+	collectApps(apps => {
+		for (const appId in apps) {
+			if (apps.hasOwnProperty(appId)) {
+				appsArray.push({ name: appId });
+			}
+		}
+		// Homey.log(appsArray);
+		cb(appsArray);
+	});
+}
+
+// ====================SETTINGS STUFF================================
 // Fired when a setting has been changed
 Homey.manager('settings').on('set', (changedKey) => {
 	settings = Homey.manager('settings').get('settings');
@@ -48,14 +92,10 @@ Homey.manager('settings').on('set', (changedKey) => {
 	} else { Homey.log('unknow settings have changed'); }
 });
 
-
 function testBearer(callback) {
 	const url = 'http://localhost/api/manager/insights/log';
 	const options = {	auth: { bearer: settings.bearer_token }	};
 	request.get(url, options, (error, response, body) => {
-		// Homey.log(error);
-		// Homey.log(response);
-		// Homey.log(body);
 		if (error) {
 			callback(error);
 			return;
@@ -71,54 +111,59 @@ function testBearer(callback) {
 	});
 }
 
+// ========================================================================
+
 // collect all apps and start archiving their logs
 function archiveAll() {
 	collectApps(apps => {
 		// Homey.log(apps);
-		const client = webdav(
-			settings.webdav_url,
-			settings.username,
-			settings.password
-		);
 		for (const appId in apps) {
 			if (apps.hasOwnProperty(appId)) {
-
-				// create a file to stream archive data to.
-				const output = fs.createWriteStream(`./userdata/${appId}.zip`);
-				const archive = archiver('zip', {
-					zlib: { level: 9 }, // Sets the compression level.
-				});
-				// pipe archive data to the file
-				archive.pipe(output);
-				// collect all logs and store as files
-				saveLogfiles(apps[appId], archive);
-				// listen if zip-file is ready
-				output.on('close', () => {
-					Homey.log(`${archive.pointer()} total bytes`);
-					Homey.log(`${appId} has been zipped.`);
-					// write file to webdav
-					const file = fs.readFileSync(`./userdata/${appId}.zip`);
-					const options = {
-						format: 'binary',
-						// headers: {
-						// 	'Content-Type': 'application/octet-stream',
-						// },
-						overwrite: true,
-					};
-					// store zip-file to webdav folder
-					client
-						.putFileContents(`/${appId}.zip`, file, options)
-						.catch(err => {
-							Homey.log(err);
-						});
-				});
-				// good practice to catch this error explicitly
-				archive.on('error', err => {
-					Homey.log(err);
-				});
-
+				archiveApp(appId);
 			}
 		}
+	});
+}
+
+// start archiving logs of one app
+function archiveApp(appId) {
+	const client = webdav(
+		settings.webdav_url,
+		settings.username,
+		settings.password
+	);
+	// create a file to stream archive data to.
+	const output = fs.createWriteStream(`./userdata/${appId}.zip`);
+	const archive = archiver('zip', {
+		zlib: { level: 9 }, // Sets the compression level.
+	});
+	// pipe archive data to the file
+	archive.pipe(output);
+	// collect all logs and store as files
+	saveLogfiles(appId, archive);
+	// listen if zip-file is ready
+	output.on('close', () => {
+		Homey.log(`${archive.pointer()} total bytes`);
+		Homey.log(`${appId} has been zipped.`);
+		// write file to webdav
+		const file = fs.readFileSync(`./userdata/${appId}.zip`);
+		const options = {
+			format: 'binary',
+			// headers: {
+			// 	'Content-Type': 'application/octet-stream',
+			// },
+			overwrite: true,
+		};
+		// store zip-file to webdav folder
+		client
+			.putFileContents(`/${appId}.zip`, file, options)
+			.catch(err => {
+				Homey.log(err);
+			});
+	});
+	// good practice to catch this error explicitly
+	archive.on('error', err => {
+		Homey.log(err);
 	});
 }
 
@@ -177,7 +222,7 @@ function collectApps(callback) {
 // 	done();
 // };
 
-function saveLogfiles(app, archive) {
+function saveLogfiles(appAppId, archive) {
 	// Homey.log(app);
 	collectLogs(logs => {
 		// Homey.log(logs);
@@ -185,13 +230,13 @@ function saveLogfiles(app, archive) {
 			// Homey.log(util.inspect(log, false, 10, true));
 			let appId = undefined;
 			if (log.uriObj.icon !== undefined) { appId = log.uriObj.icon.split('/')[2]; }
-			if (app.appId !== appId) { return; }
+			if (appAppId !== appId) { return; }
 			const url = `http://localhost/api/manager/insights/log/${log.uri}/${log.name}/entry`;
 			// Homey.log(url);
 			const options = { auth: { bearer: settings.bearer_token } };
 			const logStream = request.get(url, options, (error, response, body) => {
 				// Homey.log(`${appId}/${log.name}`);
-				Homey.log(url);
+				// Homey.log(url);
 				if (error) {
 					Homey.log(error);
 				}
@@ -203,19 +248,5 @@ function saveLogfiles(app, archive) {
 			archive.append(logStream, { name: fileName });
 		});
 		archive.finalize();
-	});
-}
-
-function deleteAllFiles() {
-	fs.readdir('./userdata/', (err, res) => {
-		// Homey.log(res);
-		if (err) {
-			Homey.log(err);
-		}
-		res.forEach(elem => {
-			fs.unlink(`./userdata/${elem}`, err => {
-				if (err) { Homey.log(err); } else { Homey.log(`deleted ${elem}`); }
-			});
-		});
 	});
 }

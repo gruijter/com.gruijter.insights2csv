@@ -9,7 +9,7 @@
     "nl": [ "export", "insights", "backup" ]
   },
   "category": ["tools"],
-  "version": "0.0.1",
+  "version": "0.0.2",
   "compatibility": ">= 1.2.0",
   "author": {
     "name": "Robin Gruijter",
@@ -31,7 +31,24 @@
 	          "en": "Export all insights",
 						"nl": "Exporteer alle insights"
 	      }
-	    }
+	    },
+			{
+        "id": "archive_app",
+        "title": {
+          "en": "Export insights of:",
+          "nl": "Exporteer insights van:"
+        },
+        "args": [
+          {
+            "name": "selectedApp",
+            "type": "autocomplete",
+            "placeholder": {
+              "en": "app...",
+              "nl": "app..."
+             }
+          }
+				]
+			}
     ]
 	}
 }

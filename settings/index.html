@@ -82,6 +82,7 @@
 
 				function backup() {
 					document.getElementById('testresult').innerHTML = " ";
+					button_backup.disabled = true; // Disable backup button until page is reloaded
 					saveData = {
 						bearer_token: document.getElementById('bearer_token').value,
 						webdav_url  : document.getElementById('webdav_url').value,
