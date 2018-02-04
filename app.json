@@ -1,54 +1,62 @@
 {
 	"id": "com.gruijter.insights2csv",
-  "name": {
-      "en": "Export Insights",
-			"nl": "Exporteer Insights"
-  },
-  "tags": {
-    "en": [ "export", "insights", "backup" ],
-    "nl": [ "export", "insights", "backup" ]
-  },
-  "category": ["tools"],
-  "version": "0.0.2",
-  "compatibility": ">= 1.2.0",
-  "author": {
-    "name": "Robin Gruijter",
-    "email": "gruijter@hotmail.com"
-  },
-  "description": {
-    "en": "Make backups of all insights",
-    "nl": "Maak backups van alle insights"
-  },
-  "images": {
-    "large": "./assets/images/large.jpg",
-    "small": "./assets/images/small.jpg"
-  },
+	"name": {
+		"en": "Export Insights",
+		"nl": "Exporteer Insights"
+	},
+  "version": "2.0.0",
+	"sdk": 2,
+	"compatibility": ">= 1.5.6",
+	"author": {
+		"name": "Robin de Gruijter",
+		"email": "gruijter@hotmail.com"
+	},
+	"Copyright": "2017, 2018 Robin de Gruijter",
+	"contributing": {
+		"donate": {
+			"paypal": {
+				"username": "gruijter"
+			}
+		}
+	},
+	"description": {
+		"en": "Make backups of all insights",
+		"nl": "Maak backups van alle insights"
+	},
+	"tags": {
+		"en": [ "export", "insights", "backup" ],
+		"nl": [ "export", "insights", "backup" ]
+	},
+	"category": ["tools"],
+	"images": {
+		"large": "./assets/images/large.jpg",
+		"small": "./assets/images/small.jpg"
+	},
+	"permissions": [
+		"homey:manager:api"
+	],
 	"flow": {
 		"actions": [
-	    {
-	      "id": "archive_all",
-	      "title": {
-	          "en": "Export all insights",
-						"nl": "Exporteer alle insights"
-	      }
-	    },
 			{
-        "id": "archive_app",
-        "title": {
-          "en": "Export insights of:",
-          "nl": "Exporteer insights van:"
-        },
-        "args": [
-          {
-            "name": "selectedApp",
-            "type": "autocomplete",
-            "placeholder": {
-              "en": "app...",
-              "nl": "app..."
-             }
-          }
+				"id": "archive_all",
+				"title": {
+					"en": "Export all insights",
+					"nl": "Exporteer alle insights"
+				}
+			},
+			{
+				"id": "archive_app",
+				"title": {
+					"en": "Export insights of:",
+					"nl": "Exporteer insights van:"
+				},
+				"args": [
+					{
+						"name": "selectedApp",
+						"type": "autocomplete"
+					}
 				]
 			}
-    ]
+		]
 	}
 }

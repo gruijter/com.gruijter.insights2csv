@@ -1,11 +1,16 @@
 {
-"Bearer token settings"					:	"Bearer token instelling",
-"Bearer token"									:	"Bearer token",
-"Backup Insights settings page"	: "Backup Insights instellingen",
-"WebDAV settings"								: "WebDAV instellingen",
-"WebDAV url"										: "WebDAV url",
-"Username"											: "Gebruikersnaam",
-"Password"											: "Wachtwoord",
-"Save"													: "Opslaan",
-"Backup"												: "Maak Backup"
+	"settings": {
+		"title"													: "Exporteer Insights instellingen",
+		"settingsTitle"									: "Instellingen",
+		"loggingTitle"									: "Debug logs",
+		"webDavTitle"										: "WebDAV instellingen",
+		"webDavUrl"											: "WebDAV url",
+		"username"											: "Gebruikersnaam",
+		"password"											: "Wachtwoord",
+		"save"													: "Opslaan",
+		"backup"												: "Exporteer Insights",
+		"settingsSaved"									: "De instellingen zijn opgeslagen",
+		"confirmExport"									: "Alle insights worden geëxporteerd. Dit kan erg lang duren. Doorgaan?",
+		"backupInitiated"								: "Volledige export is gestart"
+	}
 }

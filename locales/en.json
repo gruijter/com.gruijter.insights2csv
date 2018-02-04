@@ -1,11 +1,16 @@
 {
-"Bearer token settings"					:	"Bearer token settings",
-"Bearer token"									:	"Bearer token",
-"Backup Insights settings page"	: "Backup Insights settings page",
-"WebDAV settings"								: "WebDAV settings",
-"WebDAV url"										: "WebDAV url",
-"Username"											: "Username",
-"Password"											: "Password",
-"Save"													: "Save",
-"Backup"												: "Make Backup"
+	"settings": {
+		"title"													: "Export Insights settings",
+		"settingsTitle"									: "Settings",
+		"loggingTitle"									: "Debug logs",
+		"webDavTitle"										: "WebDAV settings",
+		"webDavUrl"											: "WebDAV url",
+		"username"											: "Username",
+		"password"											: "Password",
+		"save"													: "Save",
+		"backup"												: "Export Insights",
+		"settingsSaved"									: "De settings were saved",
+		"confirmExport"									: "Al insights will be exported. This can take a very long time. Continue?",
+		"backupInitiated"								: "Full export has started"
+	}
 }

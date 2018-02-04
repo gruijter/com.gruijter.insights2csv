@@ -1,252 +1,350 @@
+/*
+Copyright 2017, 2018 Robin de Gruijter
+
+This file is part of com.gruijter.insights2csv.
+
+com.gruijter.insights2csv is free software: you can redistribute it and/or
+modify it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+com.gruijter.insights2csv is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with com.gruijter.insights2csv. If not, see <http://www.gnu.org/licenses/>.
+*/
+
 'use strict';
 
-const request = require('request');
-const replaceStream = require('replacestream');
 const archiver = require('archiver');
 const webdav = require('webdav');
+const Logger = require('./captureLogs.js');
 const fs = require('fs');
 // const util = require('util');
-let settings;
 
-Homey.log('app.js started');
+const Homey = require('homey');
+const { HomeyAPI } = require('athom-api');
 
-module.exports.init = init;
+class Insights2csvApp extends Homey.App {
 
-function init() {
-	Homey.log('app.js init started');
-	settings = Homey.manager('settings').get('settings');
-	deleteAllFiles();
-}
+	async onInit() {
+		this.log('Insights2csv App is running!');
+		this.api = await HomeyAPI.forCurrentHomey();
+		this.logger = new Logger('log', 200);
 
-function deleteAllFiles() {
-	fs.readdir('./userdata/', (err, res) => {
-		// Homey.log(res);
-		if (err) {
-			Homey.log(err);
-		}
-		res.forEach(elem => {
-			fs.unlink(`./userdata/${elem}`, err => {
-				if (err) { Homey.log(err); } else { Homey.log(`deleted ${elem}`); }
+		// register some listeners
+		process.on('unhandledRejection', (error) => {
+			this.error('unhandledRejection! ', error);
+		});
+		Homey
+			.on('unload', () => {
+				this.log('app unload called');
+				// save logs to persistant storage
+				this.logger.saveLogs();
+			})
+			.on('memwarn', () => {
+				this.log('memwarn!');
+			})
+			// Fired when an app setting has changed
+			.ManagerSettings.on('set', (key) => {
+				this.log('settings were changed!');
+				this.log(Homey.ManagerSettings.get('settings'));
+				this.getWebDavClient();
 			});
-		});
-	});
-}
 
-// ==============FLOW CARD STUFF======================================
-Homey.manager('flow').on('action.archive_all', (callback, args) => {
-	archiveAll();
-	callback(null, true); // we've fired successfully
-});
-
-Homey.manager('flow').on('action.archive_app', (callback, args) => {
-	// Homey.log(args);
-	archiveApp(args.selectedApp.name);
-	callback(null, true); //  we've fired successfully
-});
-
-Homey.manager('flow').on('action.archive_app.selectedApp.autocomplete', (callback, args) => {
-	collectAppsArray(myItems => {
-		// filter items to match the search query
-		myItems = myItems.filter(function (item) {
-			return (item.name.toLowerCase().indexOf(args.query.toLowerCase()) > -1);
-		});
-		callback(null, myItems); // err, results
-	});
-});
-
-// make a list for autocomplete flow
-function collectAppsArray(cb) {
-	const appsArray = [];
-	collectApps(apps => {
-		for (const appId in apps) {
-			if (apps.hasOwnProperty(appId)) {
-				appsArray.push({ name: appId });
-			}
-		}
-		// Homey.log(appsArray);
-		cb(appsArray);
-	});
-}
-
-// ====================SETTINGS STUFF================================
-// Fired when a setting has been changed
-Homey.manager('settings').on('set', (changedKey) => {
-	settings = Homey.manager('settings').get('settings');
-	Homey.log(settings);
-	// Homey.log(changedKey);
-	if (changedKey === 'settings') {				// save button is pressed
-		Homey.log('save event received in app.js');
-		testBearer((error) => {
-			// Homey.log('bearer token test completed', error);
-			if (!error) {	// bearer is correct
-				Homey.manager('api').realtime('testing_ready', { error: null, result: 'settings are saved' });
-			} else {	// bearer setting incorrect
-				// send result back to settings html
-				Homey.manager('api').realtime('testing_ready', { error, result: ' ,bearer token incorrect' });
-			}
-		});
-	} else if (changedKey === 'backup') {				// backup button is pressed
-		Homey.log('backup event received in app.js');
-		deleteAllFiles();
-		archiveAll();
-	} else { Homey.log('unknow settings have changed'); }
-});
-
-function testBearer(callback) {
-	const url = 'http://localhost/api/manager/insights/log';
-	const options = {	auth: { bearer: settings.bearer_token }	};
-	request.get(url, options, (error, response, body) => {
-		if (error) {
-			callback(error);
-			return;
-		}
-		const res = JSON.parse(body);
-		if (res.status !== 200) {
-			Homey.log('error');
-			Homey.log(res.status);
-			callback(`${res.status} ${res.result}`);
-			return;
-		}
-		callback(null);
-	});
-}
-
-// ========================================================================
-
-// collect all apps and start archiving their logs
-function archiveAll() {
-	collectApps(apps => {
-		// Homey.log(apps);
-		for (const appId in apps) {
-			if (apps.hasOwnProperty(appId)) {
-				archiveApp(appId);
-			}
-		}
-	});
-}
-
-// start archiving logs of one app
-function archiveApp(appId) {
-	const client = webdav(
-		settings.webdav_url,
-		settings.username,
-		settings.password
-	);
-	// create a file to stream archive data to.
-	const output = fs.createWriteStream(`./userdata/${appId}.zip`);
-	const archive = archiver('zip', {
-		zlib: { level: 9 }, // Sets the compression level.
-	});
-	// pipe archive data to the file
-	archive.pipe(output);
-	// collect all logs and store as files
-	saveLogfiles(appId, archive);
-	// listen if zip-file is ready
-	output.on('close', () => {
-		Homey.log(`${archive.pointer()} total bytes`);
-		Homey.log(`${appId} has been zipped.`);
-		// write file to webdav
-		const file = fs.readFileSync(`./userdata/${appId}.zip`);
-		const options = {
-			format: 'binary',
-			// headers: {
-			// 	'Content-Type': 'application/octet-stream',
-			// },
-			overwrite: true,
-		};
-		// store zip-file to webdav folder
-		client
-			.putFileContents(`/${appId}.zip`, file, options)
-			.catch(err => {
-				Homey.log(err);
+		// ==============FLOW CARD STUFF======================================
+		const archiveAllAction = new Homey.FlowCardAction('archive_all');
+		archiveAllAction
+			.register()
+			.registerRunListener((args, state) => {
+				this.archiveAll();
+				return Promise.resolve(true);
 			});
-	});
-	// good practice to catch this error explicitly
-	archive.on('error', err => {
-		Homey.log(err);
-	});
-}
 
-function collectLogs(callback) {
-	const url = 'http://localhost/api/manager/insights/log';
-	const options = {	auth: { bearer: settings.bearer_token }	};
-	request.get(url, options, (error, response, body) => {
-			// Homey.log(error);
-			// Homey.log(response);
-			// Homey.log(body);
-		if (!error) {
-			const res = JSON.parse(body);
-			const logs = res.result;
-			if (res.status !== 200) {
-				Homey.log('error');
-				Homey.log(res.status);
-				return;
+		const archiveAppAction = new Homey.FlowCardAction('archive_app');
+		archiveAppAction
+			.register()
+			.registerRunListener((args, state) => {
+				this.archiveApp(args.selectedApp.name);
+			})
+			.getArgument('selectedApp')
+			.registerAutocompleteListener(async (query, args) => {
+				let results = await this.getLogListArray();
+				results = results.filter((result) => {		// filter for query on appId and appName
+					const appIdFound = result.name.toLowerCase().indexOf(query.toLowerCase()) > -1;
+					const appNameFound = result.description.toLowerCase().indexOf(query.toLowerCase()) > -1;
+					return appIdFound || appNameFound;
+				});
+				return Promise.resolve(results);
+			});
+
+		this.deleteAllFiles();
+		this.getWebDavClient();
+
+		// do testing here
+		setTimeout(async () => {
+			// this.archiveApp('nl.philips.hue');
+			// this.archiveAll();
+		}, 3000); // wait a few seconds :)
+
+	}
+
+	// logfile stuff for frontend API here
+	deleteLogs() {
+		return this.logger.deleteLogs();
+	}
+	getLogs() {
+		return this.logger.logArray;
+	}
+
+	// **************** Local file handling in app userdata folder *************
+	deleteAllFiles() {
+		fs.readdir('./userdata/', (err, res) => {
+			// this.log(res);
+			if (err) {
+				return this.log(err);
 			}
-				// Homey.log(util.inspect(logs, false, 10, true));
-			callback(logs);
-		}
-	});
-}
+			res.forEach((elem) => {
+				if (elem !== 'log.json') {
+					fs.unlink(`./userdata/${elem}`, (error) => {
+						if (error) { this.log(error); } else { this.log(`deleted ${elem}`); }
+					});
+				}
+			});
+			return this.log('all files deleted');
+		});
+	}
 
-// fill the list of apps
-function collectApps(callback) {
-	collectLogs(logs => {
-		const apps = {};
-		// Homey.log(logs);
-		logs.forEach(log => {
-			// Homey.log(util.inspect(log, false, 10, true));
-			if (log.uriObj.icon !== undefined) {
-				const appId = log.uriObj.icon.split('/')[2];
-				if (apps[appId] === undefined) {
-					const app = {
-						appId,
-						type: log.uriObj.type,
-					};
-					if (log.uriObj.type !== 'device') {
-						app.name = log.uriObj.name;
+	deleteFile(filename) {	// filename is appId
+		fs.unlink(`./userdata/${filename}.zip`, (error) => {
+			if (error) { this.log(error); } else {
+				// this.log(`deleted ${filename}.zip`);
+			}
+		});
+	}
+
+	// **************** WebDav file handling  *************
+	getWebDavClient() {
+		const settings = Homey.ManagerSettings.get('settings');
+		this.webDavClient = webdav(
+			settings.webdav_url,
+			settings.username,
+			settings.password,
+		);
+		return this.webDavClient;
+	}
+
+	// save a file to WebDAV as promise; resolves webdav filename
+	saveWebDav(appId) {	// filename is appId
+		return new Promise((resolve, reject) => {
+			try {
+				// fs.readdir('./userdata/', (err, res) => {
+				// 	this.log(res);
+				// });
+				const options = {
+					format: 'binary',
+					overwrite: true,
+				};
+				const filename = `/${appId}.zip`;
+				const webDavWriteStream = this.webDavClient.createWriteStream(filename, options);
+				const fileStream = fs.createReadStream(`./userdata/${appId}.zip`);
+				fileStream.on('open', () => {
+					// this.log('piping to webdav');
+					fileStream.pipe(webDavWriteStream);
+				});
+				fileStream.on('close', () => {
+					// The file has been read completely
+					webDavWriteStream.end();
+					this.log(`${appId}.zip has been saved to webDav`);
+					return resolve(filename);
+				});
+				fileStream.on('error', (err) => {
+					this.log('filestream error: ', err);
+				});
+				webDavWriteStream.on('error', (err) => {
+					this.log('webdavwritestream error: ', err);
+				});
+			} catch (error) {
+				this.error('error:', error);
+				return reject(error);
+			}
+		});
+	}
+
+	// zip all log entries from one app as promise; resolves zipfilename
+	async zipAppLogs(appId) {
+		// this.log(`Zipping all logs for ${appId}`);
+		return new Promise(async (resolve, reject) => {
+			try {
+				// create a file to stream archive data to.
+				const output = fs.createWriteStream(`./userdata/${appId}.zip`);
+				const archive = archiver('zip', {
+					zlib: { level: 9 },	// Sets the compression level.
+				});
+				archive.pipe(output);	// pipe archive data to the file
+				const logs = await this.getAppLogs(appId);
+				for (let idx = 0; idx < logs.length; idx += 1) {
+					const log = logs[idx];
+					const entries = await this.getEntries(log);
+					const fileName = `${appId}/${log.uriObj.name}/${log.name}.csv`;
+					// this.log('zipping now ....');
+					await archive.append(entries, { name: fileName });
+				}
+				this.log(`${logs.length} files zipped`);
+				archive.finalize();
+
+				output.on('close', () => {	// when zipping and storing is done...
+					this.log(`${archive.pointer()} total bytes`);
+					// this.log(`${appId} has been zipped.`);
+					const filename = `./userdata/${appId}.zip`;
+					return resolve(filename);
+				});
+				output.on('error', (err) => {	// when storing gave an error
+					throw (err);
+				});
+				archive.on('error', (err) => {	// when zipping gave an error
+					throw (err);
+				});
+				archive.on('warning', (warning) => {
+					throw (warning);
+				});
+			} catch (error) {
+				this.error('error:', error);
+				return reject(error);
+			}
+		});
+	}
+
+	// **************** api calls to retrieve logs *************
+
+	// Get a list of all app names
+	async getAppNameList() {
+		const allApps = await this.api.apps.getApps();
+		const appNameList = {};
+		Object.keys(allApps).forEach((key) => {
+			appNameList[key] = {
+				id: allApps[key].id,
+				name: allApps[key].name.en,
+			};
+		});
+		return appNameList;
+	}
+
+	// Get a list of all logs
+	getLogList() {
+		return new Promise(async (resolve, reject) => {
+			try {
+				const logs = await this.api.insights.getLogs();
+				const appNameList = await this.getAppNameList();
+				const logList = {};
+				logs.forEach(async (log) => {
+					if (Object.prototype.hasOwnProperty.call(log.uriObj, 'icon')) {
+						const appId = log.uriObj.icon.split('/')[2];
+						if (logList[appId] === undefined) {
+							const app = {
+								appId,
+								name: undefined,
+								icon: `/app/${appId}/assets/icon.svg`,
+							};
+							if (appNameList[appId] !== undefined) {
+								app.name = appNameList[appId].name;
+							}
+							if (log.uriObj.type !== 'device') {
+								app.name = log.uriObj.name;
+								app.icon = log.uriObj.icon;
+							}
+							logList[appId] = app;
+						}
 					}
-					apps[appId] = app;
-				}
+				});
+				return resolve(logList);
+			} catch (error) {
+				this.error('error:', error);
+				return reject(error);
 			}
 		});
-		callback(apps);
-	});
-}
+	}
 
-// // transform stream FOR FUTURE USE
-// const Transform = require('stream').Transform;
-//
-// const parser = new Transform();
-// parser._transform = function (data, encoding, done) {
-// 	this.push(data);
-// 	done();
-// };
-
-function saveLogfiles(appAppId, archive) {
-	// Homey.log(app);
-	collectLogs(logs => {
-		// Homey.log(logs);
-		logs.forEach(log => {
-			// Homey.log(util.inspect(log, false, 10, true));
-			let appId = undefined;
-			if (log.uriObj.icon !== undefined) { appId = log.uriObj.icon.split('/')[2]; }
-			if (appAppId !== appId) { return; }
-			const url = `http://localhost/api/manager/insights/log/${log.uri}/${log.name}/entry`;
-			// Homey.log(url);
-			const options = { auth: { bearer: settings.bearer_token } };
-			const logStream = request.get(url, options, (error, response, body) => {
-				// Homey.log(`${appId}/${log.name}`);
-				// Homey.log(url);
-				if (error) {
-					Homey.log(error);
-				}
-			}).pipe(replaceStream(',', ';'));
-			let fileName = `${appId}/${log.name}.csv`;
-			if (log.uriObj.type === 'device') {
-				fileName = `${appId}/${log.uriObj.name}/${log.name}.csv`;
+	getLogListArray() {	// for autocomlete actionlist
+		return new Promise(async (resolve, reject) => {
+			try {
+				const logList = await this.getLogList();
+				const logListArray = [];
+				Object.keys(logList).forEach((key) => {
+					const item = logList[key];
+					const logProperties = {
+						name: item.appId,
+						description: item.name,
+						icon: item.icon,
+					};
+					logListArray.push(logProperties);
+				});
+				return resolve(logListArray);
+			} catch (error) {
+				this.error('error:', error);
+				return reject(error);
 			}
-			archive.append(logStream, { name: fileName });
 		});
-		archive.finalize();
-	});
+	}
+
+	// get all logs from one app
+	async getAppLogs(appId) {
+		const logs = await this.api.insights.getLogs();
+		const list = logs.filter((log) => {
+			if (Object.prototype.hasOwnProperty.call(log.uriObj, 'icon')) {
+				return (log.uriObj.icon.includes(appId));
+			}
+			return false;
+		});
+		return list;
+	}
+
+	// get all the entries from one log (device or app)
+	async getEntries(log) {
+		// this.log(`retrieving log entries for ${log.uriObj.name} ${log.name}`);
+		const options = {
+			uri: log.uri, // e.g. 'homey:device:43801912-11d6-44c6-acd7-012c3d67113b',
+			name: log.name, // e.g. 'onoff',
+			// start: '2017-12-24T23:59:59.000Z',
+			// end: '2017-12-25T23:59:59.000Z', // now.toISOString(),
+		};
+		const entries = await this.api.insights.getEntries(options)
+			.catch((error) => {
+				this.log(error);
+				return '';
+			});
+		return entries.replace(/,/g, ';');
+	}
+
+	async archiveAll() {
+		this.log('now archiving all logs');
+		const logListArray = await this.getLogListArray();
+		for (let idx = 0; idx < logListArray.length; idx += 1) {
+			const log = logListArray[idx];
+			await this.archiveApp(log.name);
+		}
+		this.log('Finished archiving all logs');
+	}
+
+	archiveApp(appId) {
+		this.log(`now archiving ${appId}`);
+		return new Promise(async (resolve, reject) => {
+			try {
+				await this.zipAppLogs(appId);
+				await this.saveWebDav(appId);
+				this.deleteFile(appId);
+				return resolve(true);
+			} catch (error) {
+				this.error('error:', error);
+				return reject(error);
+			}
+		});
+	}
+
+
 }
+
+module.exports = Insights2csvApp;
