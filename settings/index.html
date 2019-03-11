@@ -15,18 +15,36 @@
     <!-- Settings panel -->
   	<div id="panel-1" class="panel">
 			<fieldset>
+					<legend data-i18n='settings.smbTitle'> </legend>
+					<label for="smbShare" data-i18n="settings.smbShare"> </label>
+					<input id="smbShare" size="70" type="text" placeholder="e.g. \\192.168.1.10\Backup" value="" />
+					<label for="smbDomain" data-i18n="settings.smbDomain"> </label>
+					<input id="smbDomain" size="45" type="text" value="DOMAIN" />
+					<label for="smbUsername" data-i18n="settings.username"> </label>
+					<input id="smbUsername" size="45" type="text" value="" />
+					<label for="smbPassword" data-i18n="settings.password"> </label>
+					<input id="smbPassword" size="45" type="password" value="" />
+					<br><br>
+					<input type="checkbox" id="useSmb" name="useSmb" checked=false>
+					<label for="useSmb" data-i18n="settings.useSmb"> </label>
+					<br><br>
+					<button id="smb_button_save" class="left" onclick="saveSmb()"><i class="fa fa-save"></i> <span data-i18n="settings.save">Save</span></button>
+					<button id="smb_button_backup" class="left" onclick="backupSmb()"><i class="fa fa fa-file-excel-o"></i> <span data-i18n="settings.backup">Export</span></button>
+			</fieldset>
+			<fieldset>
 					<legend data-i18n='settings.webDavTitle'> </legend>
 					<label for="webdav_url" data-i18n="settings.webDavUrl"> </label>
 					<input id="webdav_url" size="70" type="text" placeholder="e.g. https://mynas:443/webdav/HomeyBackups" value="" />
+					<label for="webdavUsername" data-i18n="settings.username"> </label>
+					<input id="webdavUsername" size="45" type="text" value="" />
+					<label for="webdavPassword" data-i18n="settings.password"> </label>
+					<input id="webdavPassword" size="45" type="password" value="" />
 					<br><br>
-					<label for="username" data-i18n="settings.username"> </label>
-					<input id="username" size="45" type="text" value="" />
+					<input type="checkbox" id="useWebdav" name="useWebdav" checked=false>
+					<label for="useWebdav" data-i18n="settings.useWebdav"> </label>
 					<br><br>
-					<label for="password" data-i18n="settings.password"> </label>
-					<input id="password" size="45" type="password" value="" />
-					<br><br>
-					<button id="button_save" class="left" onclick="save()"><i class="fa fa-save"></i> <span data-i18n="settings.save">Save</span></button>
-					<button id="button_backup" class="left" onclick="backup()"><i class="fa fa fa-file-excel-o"></i> <span data-i18n="settings.backup">Export</span></button>
+					<button id="webdav_button_save" class="left" onclick="save()"><i class="fa fa-save"></i> <span data-i18n="settings.save">Save</span></button>
+					<button id="webdav_button_backup" class="left" onclick="backup()"><i class="fa fa fa-file-excel-o"></i> <span data-i18n="settings.backup">Export</span></button>
 			</fieldset>
     </div>
     <!-- Debug logs panel -->
@@ -39,11 +57,19 @@
 
 		var saveData;
 		var HomeyAPI = null;
+		var useSmbField = document.getElementById('useSmb');
+		var smbShareField = document.getElementById('smbShare');
+		var smbDomainField = document.getElementById('smbDomain');
+		var smbUsernameField = document.getElementById('smbUsername');
+		var smbPasswordField = document.getElementById('smbPassword');
+		var smbSaveButton = document.getElementById('smb_button_save');
+		var smbBackupButton = document.getElementById('smb_button_backup');
+		var useWebdavField = document.getElementById('useWebdav');
 		var webdavUrlField = document.getElementById('webdav_url');
-		var usernameField = document.getElementById('username');
-		var passwordField = document.getElementById('password');
-		var saveButton = document.getElementById('button_save');
-		var backupButton = document.getElementById('button_backup');
+		var webdavUsernameField = document.getElementById('webdavUsername');
+		var webdavPasswordField = document.getElementById('webdavPassword');
+		var webdavSaveButton = document.getElementById('webdav_button_save');
+		var webdavBackupButton = document.getElementById('webdav_button_backup');
 
 		function showPanel(panel) {
 		  $('.panel').hide()
@@ -58,8 +84,29 @@
 		// triggered when user opens settings page
 		function onHomeyReady(Homey) {
 			HomeyAPI = Homey;
-			saveButton.disabled = true; // Disable save button until settings have been loaded
-			backupButton.disabled = true; // Disable backup button until settings have been loaded
+			smbSaveButton.disabled = true; // Disable save button until settings have been loaded
+			smbBackupButton.disabled = true; // Disable backup button until settings have been loaded
+			webdavSaveButton.disabled = true; // Disable save button until settings have been loaded
+			webdavBackupButton.disabled = true; // Disable backup button until settings have been loaded
+
+			Homey.get('smbSettings', function(err, storedData) {
+				if( err ) {
+					return Homey.alert( err );
+				} else {
+					//console.log('got data: ', storedData);
+					if ((storedData != null) && (storedData != undefined)) {
+						useSmbField.checked = storedData.useSmb;
+						smbShareField.value = storedData.smbShare;
+						smbDomainField.value = storedData.smbDomain;
+						smbUsernameField.value = storedData.smbUsername;
+						smbPasswordField.value = storedData.smbPassword;
+						smbBackupButton.disabled = false;
+					}
+				}
+				smbSaveButton.disabled = false;
+				showPanel(1);
+				Homey.ready();  //ready to show the settings page
+			});
 
 			Homey.get('settings', function(err, storedData) {
 				if( err ) {
@@ -67,36 +114,70 @@
 				} else {
 					//console.log('got data: ', storedData);
 					if ((storedData != null) && (storedData != undefined)) {
+						useWebdavField.checked = storedData.useWebdav;
 						webdavUrlField.value = storedData.webdav_url;
-						usernameField.value = storedData.username;
-						passwordField.value = storedData.password;
-						backupButton.disabled = false;
+						webdavUsernameField.value = storedData.username;
+						webdavPasswordField.value = storedData.password;
+						webdavBackupButton.disabled = false;
 					}
 				}
-				saveButton.disabled = false;
+				webdavSaveButton.disabled = false;
 				showPanel(1);
 				Homey.ready();  //ready to show the settings page
 			});
 
 		}
+		function saveSmb() {
+			saveData = {
+				useSmb: useSmbField.checked,
+				smbShare: smbShareField.value,
+				smbDomain: smbDomainField.value,
+				smbUsername: smbUsernameField.value,
+				smbPassword: smbPasswordField.value
+			};
+			HomeyAPI.set('smbSettings', saveData, function (error) {
+				if (error) {
+					HomeyAPI.alert(error, 'error');
+				} else {
+					HomeyAPI.alert(HomeyAPI.__("settings.settingsSaved"), 'info');
+					smbBackupButton.disabled = false;
+				}
+			});
+		};
+		function backupSmb() {
+			HomeyAPI.confirm(HomeyAPI.__("settings.confirmExport"), 'warning', function( err, result ) {
+				if (!result) { return; }
+				smbBackupButton.disabled = true; // Disable backup button until page is reloaded
+				HomeyAPI.api('GET', '/archiveAll', function(error, result) {
+					if (error) {
+						HomeyAPI.alert(error, 'error');
+					}
+					else {
+						HomeyAPI.alert(HomeyAPI.__("settings.backupInitiated"), 'info');
+					}
+				});
+			});
+		}
 		function save() {
 			saveData = {
+				useWebdav: useWebdavField.checked,
 				webdav_url: webdavUrlField.value,
-				username: usernameField.value,
-				password: passwordField.value
+				username: webdavUsernameField.value,
+				password: webdavPasswordField.value
 			};
 			HomeyAPI.set('settings', saveData, function (error) {
 				if (error) {
 					HomeyAPI.alert(error, 'error');
 				} else {
 					HomeyAPI.alert(HomeyAPI.__("settings.settingsSaved"), 'info');
+					webdavBackupButton.disabled = false;
 				}
 			});
 		};
 		function backup() {
 			HomeyAPI.confirm(HomeyAPI.__("settings.confirmExport"), 'warning', function( err, result ) {
 				if (!result) { return; }
-				backupButton.disabled = true; // Disable backup button until page is reloaded
+				webdavBackupButton.disabled = true; // Disable backup button until page is reloaded
 				HomeyAPI.api('GET', '/archiveAll', function(error, result) {
 					if (error) {
 						HomeyAPI.alert(error, 'error');

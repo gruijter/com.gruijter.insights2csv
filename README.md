@@ -1,11 +1,14 @@
 # Export Insights #
 
-Make a backup of all your insights to your NAS or other WebDAV compliant storage.
+Make a backup of all your insights to your NAS or WebDAV compliant storage.
 The insights are zipped and stored in .csv format so you can open them in excel
 and create all kinds of statistics and charts.
 
 Backups can be easily scheduled by using the trigger card in a flow. You can
 schedule a full backup, or a backup per app.
+
+To setup enter the local share (NAS) information and/or the webDAV information.
+It is possible to use a local share and a webDAV storage simultaneously.
 
 ![image][flow-cards-image]
 
@@ -24,7 +27,8 @@ If you like the app do not hesitate to donate a cool drink :)
 Version changelog
 
 ```
-v2.0.0	2018.02.04 Complete rewrite to SDK2. Flows need to be repaired!
+v2.1.0  2018.02.05 Added backup to local network share (smb).
+v2.0.0  2018.02.04 Complete rewrite to SDK2. Flows need to be repaired!
 v0.0.2  2017.06.05 Added per-app backup
 v0.0.1  2017.05.19 Initial release
 ```

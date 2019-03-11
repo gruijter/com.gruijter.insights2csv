@@ -21,12 +21,14 @@ with com.gruijter.insights2csv. If not, see <http://www.gnu.org/licenses/>.
 
 const archiver = require('archiver');
 const webdav = require('webdav');
+// const SMB2 = require('@marsaud/smb2');
+const SMB2 = require('@tracker1/smb2');
 const Logger = require('./captureLogs.js');
 const fs = require('fs');
 // const util = require('util');
 
 const Homey = require('homey');
-const { HomeyAPI } = require('athom-api');
+const { HomeyAPI } = require('athom-api');	// npm install athom-api@beta --save
 
 class Insights2csvApp extends Homey.App {
 
@@ -39,11 +41,15 @@ class Insights2csvApp extends Homey.App {
 		process.on('unhandledRejection', (error) => {
 			this.error('unhandledRejection! ', error);
 		});
+		process.on('uncaughtException', (error) => {
+			this.error('uncaughtException! ', error);
+		});
 		Homey
 			.on('unload', () => {
 				this.log('app unload called');
 				// save logs to persistant storage
 				this.logger.saveLogs();
+				this.deleteAllFiles();
 			})
 			.on('memwarn', () => {
 				this.log('memwarn!');
@@ -51,8 +57,9 @@ class Insights2csvApp extends Homey.App {
 			// Fired when an app setting has changed
 			.ManagerSettings.on('set', (key) => {
 				this.log('settings were changed!');
-				this.log(Homey.ManagerSettings.get('settings'));
+				// this.log(Homey.ManagerSettings.get(key));
 				this.getWebDavClient();
+				this.getSmb2Client();
 			});
 
 		// ==============FLOW CARD STUFF======================================
@@ -69,6 +76,7 @@ class Insights2csvApp extends Homey.App {
 			.register()
 			.registerRunListener((args, state) => {
 				this.archiveApp(args.selectedApp.name);
+				return Promise.resolve(true);
 			})
 			.getArgument('selectedApp')
 			.registerAutocompleteListener(async (query, args) => {
@@ -81,18 +89,20 @@ class Insights2csvApp extends Homey.App {
 				return Promise.resolve(results);
 			});
 
+		// init some stuff
 		this.deleteAllFiles();
 		this.getWebDavClient();
+		this.getSmb2Client();
 
-		// do testing here
-		setTimeout(async () => {
-			// this.archiveApp('nl.philips.hue');
-			// this.archiveAll();
-		}, 3000); // wait a few seconds :)
+		// // do testing here
+		// setTimeout(async () => {
+		// 	this.archiveApp('nl.philips.hue');
+		// 	// this.archiveAll();
+		// }, 3000); // wait a few seconds :)
 
 	}
 
-	// logfile stuff for frontend API here
+	// logfile stuff for frontend API
 	deleteLogs() {
 		return this.logger.deleteLogs();
 	}
@@ -100,7 +110,30 @@ class Insights2csvApp extends Homey.App {
 		return this.logger.logArray;
 	}
 
-	// **************** Local file handling in app userdata folder *************
+	// for autocomlete actionlist
+	getLogListArray() {
+		return new Promise(async (resolve, reject) => {
+			try {
+				const logList = await this.getLogList();
+				const logListArray = [];
+				Object.keys(logList).forEach((key) => {
+					const item = logList[key];
+					const logProperties = {
+						name: item.appId,
+						description: item.name,
+						icon: item.icon,
+					};
+					logListArray.push(logProperties);
+				});
+				return resolve(logListArray);
+			} catch (error) {
+				this.error('error:', error);
+				return reject(error);
+			}
+		});
+	}
+
+	// Local file handling in app userdata folder
 	deleteAllFiles() {
 		fs.readdir('./userdata/', (err, res) => {
 			// this.log(res);
@@ -117,7 +150,6 @@ class Insights2csvApp extends Homey.App {
 			return this.log('all files deleted');
 		});
 	}
-
 	deleteFile(filename) {	// filename is appId
 		fs.unlink(`./userdata/${filename}.zip`, (error) => {
 			if (error) { this.log(error); } else {
@@ -126,9 +158,66 @@ class Insights2csvApp extends Homey.App {
 		});
 	}
 
-	// **************** WebDav file handling  *************
+	// SMB file handling
+	getSmb2Client() {
+		const settings = Homey.ManagerSettings.get('smbSettings');
+		if (!settings) {
+			return false;
+		}
+		this.smb2Client = new SMB2({
+			share: settings.smbShare,
+			domain: settings.smbDomain,
+			username: settings.smbUsername,
+			password: settings.smbPassword,
+			autoCloseTimeout: 0,
+		});
+		return this.smb2Client;
+	}
+	// save a file to a network share via SMB as promise; resolves smb2 filename
+	saveSmb(appId) {	// filename is appId
+		return new Promise((resolve, reject) => {
+			try {
+				this.smb2Client.close();
+				this.getSmb2Client();
+				const filename = `${appId}.zip`;
+				this.smb2Client.createWriteStream(filename, (error, smbWriteStream) => {
+					if (error) {
+						this.log(error);
+						return reject(error);
+					}
+					const fileStream = fs.createReadStream(`./userdata/${appId}.zip`);
+					fileStream.on('open', () => {
+						this.log('piping to SMB2');
+						fileStream.pipe(smbWriteStream);
+					});
+					fileStream.on('close', () => {
+						// The file has been read completely
+						this.log(`${appId}.zip has been saved to SMB2`);
+						fileStream.unpipe();
+						return resolve(filename);
+					});
+					fileStream.on('error', (err) => {
+						this.log('filestream error: ', err);
+						// fileStream.unpipe();
+						// smbWriteStream.end();
+						return reject(err);
+					});
+				});
+			} catch (error) {
+				this.error('error:', error);
+				// this.smb2Client.close();
+				// this.getSmb2Client();
+				return reject(error);
+			}
+		});
+	}
+
+	// WebDav file handling
 	getWebDavClient() {
 		const settings = Homey.ManagerSettings.get('settings');
+		if (!settings) {
+			return false;
+		}
 		this.webDavClient = webdav(
 			settings.webdav_url,
 			settings.username,
@@ -136,14 +225,11 @@ class Insights2csvApp extends Homey.App {
 		);
 		return this.webDavClient;
 	}
-
 	// save a file to WebDAV as promise; resolves webdav filename
 	saveWebDav(appId) {	// filename is appId
 		return new Promise((resolve, reject) => {
 			try {
-				// fs.readdir('./userdata/', (err, res) => {
-				// 	this.log(res);
-				// });
+				this.getWebDavClient();
 				const options = {
 					format: 'binary',
 					overwrite: true,
@@ -157,8 +243,8 @@ class Insights2csvApp extends Homey.App {
 				});
 				fileStream.on('close', () => {
 					// The file has been read completely
-					webDavWriteStream.end();
 					this.log(`${appId}.zip has been saved to webDav`);
+					webDavWriteStream.end();
 					return resolve(filename);
 				});
 				fileStream.on('error', (err) => {
@@ -190,26 +276,25 @@ class Insights2csvApp extends Homey.App {
 					const log = logs[idx];
 					const entries = await this.getEntries(log);
 					const fileName = `${appId}/${log.uriObj.name}/${log.name}.csv`;
-					// this.log('zipping now ....');
+					this.log('zipping now ....');
 					await archive.append(entries, { name: fileName });
 				}
 				this.log(`${logs.length} files zipped`);
 				archive.finalize();
-
 				output.on('close', () => {	// when zipping and storing is done...
 					this.log(`${archive.pointer()} total bytes`);
-					// this.log(`${appId} has been zipped.`);
+					this.log(`${appId} has been zipped.`);
 					const filename = `./userdata/${appId}.zip`;
 					return resolve(filename);
 				});
 				output.on('error', (err) => {	// when storing gave an error
-					throw (err);
+					this.log(err);
 				});
 				archive.on('error', (err) => {	// when zipping gave an error
-					throw (err);
+					this.log(err);
 				});
 				archive.on('warning', (warning) => {
-					throw (warning);
+					this.log(warning);
 				});
 			} catch (error) {
 				this.error('error:', error);
@@ -219,7 +304,6 @@ class Insights2csvApp extends Homey.App {
 	}
 
 	// **************** api calls to retrieve logs *************
-
 	// Get a list of all app names
 	async getAppNameList() {
 		const allApps = await this.api.apps.getApps();
@@ -232,7 +316,6 @@ class Insights2csvApp extends Homey.App {
 		});
 		return appNameList;
 	}
-
 	// Get a list of all logs
 	getLogList() {
 		return new Promise(async (resolve, reject) => {
@@ -267,29 +350,6 @@ class Insights2csvApp extends Homey.App {
 			}
 		});
 	}
-
-	getLogListArray() {	// for autocomlete actionlist
-		return new Promise(async (resolve, reject) => {
-			try {
-				const logList = await this.getLogList();
-				const logListArray = [];
-				Object.keys(logList).forEach((key) => {
-					const item = logList[key];
-					const logProperties = {
-						name: item.appId,
-						description: item.name,
-						icon: item.icon,
-					};
-					logListArray.push(logProperties);
-				});
-				return resolve(logListArray);
-			} catch (error) {
-				this.error('error:', error);
-				return reject(error);
-			}
-		});
-	}
-
 	// get all logs from one app
 	async getAppLogs(appId) {
 		const logs = await this.api.insights.getLogs();
@@ -301,13 +361,13 @@ class Insights2csvApp extends Homey.App {
 		});
 		return list;
 	}
-
 	// get all the entries from one log (device or app)
 	async getEntries(log) {
 		// this.log(`retrieving log entries for ${log.uriObj.name} ${log.name}`);
 		const options = {
 			uri: log.uri, // e.g. 'homey:device:43801912-11d6-44c6-acd7-012c3d67113b',
 			name: log.name, // e.g. 'onoff',
+			$timeout:	120000,	// ultralong timeout :)
 			// start: '2017-12-24T23:59:59.000Z',
 			// end: '2017-12-25T23:59:59.000Z', // now.toISOString(),
 		};
@@ -319,22 +379,32 @@ class Insights2csvApp extends Homey.App {
 		return entries.replace(/,/g, ';');
 	}
 
+	// Archiving commands
 	async archiveAll() {
 		this.log('now archiving all logs');
 		const logListArray = await this.getLogListArray();
 		for (let idx = 0; idx < logListArray.length; idx += 1) {
 			const log = logListArray[idx];
-			await this.archiveApp(log.name);
+			await this.archiveApp(log.name)
+				.catch((error) => {
+					// do nothing, just skip this app
+				});
 		}
 		this.log('Finished archiving all logs');
 	}
-
 	archiveApp(appId) {
 		this.log(`now archiving ${appId}`);
 		return new Promise(async (resolve, reject) => {
 			try {
 				await this.zipAppLogs(appId);
-				await this.saveWebDav(appId);
+				const settingsWebdav = Homey.ManagerSettings.get('settings');
+				if (settingsWebdav.useWebdav) {
+					await this.saveWebDav(appId);
+				}
+				const settingsSmb = Homey.ManagerSettings.get('smbSettings');
+				if (settingsSmb.useSmb) {
+					await this.saveSmb(appId);
+				}
 				this.deleteFile(appId);
 				return resolve(true);
 			} catch (error) {

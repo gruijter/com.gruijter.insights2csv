@@ -1,16 +1,21 @@
 {
 	"settings": {
-		"title"													: "Exporteer Insights instellingen",
-		"settingsTitle"									: "Instellingen",
-		"loggingTitle"									: "Debug logs",
-		"webDavTitle"										: "WebDAV instellingen",
-		"webDavUrl"											: "WebDAV url",
-		"username"											: "Gebruikersnaam",
-		"password"											: "Wachtwoord",
-		"save"													: "Opslaan",
-		"backup"												: "Exporteer Insights",
-		"settingsSaved"									: "De instellingen zijn opgeslagen",
-		"confirmExport"									: "Alle insights worden geëxporteerd. Dit kan erg lang duren. Doorgaan?",
-		"backupInitiated"								: "Volledige export is gestart"
+		"title"									: "Exporteer Insights instellingen",
+		"settingsTitle"					: "Settings",
+		"loggingTitle"					: "Debug logs",
+		"smbTitle"							: "Lokale netwerk share (smb) instellingen",
+		"useSmb"								: "Gebruik lokale netwerk share (smb) bij het exporteren",
+		"smbShare"							: "Netwerk share",
+		"smbDomain"							: "Domein",
+		"webDavTitle"						: "WebDAV instellingen",
+		"useWebdav"							: "Gebruik webDAV bij het exporteren",
+		"webDavUrl"							: "WebDAV url",
+		"username"							: "Gebruikersnaam",
+		"password"							: "Wachtwoord",
+		"save"									: "Opslaan",
+		"backup"								: "Exporteer Insights",
+		"settingsSaved"					: "De instellingen zijn opgeslagen",
+		"confirmExport"					: "Alle insights worden geëxporteerd. Dit kan erg lang duren. Doorgaan?",
+		"backupInitiated"				: "Volledige export is gestart"
 	}
 }
