@@ -14,14 +14,7 @@
 	"copyright": "Robin de Gruijter (gruijter@hotmail.com)",
 	"license": " GPL-3.0-or-later",
 	"contributors": {
-		"translators": [
-			{
-				"name": "EN: Robin"
-			},
-			{
-				"name": "EN: Robin"
-			}
-		]
+		"translators": [{"name": "🇬🇧 Robin"},{"name": "🇳🇱 Robin"}]
 	},
 	"contributing": {
 		"donate": {
