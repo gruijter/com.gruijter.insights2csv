@@ -2,131 +2,110 @@
 <html>
   <head>
 		<!-- The '/homey.js' script must be included in your settings view to work -->
+		<link rel="stylesheet" type="text/css" href="styles.css" />
 		<script type="text/javascript" src="/homey.js" data-origin="settings"></script>
 		<script type="text/javascript" src="/manager/webserver/assets/js/jquery.js"></script>
+		<script type="text/javascript" src="settings.js" data-origin="settings"></script>
   </head>
+
   <body>
-    <h1 data-i18n="settings.title"></h1>
-    <div id="panel-buttons">
-      <button id="panel-button-1" class="button panel-button" onclick="showPanel(1)" data-i18n="settings.settingsTitle">Settings</button>&nbsp;
-      <button id="panel-button-2" class="button panel-button" onclick="showPanel(2)" data-i18n="settings.loggingTitle">Logging</button>&nbsp;
-			<br><br>
-    </div>
-    <!-- Settings panel -->
-  	<div id="panel-1" class="panel">
-			<fieldset>
-					<legend data-i18n='settings.webDavTitle'> </legend>
-					<label for="webdav_url" data-i18n="settings.webDavUrl"> </label>
-					<input id="webdav_url" size="70" type="text" placeholder="e.g. https://mynas:443/webdav/HomeyBackups" value="" />
-					<br><br>
-					<label for="username" data-i18n="settings.username"> </label>
-					<input id="username" size="45" type="text" value="" />
-					<br><br>
-					<label for="password" data-i18n="settings.password"> </label>
-					<input id="password" size="45" type="password" value="" />
-					<br><br>
-					<button id="button_save" class="left" onclick="save()"><i class="fa fa-save"></i> <span data-i18n="settings.save">Save</span></button>
-					<button id="button_backup" class="left" onclick="backup()"><i class="fa fa fa-file-excel-o"></i> <span data-i18n="settings.backup">Export</span></button>
-			</fieldset>
-    </div>
-    <!-- Debug logs panel -->
-    <div id="panel-2" class="panel">
-			<!-- <button type="button" class="right" id="button_getlog" onclick="showLogs()" data-i18n="settings.getLogs">Get Logs</button> -->
-			<div id="loglines"></div>
-    </div>
+		<div id="app">
+				<p data-i18n="settings.benefit" class="benefit">Export all your Homey Insights</p>
+				<div class="rTable tabs">
+					<div class="rTableRow">
+						<div id="tabb1" class="tab tab-inactive" onclick="showTab(1)" data-i18n="settings.tab1.title">SMB Settings</div>
+						<div id="tabb2" class="tab tab-inactive" onclick="showTab(2)" data-i18n="settings.tab2.title">webDAV Settings</div>
+						<div id="tabb3" class="tab tab-inactive" onclick="showTab(3)" data-i18n="settings.tab3.title">Log</div>
+					</div>
+				</div>
 
-		<script type="text/javascript">
+				<!-- SMB Settings panel -->
+				<div style="height:8px" class="panel"></div>
+				<div id="tab1" class="panel" style="display: none;">
+					<fieldset class="listContainer">
+						<legend data-i18n="settings.tab1.instructionsTitle">Instructions</legend>
+						<p data-i18n="settings.tab1.instructions" class="instructions">Instructions</p>
+					</fieldset>
 
-		var saveData;
-		var HomeyAPI = null;
-		var webdavUrlField = document.getElementById('webdav_url');
-		var usernameField = document.getElementById('username');
-		var passwordField = document.getElementById('password');
-		var saveButton = document.getElementById('button_save');
-		var backupButton = document.getElementById('button_backup');
+					<div class="settings-itemgroup">
+							<div class="settings-item-text">
+									<span data-i18n="settings.tab1.useSmb">Use SMB</span>
+							</div>
+							<div class="settings-item-last">
+									<label class="form-switch">
+											<input type="checkbox" id="useSmb" checked="false">
+											<i></i>
+									</label>
+							</div>
+					</div>
+					<label class="settings-item-description" data-i18n="settings.tab1.smbShare">SMB Share</label>
+					<div class="settings-itemgroup">
+						<input id="smbShare" type="text" placeholder="e.g. //myNas/Backup" value="">
+					</div>
+					<label class="settings-item-description" data-i18n="settings.tab1.smbDomain">SMB Domain</label>
+					<div class="settings-itemgroup">
+						<input id="smbDomain" type="text" placeholder="e.g. DOMAIN" value="DOMAIN">
+					</div>
+					<label class="settings-item-description" data-i18n="settings.tab1.smbUsername">SMB Username</label>
+					<div class="settings-itemgroup">
+						<input id="smbUsername" type="text" value="">
+					</div>
+					<label class="settings-item-description" data-i18n="settings.tab1.smbPassword">SMB Password</label>
+					<div class="settings-itemgroup">
+						<input id="smbPassword" type="password" value="">
+					</div>
+					<label class="settings-item-description" data-i18n="settings.tab1.testSmb">Test SMB Settings</label>
+					<button id="testSmb" class="btn" onclick="testSmb()" data-i18n="settings.tab1.testSmb">Test SMB Settings</button>
+					<label class="settings-item-description" data-i18n="settings.tab1.saveSmb">Save SMB Settings</label>
+					<button id="saveSmb" class="btn" onclick="saveSmb()" data-i18n="settings.tab1.saveSmb">Save SMB Settings</button>
+				</div>
 
-		function showPanel(panel) {
-		  $('.panel').hide()
-		  $('.panel-button').removeClass('panel-button-active').addClass('panel-button-inactive')
-		  $('#panel-button-' + panel).removeClass('panel-button-inactive').addClass('panel-button-active')
-		  $('#panel-' + panel).show()
-			if (panel === 2) {
-				showLogs();
-			}
-		}
+				<!-- WebDAV Settings panel -->
+				<div style="height:8px" class="panel"></div>
+				<div id="tab2" class="panel" style="display: none;">
+					<fieldset class="listContainer">
+						<legend data-i18n="settings.tab2.instructionsTitle">Instructions</legend>
+						<p data-i18n="settings.tab2.instructions" class="instructions">Instructions</p>
+					</fieldset>
 
-		// triggered when user opens settings page
-		function onHomeyReady(Homey) {
-			HomeyAPI = Homey;
-			saveButton.disabled = true; // Disable save button until settings have been loaded
-			backupButton.disabled = true; // Disable backup button until settings have been loaded
+					<div class="settings-itemgroup">
+							<div class="settings-item-text">
+									<span data-i18n="settings.tab2.useWebdav">Use WebDAV</span>
+							</div>
+							<div class="settings-item-last">
+									<label class="form-switch">
+											<input type="checkbox" id="useWebdav" checked="false">
+											<i></i>
+									</label>
+							</div>
+					</div>
+					<label class="settings-item-description" data-i18n="settings.tab1.webdavUrl">WebDAV Url</label>
+					<div class="settings-itemgroup">
+						<input id="webdavUrl" type="text" placeholder="e.g. https://mynas/webdav/Backup" value="">
+					</div>
+					<label class="settings-item-description" data-i18n="settings.tab2.webdavUsername">WebDAV Username</label>
+					<div class="settings-itemgroup">
+						<input id="webdavUsername" type="text" value="">
+					</div>
+					<label class="settings-item-description" data-i18n="settings.tab2.webdavPassword">WebDAV Password</label>
+					<div class="settings-itemgroup">
+						<input id="webdavPassword" type="password" value="">
+					</div>
+					<label class="settings-item-description" data-i18n="settings.tab2.testWebdav">Test WebDAV Settings</label>
+					<button id="testWebdav" class="btn" onclick="testWebdav()" data-i18n="settings.tab2.testWebdav">Test WebDAV Settings</button>
+					<label class="settings-item-description" data-i18n="settings.tab2.saveWebdav">Save WebDAV Settings</label>
+					<button id="saveWebdav" class="btn" onclick="saveWebdav()" data-i18n="settings.tab2.saveWebdav">Save WebDAV Settings</button>
+				</div>
 
-			Homey.get('settings', function(err, storedData) {
-				if( err ) {
-					return Homey.alert( err );
-				} else {
-					//console.log('got data: ', storedData);
-					if ((storedData != null) && (storedData != undefined)) {
-						webdavUrlField.value = storedData.webdav_url;
-						usernameField.value = storedData.username;
-						passwordField.value = storedData.password;
-						backupButton.disabled = false;
-					}
-				}
-				saveButton.disabled = false;
-				showPanel(1);
-				Homey.ready();  //ready to show the settings page
-			});
-
-		}
-		function save() {
-			saveData = {
-				webdav_url: webdavUrlField.value,
-				username: usernameField.value,
-				password: passwordField.value
-			};
-			HomeyAPI.set('settings', saveData, function (error) {
-				if (error) {
-					HomeyAPI.alert(error, 'error');
-				} else {
-					HomeyAPI.alert(HomeyAPI.__("settings.settingsSaved"), 'info');
-				}
-			});
-		};
-		function backup() {
-			HomeyAPI.confirm(HomeyAPI.__("settings.confirmExport"), 'warning', function( err, result ) {
-				if (!result) { return; }
-				backupButton.disabled = true; // Disable backup button until page is reloaded
-				HomeyAPI.api('GET', '/archiveAll', function(error, result) {
-					if (error) {
-						HomeyAPI.alert(error, 'error');
-					}
-					else {
-						HomeyAPI.alert(HomeyAPI.__("settings.backupInitiated"), 'info');
-					}
-				});
-			});
-		}
-		function showLogs() {
-			 HomeyAPI.api('GET', 'getlogs/', function(err, result) {
-					if (!err) {
-						 document.getElementById('loglines').innerHTML = '';
-						 for (var i=(result.length - 1); i >= 0; i--) {
-								document.getElementById('loglines').innerHTML += result[i];
-								document.getElementById('loglines').innerHTML += "<br />";
-						 }
-					};
-			 });
-		}
-		function deleteLogs() {
-			 HomeyAPI.api('GET', 'deletelogs/', function(err, result) {
-				 if (err) {
-					 HomeyAPI.alert( err.message, 'error' ); // [, String icon], Function callback )
-				 } else { HomeyAPI.alert( 'Logs deleted!', 'info' ); }
-			 });
-		}
-
-		</script>
-
-  </body>
+				<!-- Logging panel -->
+				<div id="tab3" class="panel" style="display: none;">
+					<div class="setting">
+						<label class="settings-item-description" data-i18n="settings.tab3.deletelogs"></label>
+						<button id="deleteButton" class="btn" onclick="deleteLogs()" data-i18n="settings.tab3.deletelogs">Delete</button>
+					</div>
+					<div id="loglines" class="instructions"></div>
+				</div>
+			</div>
+		</div>
+	</body>
 </html>

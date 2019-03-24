@@ -1,5 +1,6 @@
+/* eslint-disable no-await-in-loop */
 /*
-Copyright 2017, 2018 Robin de Gruijter
+Copyright 2017 - 2019 Robin de Gruijter
 
 This file is part of com.gruijter.insights2csv.
 
@@ -42,7 +43,7 @@ class captureLogs {
 	getLogs() {
 		fs.readFile(this.logFile, 'utf8', (err, data) => {
 			if (err) {
-				Homey.app.error('error reading logfile: ', err.message);
+				Homey.app.error('no logfile');
 				return [];
 			}
 			try {
@@ -56,6 +57,7 @@ class captureLogs {
 			return this.logArray;
 		});
 	}
+
 	saveLogs() {
 		fs.writeFile(this.logFile, JSON.stringify(this.logArray), (err) => {
 			if (err) {
@@ -65,6 +67,7 @@ class captureLogs {
 			}
 		});
 	}
+
 	deleteLogs() {
 		// this.log('deleting logs from frontend');
 		fs.unlink(this.logFile, (err) => {
@@ -91,6 +94,7 @@ class captureLogs {
 		});
 		// captureStdout.release();
 	}
+
 	captureStdErr() {
 		// Capture all writes to stderr (e.g. this.error)
 		this.captureStderr = new StdOutFixture({ stream: process.stderr });
@@ -104,9 +108,11 @@ class captureLogs {
 		});
 		// captureStderr.release();
 	}
+
 	releaseStdOut() {
 		this.captureStdout.release();
 	}
+
 	releaseStdErr() {
 		this.captureStderr.release();
 	}

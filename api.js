@@ -2,9 +2,33 @@ const Homey = require('homey');
 
 module.exports = [
 	{
+		description: 'Test the SMB settings',
+		method: 'POST',
+		path: '/testSmb/',
+		requires_authorization: true,
+		role: 'owner',
+		fn: function fn(args, callback) {
+			Homey.app.testSmb(args.body)
+				.then(result => callback(null, result))
+				.catch(error => callback(error));
+		},
+	},
+	{
+		description: 'Test the WebDAV settings',
+		method: 'POST',
+		path: '/testWebdav/',
+		requires_authorization: true,
+		role: 'owner',
+		fn: function fn(args, callback) {
+			Homey.app.testWebdav(args.body)
+				.then(result => callback(null, result))
+				.catch(error => callback(error));
+		},
+	},
+	{
 		description: 'Make a full backup',
 		method: 'GET',
-		path: '/archiveAll',
+		path: '/archiveAll/',
 		requires_authorization: true,
 		role: 'owner',
 		fn: function fn(args, callback) {

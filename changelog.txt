@@ -1,0 +1,7 @@
+Version changelog
+
+v2.2.0  24.03.2019 complete rewrite for Homey V2 Insights.
+v2.1.0  2018.02.05 Added backup to local network share (smb).
+v2.0.0  2018.02.04 Complete rewrite to SDK2. Flows need to be repaired!
+v0.0.2  2017.06.05 Added per-app backup
+v0.0.1  2017.05.19 Initial release

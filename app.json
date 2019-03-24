@@ -4,30 +4,39 @@
 		"en": "Export Insights",
 		"nl": "Exporteer Insights"
 	},
-  "version": "2.0.0",
+  "version": "2.2.0",
 	"sdk": 2,
-	"compatibility": ">= 1.5.6",
+	"compatibility": ">= 2.0.5",
 	"author": {
 		"name": "Robin de Gruijter",
 		"email": "gruijter@hotmail.com"
 	},
-	"Copyright": "2017, 2018 Robin de Gruijter",
+	"copyright": "Robin de Gruijter (gruijter@hotmail.com)",
+	"license": " GPL-3.0-or-later",
+	"contributors": {
+		"developers": [{"name": "Robin de Gruijter","email": "gruijter@hotmail.com"}],
+		"translators": [{"name": "🇬🇧 Robin"},{"name": "🇳🇱 Robin"}]
+	},
 	"contributing": {
 		"donate": {
 			"paypal": {
-				"username": "gruijter"
+			"username": "gruijter"
 			}
 		}
 	},
+	"bugs": {
+		"url": "https://github.com/gruijter/com.gruijter.insights2csv/issues"
+	},
+	"homeyCommunityTopicId": 10976,
+	"category": ["internet","tools"],
 	"description": {
 		"en": "Make backups of all insights",
 		"nl": "Maak backups van alle insights"
 	},
 	"tags": {
-		"en": [ "export", "insights", "backup" ],
-		"nl": [ "export", "insights", "backup" ]
+		"en": [ "export", "insights", "backup", "NAS", "webDAV", "csv", "excel" ],
+		"nl": [ "export", "insights", "backup", "NAS", "webDAV", "csv", "excel" ]
 	},
-	"category": ["tools"],
 	"images": {
 		"large": "./assets/images/large.jpg",
 		"small": "./assets/images/small.jpg"
@@ -42,7 +51,105 @@
 				"title": {
 					"en": "Export all insights",
 					"nl": "Exporteer alle insights"
-				}
+				},
+				"args": [
+					{
+						"name": "resolution",
+						"type": "dropdown",
+						"values": [
+							{
+								"id": "lastHour",
+								"label": {
+									"en": "last hour"
+								}
+							},
+							{
+								"id": "last6Hours",
+								"label": {
+									"en": "last 6 hours"
+								}
+							},
+							{
+								"id": "last24Hours",
+								"label": {
+									"en": "last 24 hours"
+								}
+							},
+							{
+								"id": "last7Days",
+								"label": {
+									"en": "last 7 days"
+								}
+							},
+							{
+								"id": "last14Days",
+								"label": {
+									"en": "last 14 days"
+								}
+							},
+							{
+								"id": "last31Days",
+								"label": {
+									"en": "last 31 days"
+								}
+							},
+							{
+								"id": "today",
+								"label": {
+									"en": "today"
+								}
+							},
+							{
+								"id": "yesterday",
+								"label": {
+									"en": "yesterday"
+								}
+							},
+							{
+								"id": "thisWeek",
+								"label": {
+									"en": "this week"
+								}
+							},
+							{
+								"id": "lastWeek",
+								"label": {
+									"en": "last week"
+								}
+							},
+							{
+								"id": "thisMonth",
+								"label": {
+									"en": "this month"
+								}
+							},
+							{
+								"id": "lastMonth",
+								"label": {
+									"en": "last month"
+								}
+							},
+							{
+								"id": "thisYear",
+								"label": {
+									"en": "this year"
+								}
+							},
+							{
+								"id": "lastYear",
+								"label": {
+									"en": "last year"
+								}
+							},
+							{
+								"id": "last2Years",
+								"label": {
+									"en": "last 2 years"
+								}
+							}
+						]
+					}
+				]
 			},
 			{
 				"id": "archive_app",
@@ -54,6 +161,102 @@
 					{
 						"name": "selectedApp",
 						"type": "autocomplete"
+					},
+					{
+						"name": "resolution",
+						"type": "dropdown",
+						"values": [
+							{
+								"id": "lastHour",
+								"label": {
+									"en": "last hour"
+								}
+							},
+							{
+								"id": "last6Hours",
+								"label": {
+									"en": "last 6 hours"
+								}
+							},
+							{
+								"id": "last24Hours",
+								"label": {
+									"en": "last 24 hours"
+								}
+							},
+							{
+								"id": "last7Days",
+								"label": {
+									"en": "last 7 days"
+								}
+							},
+							{
+								"id": "last14Days",
+								"label": {
+									"en": "last 14 days"
+								}
+							},
+							{
+								"id": "last31Days",
+								"label": {
+									"en": "last 31 days"
+								}
+							},
+							{
+								"id": "today",
+								"label": {
+									"en": "today"
+								}
+							},
+							{
+								"id": "yesterday",
+								"label": {
+									"en": "yesterday"
+								}
+							},
+							{
+								"id": "thisWeek",
+								"label": {
+									"en": "this week"
+								}
+							},
+							{
+								"id": "lastWeek",
+								"label": {
+									"en": "last week"
+								}
+							},
+							{
+								"id": "thisMonth",
+								"label": {
+									"en": "this month"
+								}
+							},
+							{
+								"id": "lastMonth",
+								"label": {
+									"en": "last month"
+								}
+							},
+							{
+								"id": "thisYear",
+								"label": {
+									"en": "this year"
+								}
+							},
+							{
+								"id": "lastYear",
+								"label": {
+									"en": "last year"
+								}
+							},
+							{
+								"id": "last2Years",
+								"label": {
+									"en": "last 2 years"
+								}
+							}
+						]
 					}
 				]
 			}
