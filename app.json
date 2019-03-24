@@ -11,23 +11,38 @@
 		"name": "Robin de Gruijter",
 		"email": "gruijter@hotmail.com"
 	},
-	"Copyright": "2017 - 2019 Robin de Gruijter",
+	"copyright": "Robin de Gruijter (gruijter@hotmail.com)",
+	"license": " GPL-3.0-or-later",
+	"contributors": {
+		"translators": [
+			{
+				"name": "EN: Robin"
+			},
+			{
+				"name": "EN: Robin"
+			}
+		]
+	},
 	"contributing": {
 		"donate": {
 			"paypal": {
-				"username": "gruijter"
+			"username": "gruijter"
 			}
 		}
 	},
+	"bugs": {
+		"url": "https://github.com/gruijter/com.gruijter.insights2csv/issues"
+	},
+	"homeyCommunityTopicId": 10976,
+	"category": ["internet","tools"],
 	"description": {
 		"en": "Make backups of all insights",
 		"nl": "Maak backups van alle insights"
 	},
 	"tags": {
-		"en": [ "export", "insights", "backup" ],
-		"nl": [ "export", "insights", "backup" ]
+		"en": [ "export", "insights", "backup", "NAS", "webDAV", "csv", "excel" ],
+		"nl": [ "export", "insights", "backup", "NAS", "webDAV", "csv", "excel" ]
 	},
-	"category": ["tools"],
 	"images": {
 		"large": "./assets/images/large.jpg",
 		"small": "./assets/images/small.jpg"
