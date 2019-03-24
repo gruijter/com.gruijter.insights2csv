@@ -1,21 +1,40 @@
 {
 	"settings": {
-		"title"									: "Export Insights settings",
-		"settingsTitle"					: "Settings",
-		"loggingTitle"					: "Debug logs",
-		"smbTitle"							: "Local network share (smb) settings",
-		"useSmb"								: "Use local network share (smb) when exporting",
-		"smbShare"							: "Network share",
-		"smbDomain"							: "Domain",
-		"webDavTitle"						: "WebDAV settings",
-		"useWebdav"							: "Use webDAV when exporting",
-		"webDavUrl"							: "WebDAV url",
-		"username"							: "Username",
-		"password"							: "Password",
-		"save"									: "Save",
-		"backup"								: "Export Insights",
-		"settingsSaved"					: "The settings were saved",
-		"confirmExport"					: "All insights will be exported. This can take a very long time. Continue?",
-		"backupInitiated"				: "Full export has started"
+		"benefit": "Let Homey export all Insights from a flow",
+		"tab1": {
+			"title": "NAS Settings",
+			"instructionsTitle": "Instructions",
+			"instructions": "Export to NAS, or any other windows network share, is possible via the SAMBA protocol. Enable 'Use SMB', and fill in the required parameters to access the network share. Test to verify if the settings are correct, and save them. Now you can start exporting Insights to a network share from a flow.",
+			"useSmb": "Use SMB when exporting",
+			"smbShare": "Network share",
+			"smbDomain": "Domain",
+			"smbUsername": "Username",
+			"smbPassword": "Password",
+			"testSmb": "Test the SMB settings",
+			"testOk": "OK! Now save the settings.",
+			"saveSmb": "Save",
+			"settingsSaved": "SMB settings are saved"
+		},
+		"tab2": {
+			"title": "WebDAV Settings",
+			"instructionsTitle": "Instructions",
+			"instructions": "Export to a web folder is possible via the WebDAV protocol. Enable 'Use WebDAV', and fill in the required parameters to access the WebDAV folder. Test to verify if the settings are correct, and save them. Now you can start exporting Insights to a web folder from a flow.",
+			"useWebdav": "Use WebDAV when exporting",
+			"webdavUrl": "WebDAV URL",
+			"webdavUsername": "Username",
+			"webdavPassword": "Password",
+			"testWebdav": "Test the WebDAV settings",
+			"testOk": "OK! Now save the settings.",
+			"saveWebdav": "Save",
+			"settingsSaved": "WebDAV settings are saved"
+		},
+		"tab3": {
+			"title": "Logs",
+			"deleteLogs": "Delete logs",
+			"deleteWarning": "Delete all logs?"
+		},
+		"backup": "Export Insights",
+		"confirmExport": "All insights will be exported. This can take a very long time. Continue?",
+		"backupInitiated": "Full export has started"
 	}
 }

@@ -1,21 +1,37 @@
 {
 	"settings": {
-		"title"									: "Exporteer Insights instellingen",
-		"settingsTitle"					: "Settings",
-		"loggingTitle"					: "Debug logs",
-		"smbTitle"							: "Lokale netwerk share (smb) instellingen",
-		"useSmb"								: "Gebruik lokale netwerk share (smb) bij het exporteren",
-		"smbShare"							: "Netwerk share",
-		"smbDomain"							: "Domein",
-		"webDavTitle"						: "WebDAV instellingen",
-		"useWebdav"							: "Gebruik webDAV bij het exporteren",
-		"webDavUrl"							: "WebDAV url",
-		"username"							: "Gebruikersnaam",
-		"password"							: "Wachtwoord",
-		"save"									: "Opslaan",
-		"backup"								: "Exporteer Insights",
-		"settingsSaved"					: "De instellingen zijn opgeslagen",
-		"confirmExport"					: "Alle insights worden geëxporteerd. Dit kan erg lang duren. Doorgaan?",
-		"backupInitiated"				: "Volledige export is gestart"
+		"benefit": "Exporteer alle Insights via een flow",
+		"tab1": {
+			"title": "NAS Instellingen",
+			"instructionsTitle": "Instructies",
+			"instructions": "Exporteer naar NAS, of een andere windows network share, via het SAMBA protocol. Zet 'Gebruik SMB' aan, en vul de benodigde parameters in om de network share te benaderen. Test om te controleren of de instellingen correct zijn, en sla ze op. Nu kun je Insights exporteren naar een network share vanuit een flow.",
+			"useSmb": "Gebruik SMB bij export",
+			"smbShare": "Network share",
+			"smbDomain": "Domein",
+			"smbUsername": "Gebruikersnaam",
+			"smbPassword": "Wachtwoord",
+			"testSmb": "Test de SMB instellingen",
+			"testOk": "OK! Sla de instellnigen nu op.",
+			"saveSmb": "Opslaan",
+			"settingsSaved": "SMB instellnigen zijn opgeslagen"
+		},
+		"tab2": {
+			"title": "WebDAV Instellingen",
+			"instructionsTitle": "Instructies",
+			"instructions": "Exporteer naar een web folder via het WebDAV protocol. Zet 'Gebruik WebDAV' aan, en vul de benodigde parameters in om de web folder te benaderen. Test om te controleren of de instellingen correct zijn, en sla ze op. Nu kun je Insights exporteren naar een web folder vanuit een flow.",
+			"useWebdav": "Gebruik WebDAV bij export",
+			"webdavUrl": "WebDAV URL",
+			"webdavUsername": "Gebruikersnaam",
+			"webdavPassword": "Wachtwoord",
+			"testWebdav": "Test de WebDAV instellingen",
+			"testOk": "OK! Sla de instellnigen nu op.",
+			"saveWebdav": "Opslaan",
+			"settingsSaved": "WebDAV instellingen zijn opgeslagen"
+		},
+		"tab3": {
+			"title": "Logs",
+			"deleteLogs": "Verwijder logs",
+			"deleteWarning": "Verwijder alle logs?"
+		}
 	}
 }
