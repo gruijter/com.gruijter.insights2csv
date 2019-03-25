@@ -26,17 +26,33 @@ const fs = require('fs');
 const archiver = require('archiver');
 const SMB2 = require('@marsaud/smb2');
 const { createClient } = require('webdav');
+
 const Logger = require('./captureLogs.js');
+
 
 // ============================================================
 // Some helper functions here
 
-const log2csv = (logEntries) => {
+const JSDateToExcelDate = (inDate) => {
+	// convert to yyyy-MM-dd HH:mm:ss
+	const returnDateTime = inDate.toISOString().replace(/T/, ' ').replace(/\..+/, '');
+	return returnDateTime;
+};
+
+const log2csv = async (logEntries) => {
 	try {
-		const entries = JSON.parse(JSON.stringify(logEntries.values));
 		const meta = JSON.parse(JSON.stringify(logEntries));
 		delete meta.values;
-		const csv = entries.reduce((txt, entry) => `${txt}${entry.t};${entry.v}\r\n`, '');
+		const entries = logEntries.values.map((entry) => {
+			const newEntry = {
+				t: JSDateToExcelDate(new Date(entry.t)),
+				v: JSON.stringify(entry.v).replace('.', ','),
+			};
+			return newEntry;
+		});
+		const delimiter = ';';
+		const header = `Zulu dateTime${delimiter}${logEntries.id}\r\n`;
+		const csv = entries.reduce((txt, entry) => `${txt}${entry.t}${delimiter}${entry.v}\r\n`, header);
 		return Promise.resolve({ csv, meta });	// csv is string. meta is object.
 	} catch (error) {
 		return Promise.reject(error);
@@ -126,6 +142,7 @@ class App extends Homey.App {
 	async test() {
 		try {
 			// await this.exportApp('weather', 'lastHour');
+			// await this.exportApp('com.gruijter.enelogic', 'last24Hours');
 			// await this.exportAll('last2Years');
 		} catch (error) {
 			this.error(error);
@@ -475,9 +492,11 @@ class App extends Homey.App {
 					const allMeta = Object.assign(data.meta, log);
 					const fileNameCsv = `${log.uriObj.name}/${log.id}.csv`;
 					const fileNameMeta = `${log.uriObj.name}/${log.id}_meta.json`;
+					const fileNameJson = `${log.uriObj.name}/${log.id}.json`;
 					// this.log('zipping now ....');
 					await archive.append(data.csv, { name: fileNameCsv });
 					await archive.append(JSON.stringify(allMeta), { name: fileNameMeta });
+					await archive.append(JSON.stringify(entries), { name: fileNameJson });
 				}
 				// this.log(`${logs.length} files zipped`);
 				archive.finalize();

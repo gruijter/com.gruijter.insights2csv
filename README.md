@@ -2,7 +2,8 @@
 
 Make a backup of all your insights to your NAS or WebDAV compliant storage.
 The insights are zipped and stored in .csv format so you can open them in excel
-and create all kinds of statistics and charts.
+and create all kinds of statistics and charts. The export also includes a JSON version
+of the data.
 
 Backups can be easily scheduled by using the trigger card in a flow. You can
 schedule a full backup, or a backup per app.
