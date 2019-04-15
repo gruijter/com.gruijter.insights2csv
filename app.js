@@ -23,11 +23,13 @@ with com.gruijter.insights2csv. If not, see <http://www.gnu.org/licenses/>.
 const Homey = require('homey');
 const { HomeyAPI } = require('athom-api');
 const fs = require('fs');
+const util = require('util');
 const archiver = require('archiver');
 const SMB2 = require('@marsaud/smb2');
 const { createClient } = require('webdav');
-
 const Logger = require('./captureLogs.js');
+
+const setTimeoutPromise = util.promisify(setTimeout);
 
 
 // ============================================================
@@ -77,6 +79,12 @@ class App extends Homey.App {
 			this.webdavSettings = {};
 			this.smbSettings = {};
 
+			// queue properties
+			this.queue = [];
+			this.head = 0;
+			this.tail = 0;
+			this.queueRunning = false;
+
 			// register some listeners
 			process.on('unhandledRejection', (error) => {
 				this.error('unhandledRejection! ', error);
@@ -121,10 +129,10 @@ class App extends Homey.App {
 					return Promise.resolve(results);
 				});
 
-			// do garbage collection every 10 minutes
-			this.intervalIdGc = setInterval(() => {
-				global.gc();
-			}, 1000 * 60 * 10);
+			// // do garbage collection every 10 minutes
+			// this.intervalIdGc = setInterval(() => {
+			// 	global.gc();
+			// }, 1000 * 60 * 10);
 
 			this.deleteAllFiles();
 			await this.initExport();
@@ -148,6 +156,49 @@ class App extends Homey.App {
 			this.error(error);
 		}
 	}
+
+	// ============================================================
+	// stuff for queue handling here
+	async enQueue(item) {
+		this.queue[this.tail] = item;
+		this.tail += 1;
+		if (!this.queueRunning) {
+			this.queueRunning = true;
+			await this.initExport();
+			this.runQueue();
+		}
+	}
+
+	deQueue() {
+		const size = this.tail - this.head;
+		if (size <= 0) return undefined;
+		const item = this.queue[this.head];
+		delete this.queue[this.head];
+		this.head += 1;
+		// Reset the counter
+		if (this.head === this.tail) {
+			this.head = 0;
+			this.tail = 0;
+		}
+		return item;
+	}
+
+	async runQueue() {
+		this.queueRunning = true;
+		const item = this.deQueue();
+		if (item) {
+			await this._exportApp(item.appId, item.resolution)
+				.catch(this.error);
+			// wait a bit to reduce cpu and mem load?
+			await setTimeoutPromise(10 * 1000, 'waiting is done');
+			global.gc();
+			this.runQueue();
+		} else {
+			this.queueRunning = false;
+			this.log('Finshed all exports');
+		}
+	}
+
 
 	// ============================================================
 	// stuff for frontend API here
@@ -341,7 +392,7 @@ class App extends Homey.App {
 	}
 
 
-	async initExport() {	// rate handling / queueing to add
+	async initExport() {
 		try {
 			this.webdavSettings = Homey.ManagerSettings.get('webdavSettings');
 			this.smbSettings = Homey.ManagerSettings.get('smbSettings');
@@ -520,9 +571,20 @@ class App extends Homey.App {
 		});
 	}
 
-	async exportApp(appId, resolution) {
+	exportAll(resolution) {
+		this.allNames.forEach((name) => {
+			this.exportApp(name.id, resolution);
+		});
+		return true;
+	}
+
+	exportApp(appId, resolution) {
+		this.enQueue({ appId, resolution });
+		return true;
+	}
+
+	async _exportApp(appId, resolution) {
 		try {
-			await this.initExport();
 			const fileName = await this.zipAppLogs(appId, resolution);
 			if (this.smbSettings && this.smbSettings.useSmb) {
 				await this.saveSmb(fileName);
@@ -531,29 +593,7 @@ class App extends Homey.App {
 				await this.saveWebDav(fileName);
 			}
 			this.deleteFile(fileName);
-			this.log('Export finished');
-			global.gc();
-			return true;
-		} catch (error) {
-			return Promise.reject(error);
-		}
-	}
-
-	async exportAll(resolution) {
-		try {
-			await this.initExport();
-			for (let idx = 0; idx < this.allNames.length; idx += 1) {
-				const fileName = await this.zipAppLogs(this.allNames[idx].id, resolution);
-				if (this.smbSettings && this.smbSettings.useSmb) {
-					await this.saveSmb(fileName);
-				}
-				if (this.webdavSettings && this.webdavSettings.useWebdav) {
-					await this.saveWebDav(fileName);
-				}
-				this.deleteFile(fileName);
-			}
-			this.log('Export finished');
-			global.gc();
+			// this.log(`Export of ${appId} finished`);
 			return true;
 		} catch (error) {
 			return Promise.reject(error);

@@ -31,7 +31,8 @@
 		"tab3": {
 			"title": "Logs",
 			"deleteLogs": "Verwijder logs",
-			"deleteWarning": "Verwijder alle logs?"
+			"deleteWarning": "Verwijder alle logs?",
+			"deleted": "Alle logs zijn verwijderd"
 		}
 	}
 }

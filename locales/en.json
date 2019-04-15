@@ -31,10 +31,8 @@
 		"tab3": {
 			"title": "Logs",
 			"deleteLogs": "Delete logs",
-			"deleteWarning": "Delete all logs?"
-		},
-		"backup": "Export Insights",
-		"confirmExport": "All insights will be exported. This can take a very long time. Continue?",
-		"backupInitiated": "Full export has started"
+			"deleteWarning": "Delete all logs?",
+			"deleted": "All logs have been deleted"
+		}
 	}
 }
