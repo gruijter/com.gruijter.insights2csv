@@ -129,11 +129,6 @@ class App extends Homey.App {
 					return Promise.resolve(results);
 				});
 
-			// // do garbage collection every 10 minutes
-			// this.intervalIdGc = setInterval(() => {
-			// 	global.gc();
-			// }, 1000 * 60 * 10);
-
 			this.deleteAllFiles();
 			await this.initExport();
 
