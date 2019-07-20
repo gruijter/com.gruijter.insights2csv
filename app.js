@@ -1,4 +1,5 @@
 /* eslint-disable no-await-in-loop */
+
 /*
 Copyright 2017 - 2019 Robin de Gruijter
 
@@ -27,6 +28,7 @@ const util = require('util');
 const archiver = require('archiver');
 const SMB2 = require('@marsaud/smb2');
 const { createClient } = require('webdav');
+const ftp = require('basic-ftp');
 const Logger = require('./captureLogs.js');
 
 const setTimeoutPromise = util.promisify(setTimeout);
@@ -76,8 +78,10 @@ class App extends Homey.App {
 			this.allNames = [];
 			this.smb2Client = {};
 			this.webdavClient = {};
+			this.FTPClient = {};
 			this.webdavSettings = {};
 			this.smbSettings = {};
+			this.FTPSettings = {};
 
 			// queue properties
 			this.queue = [];
@@ -101,6 +105,10 @@ class App extends Homey.App {
 				.on('memwarn', () => {
 					this.log('memwarn!');
 				});
+			Homey.ManagerSettings.on('set', (key) => {
+				this.log(`app settings ${key} changed from frontend`);
+				this.FTPsettingsHaveChanged = true;
+			});
 
 			// ==============FLOW CARD STUFF======================================
 			const archiveAllAction = new Homey.FlowCardAction('archive_all');
@@ -129,6 +137,21 @@ class App extends Homey.App {
 					return Promise.resolve(results);
 				});
 
+			const purgeAction = new Homey.FlowCardAction('purge');
+			purgeAction
+				.register()
+				.registerRunListener((args) => {
+					this.log(`Deleting old data on ${args.storage}`);
+					if (args.storage === 'FTP') {
+						this.purgeFTP(args.daysOld, args.types === 'allTypes');
+					}
+					if (args.storage === 'SMB') {
+						this.purgeSMB(args.daysOld, args.types === 'allTypes');
+					}
+					return Promise.resolve(true);
+				});
+
+
 			this.deleteAllFiles();
 			await this.initExport();
 
@@ -147,6 +170,7 @@ class App extends Homey.App {
 			// await this.exportApp('weather', 'lastHour');
 			// await this.exportApp('com.gruijter.enelogic', 'last24Hours');
 			// await this.exportAll('last2Years');
+			this.purgeSMB();
 		} catch (error) {
 			this.error(error);
 		}
@@ -246,6 +270,28 @@ class App extends Homey.App {
 			const quota = await webdavClient.getQuota();
 			this.log('Connection successfull!');
 			return Promise.resolve(quota);
+		} catch (error) {
+			this.log(error);
+			return Promise.reject(error);
+		}
+	}
+
+	async testFTP(FTPSettings) {
+		this.log('testing FTP settings from frontend');
+		try {
+			const client = new ftp.Client();
+			client.ftp.verbose = true;
+			await client.access({
+				host: FTPSettings.FTPHost,
+				port: FTPSettings.FTPPort,
+				user: FTPSettings.FTPUsername,
+				password: FTPSettings.FTPPassword,
+				secure: FTPSettings.useSFTP,
+			});
+			await client.ensureDir(FTPSettings.FTPFolder);
+			// console.log(await client.list());
+			this.log('Connection successfull!');
+			return Promise.resolve();
 		} catch (error) {
 			this.log(error);
 			return Promise.reject(error);
@@ -391,6 +437,7 @@ class App extends Homey.App {
 		try {
 			this.webdavSettings = Homey.ManagerSettings.get('webdavSettings');
 			this.smbSettings = Homey.ManagerSettings.get('smbSettings');
+			this.FTPSettings = Homey.ManagerSettings.get('FTPSettings');
 			await this.loginHomeyApi();
 			await this.getAllLogs();
 			await this.getAllDevices();
@@ -511,6 +558,134 @@ class App extends Homey.App {
 		});
 	}
 
+	// purge SMB folder
+	async purgeSMB(daysOld, allTypes) {
+		return new Promise(async (resolve, reject) => {
+			try {
+				let selectList = [];
+				await this.getSmb2Client();
+				this.smb2Client.readdir('', async (err, files) => {
+					if (err) throw err;
+					selectList = files;
+					// select only zip files
+					if (!allTypes) {
+						selectList = await selectList.filter((item) => {
+							const isZip = item.toLowerCase().slice(-4) === '.zip';
+							return isZip;
+						});
+					}
+					// select older then daysOld
+					selectList = await selectList.filter((item) => {
+						let dateString = item.match(/_(.*?)_/)[1];
+						if (dateString.length !== 16) return false;
+						const YYYY = dateString.substring(0, 4);
+						const MM = dateString.substring(4, 6);
+						const DD = dateString.substring(6, 8);
+						const hh = dateString.substring(9, 11);
+						const mm = dateString.substring(11, 13);
+						const ss = dateString.substring(13, 15);
+						dateString = `${YYYY}-${MM}-${DD}T${hh}:${mm}:${ss}Z`;
+						const days = (Date.now() - new Date(dateString)) / 1000 / 60 / 60 / 24;
+						return days > daysOld;
+					});
+					// delete the file or folder
+					for (let idx = 0; idx < selectList.length; idx += 1) {
+						const item = selectList[idx];
+						this.log(`removing SMB file ${item}`);
+						this.smb2Client.unlink(item, (error) => {
+							if (error) throw err;
+						});
+					}
+				});
+				return resolve(selectList);
+			} catch (error) {
+				return reject(error);
+			}
+		});
+	}
+
+	// ============================================================
+	// FTP file handling here
+
+	// create FTP client
+	async getFTPClient() {
+		try {
+			if ((this.FTPClient.closed === false) && !this.FTPsettingsHaveChanged) {
+				return Promise.resolve(this.FTPClient);
+			}
+			this.FTPClient = new ftp.Client();
+			this.FTPsettingsHaveChanged = false;
+			// client.ftp.verbose = true;
+			await this.FTPClient.access({
+				host: this.FTPSettings.FTPHost,
+				port: this.FTPSettings.FTPPort,
+				user: this.FTPSettings.FTPUsername,
+				password: this.FTPSettings.FTPPassword,
+				secure: this.FTPSettings.useSFTP,
+			});
+			await this.FTPClient.ensureDir(this.FTPSettings.FTPFolder);
+			return Promise.resolve(this.FTPClient);
+		} catch (error) {
+			return Promise.reject(error);
+		}
+	}
+
+	// save a file to a network share via FTP as promise; resolves FTP filename
+	async saveFTP(fileName) {
+		try {
+			await this.getFTPClient();
+			const fileStream = fs.createReadStream(`./userdata/${fileName}`);
+			await this.FTPClient.upload(fileStream, fileName);
+			this.log(`${fileName} has been saved to FTP`);
+			Promise.resolve(fileName);
+		} catch (error) {
+			this.error('error:', error);
+			Promise.reject(error);
+		}
+	}
+
+	// purge FTP folder
+	async purgeFTP(daysOld, allTypes) {
+		try {
+			await this.getFTPClient();
+			let selectList = await this.FTPClient.list();
+			// select only zip files
+			if (!allTypes) {
+				selectList = await selectList.filter((item) => {
+					const isFile = item.type === 1;
+					// const isFolder = item.type === 2;
+					const isZip = item.name.toLowerCase().slice(-4) === '.zip';
+					return isZip && isFile;
+				});
+			}
+			// select older then daysOld
+			selectList = await selectList.filter((item) => {
+				let dateString = item.date;
+				if (dateString.length < 18) {
+					const year = new Date().getFullYear();
+					dateString = `${year} ${dateString}`;
+				}
+				const days = (Date.now() - new Date(dateString)) / 1000 / 60 / 60 / 24;
+				return days > daysOld;
+			});
+			// delete the file or folder
+			for (let idx = 0; idx < selectList.length; idx += 1) {
+				const item = selectList[idx];
+				if (item.type === 1) {
+					this.log(`removing FTP file ${item.name}`);
+					await this.FTPClient.remove(item.name);
+				}
+				if (item.type === 2) {
+					this.log(`removing FTP folder ${item.name}`);
+					await this.FTPClient.removeDir(item.name);
+				}
+			}
+			return Promise.resolve(selectList);
+		} catch (error) {
+			return Promise.reject(error);
+		}
+	}
+
 	// ============================================================
 	// ZIP handling here
 	// zip all log entries from one app as promise; resolves zipfilename
@@ -586,6 +761,9 @@ class App extends Homey.App {
 			}
 			if (this.webdavSettings && this.webdavSettings.useWebdav) {
 				await this.saveWebDav(fileName);
+			}
+			if (this.FTPSettings && this.FTPSettings.useFTP) {
+				await this.saveFTP(fileName);
 			}
 			this.deleteFile(fileName);
 			// this.log(`Export of ${appId} finished`);

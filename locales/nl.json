@@ -2,7 +2,7 @@
 	"settings": {
 		"benefit": "Exporteer alle Insights via een flow",
 		"tab1": {
-			"title": "NAS Instellingen",
+			"title": "NAS",
 			"instructionsTitle": "Instructies",
 			"instructions": "Exporteer naar NAS, of een andere windows network share, via het SAMBA protocol. Zet 'Gebruik SMB' aan, en vul de benodigde parameters in om de network share te benaderen. Test om te controleren of de instellingen correct zijn, en sla ze op. Nu kun je Insights exporteren naar een network share vanuit een flow.",
 			"useSmb": "Gebruik SMB bij export",
@@ -16,7 +16,7 @@
 			"settingsSaved": "SMB instellnigen zijn opgeslagen"
 		},
 		"tab2": {
-			"title": "WebDAV Instellingen",
+			"title": "WebDAV",
 			"instructionsTitle": "Instructies",
 			"instructions": "Exporteer naar een web folder via het WebDAV protocol. Zet 'Gebruik WebDAV' aan, en vul de benodigde parameters in om de web folder te benaderen. Test om te controleren of de instellingen correct zijn, en sla ze op. Nu kun je Insights exporteren naar een web folder vanuit een flow.",
 			"useWebdav": "Gebruik WebDAV bij export",
@@ -24,11 +24,26 @@
 			"webdavUsername": "Gebruikersnaam",
 			"webdavPassword": "Wachtwoord",
 			"testWebdav": "Test de WebDAV instellingen",
-			"testOk": "OK! Sla de instellnigen nu op.",
+			"testOk": "OK! Sla de instellingen nu op.",
 			"saveWebdav": "Opslaan",
 			"settingsSaved": "WebDAV instellingen zijn opgeslagen"
 		},
 		"tab3": {
+			"title": "FTP",
+			"instructionsTitle": "Instructies",
+			"instructions": "Exporteren naar een FTP folder via het (S)FTP protocol. zet 'Gebruik FTP' aan, en vul de benodigde parameters in om de web folder te benaderen. Test om te controleren of de instellingen correct zijn, en sla ze op. Nu kun je Insights exporteren naar een web folder vanuit een flow.",
+			"useFTP": "Gebruik FTP bij export",
+			"FTPHost": "FTP Host",
+			"FTPFolder": "FTP Folder",
+			"SFTP": "Gebruik secure SFTP",
+			"FTPUsername": "Gebruikersnaam",
+			"FTPPassword": "Wachtwoord",
+			"testFTP": "Test de FTP instellingen",
+			"testOk": "OK! Sla de instellingen nu op.",
+			"saveFTP": "Opslaan",
+			"settingsSaved": "instellingen zijn opgeslagen"
+		},
+		"tab4": {
 			"title": "Logs",
 			"deleteLogs": "Verwijder logs",
 			"deleteWarning": "Verwijder alle logs?",

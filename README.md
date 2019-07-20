@@ -1,12 +1,11 @@
-# Export Insights #
+# Archive Insights #
 
-Make a backup of all your insights to your NAS or WebDAV compliant storage.
-The insights are zipped and stored in .csv format so you can open them in excel
-and create all kinds of statistics and charts. The export also includes a JSON version
-of the data.
+Export all your insights to your NAS, to a FTP server, or to a WebDAV compliant storage.
+The insights are zipped and stored in .csv format so you can open them in excel and create
+all kinds of statistics and charts. The export also includes a JSON version of the data.
 
-Backups can be easily scheduled by using the trigger card in a flow. You can
-schedule a full backup, or a backup per app.
+Exports can be easily scheduled by using the trigger card in a flow. You can
+schedule a full export, or an export per app.
 
 ![image][flow-cards-image]
 
@@ -15,8 +14,8 @@ It is possible to use a local share and a webDAV storage simultaneously.
 
 ![image][setup-image]
 
-Note: making a backup can take a long time (more than 10 minutes), depending on
-how many insights you have. It is not possible to restore a backup into Homey.
+Note: doing an export can take a long time (more than 10 minutes), depending on
+how many insights you have. It is not possible to restore the data into Homey.
 
 For requests or remarks, visit the [forum].
 

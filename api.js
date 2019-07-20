@@ -14,6 +14,18 @@ module.exports = [
 		},
 	},
 	{
+		description: 'Test the FTP settings',
+		method: 'POST',
+		path: '/testFTP/',
+		requires_authorization: true,
+		role: 'owner',
+		fn: function fn(args, callback) {
+			Homey.app.testFTP(args.body)
+				.then(result => callback(null, result))
+				.catch(error => callback(error));
+		},
+	},
+	{
 		description: 'Test the WebDAV settings',
 		method: 'POST',
 		path: '/testWebdav/',

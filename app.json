@@ -1,10 +1,10 @@
 {
 	"id": "com.gruijter.insights2csv",
 	"name": {
-		"en": "Export Insights",
+		"en": "Archive Insights",
 		"nl": "Exporteer Insights"
 	},
-  "version": "2.3.1",
+  "version": "2.4.0",
 	"sdk": 2,
 	"compatibility": ">= 2.0.5",
 	"author": {
@@ -257,6 +257,59 @@
 								}
 							}
 						]
+					}
+				]
+			},
+			{
+				"id": "purge",
+				"title": {
+					"en": "Purge old files and folders",
+					"nl": "Verwijder oude bestanden en mappen"
+				},
+				"args": [
+					{
+						"name": "storage",
+						"type": "dropdown",
+						"values": [
+							{
+								"id": "FTP",
+								"label": {
+									"en": "FTP"
+								}
+							},
+							{
+								"id": "SMB",
+								"label": {
+									"en": "NAS/SMB"
+								}
+							}
+						]
+					},
+					{
+						"name": "types",
+						"type": "dropdown",
+						"values": [
+							{
+								"id": "onlyZip",
+								"label": {
+									"en": "only ZIP files"
+								}
+							},
+							{
+								"id": "allTypes",
+								"label": {
+									"en": "all files and folders"
+								}
+							}
+						]
+					},
+					{
+						"name": "daysOld",
+						"type": "number",
+						"min": 1,
+						"placeholder": {
+							"en": "delete older then number of days"
+						  }
 					}
 				]
 			}

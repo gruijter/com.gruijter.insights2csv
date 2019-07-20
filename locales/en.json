@@ -2,7 +2,7 @@
 	"settings": {
 		"benefit": "Let Homey export all Insights from a flow",
 		"tab1": {
-			"title": "NAS Settings",
+			"title": "NAS",
 			"instructionsTitle": "Instructions",
 			"instructions": "Export to NAS, or any other windows network share, is possible via the SAMBA protocol. Enable 'Use SMB', and fill in the required parameters to access the network share. Test to verify if the settings are correct, and save them. Now you can start exporting Insights to a network share from a flow.",
 			"useSmb": "Use SMB when exporting",
@@ -16,7 +16,7 @@
 			"settingsSaved": "SMB settings are saved"
 		},
 		"tab2": {
-			"title": "WebDAV Settings",
+			"title": "WebDAV",
 			"instructionsTitle": "Instructions",
 			"instructions": "Export to a web folder is possible via the WebDAV protocol. Enable 'Use WebDAV', and fill in the required parameters to access the WebDAV folder. Test to verify if the settings are correct, and save them. Now you can start exporting Insights to a web folder from a flow.",
 			"useWebdav": "Use WebDAV when exporting",
@@ -29,6 +29,21 @@
 			"settingsSaved": "WebDAV settings are saved"
 		},
 		"tab3": {
+			"title": "FTP",
+			"instructionsTitle": "Instructions",
+			"instructions": "Export to a FTP folder is possible via the FTP protocol. Enable 'Use FTP', and fill in the required parameters to access the FTP folder. Test to verify if the settings are correct, and save them. Now you can start exporting Insights to a FTP folder from a flow.",
+			"useFTP": "Use FTP when exporting",
+			"FTPHost": "FTP Host",
+			"FTPFolder": "FTP Folder",
+			"SFTP": "Use secure SFTP",
+			"FTPUsername": "Username",
+			"FTPPassword": "Password",
+			"testFTP": "Test the FTP settings",
+			"testOk": "OK! Now save the settings.",
+			"saveFTP": "Save",
+			"settingsSaved": "FTP settings are saved"
+		},
+		"tab4": {
 			"title": "Logs",
 			"deleteLogs": "Delete logs",
 			"deleteWarning": "Delete all logs?",
