@@ -106,8 +106,8 @@ class App extends Homey.App {
 					this.log('memwarn!');
 				});
 			Homey.ManagerSettings.on('set', (key) => {
-				this.log(`app settings ${key} changed from frontend`);
-				this.FTPsettingsHaveChanged = true;
+				this.log(`${key} changed from frontend`);
+				// this.FTPsettingsHaveChanged = true;
 			});
 
 			// ==============FLOW CARD STUFF======================================
@@ -170,7 +170,7 @@ class App extends Homey.App {
 			// await this.exportApp('weather', 'lastHour');
 			// await this.exportApp('com.gruijter.enelogic', 'last24Hours');
 			// await this.exportAll('last2Years');
-			this.purgeSMB();
+			// this.purgeSMB();
 		} catch (error) {
 			this.error(error);
 		}

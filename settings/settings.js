@@ -105,10 +105,12 @@ function saveSmb() {
 		smbUsername: $('#smbUsername').val(),
 		smbPassword: $('#smbPassword').val(),
 	};
-	if (error) {
-		return Homey.alert(error, 'error');
-	}
-	return Homey.alert(`${Homey.__('settings.tab1.settingsSaved')}`, 'info');
+	Homey.set('smbSettings', saveData, (error) => {
+		if (error) {
+			Homey.alert(error, 'error');
+		}
+	});
+	Homey.alert(`${Homey.__('settings.tab1.settingsSaved')}`, 'info');
 }
 
 function saveWebdav() {
@@ -120,10 +122,10 @@ function saveWebdav() {
 	};
 	Homey.set('webdavSettings', saveData, (error) => {
 		if (error) {
-			return Homey.alert(error, 'error');
+			Homey.alert(error, 'error');
 		}
-		return Homey.alert(`${Homey.__('settings.tab2.settingsSaved')}`, 'info');
 	});
+	Homey.alert(`${Homey.__('settings.tab2.settingsSaved')}`, 'info');
 }
 
 function saveFTP() {
@@ -138,10 +140,10 @@ function saveFTP() {
 	};
 	Homey.set('FTPSettings', saveData, (error) => {
 		if (error) {
-			return Homey.alert(error, 'error');
+			Homey.alert(error, 'error');
 		}
-		return Homey.alert(`${Homey.__('settings.tab3.settingsSaved')}`, 'info');
 	});
+	Homey.alert(`${Homey.__('settings.tab3.settingsSaved')}`, 'info');
 }
 
 // function exportAll() {
