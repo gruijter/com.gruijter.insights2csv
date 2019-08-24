@@ -4,9 +4,10 @@
 		"tab1": {
 			"title": "NAS",
 			"instructionsTitle": "Instructions",
-			"instructions": "Export to NAS, or any other windows network share, is possible via the SAMBA protocol. Enable 'Use SMB', and fill in the required parameters to access the network share. Test to verify if the settings are correct, and save them. Now you can start exporting Insights to a network share from a flow.",
+			"instructions": "Export to NAS, or any other windows network share, is possible via the SAMBA protocol. Enable 'Use SMB', and fill in the required parameters to access the network share. SEE THE EXAMPLES ON HOW TO USE SLASH (/)! Test to verify if the settings are correct, and save them. Now you can start exporting Insights to a network share from a flow.",
 			"useSmb": "Use SMB when exporting",
 			"smbShare": "Network share",
+			"smbPath": "Subdirectory",
 			"smbDomain": "Domain",
 			"smbUsername": "Username",
 			"smbPassword": "Password",

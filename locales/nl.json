@@ -4,9 +4,10 @@
 		"tab1": {
 			"title": "NAS",
 			"instructionsTitle": "Instructies",
-			"instructions": "Exporteer naar NAS, of een andere windows network share, via het SAMBA protocol. Zet 'Gebruik SMB' aan, en vul de benodigde parameters in om de network share te benaderen. Test om te controleren of de instellingen correct zijn, en sla ze op. Nu kun je Insights exporteren naar een network share vanuit een flow.",
+			"instructions": "Exporteer naar NAS, of een andere windows network share, via het SAMBA protocol. Zet 'Gebruik SMB' aan, en vul de benodigde parameters in om de network share te benaderen. ZIE DE VOORBEELDEN HOE SLASH (/) TE GEBRUIKEN! Test om te controleren of de instellingen correct zijn, en sla ze op. Nu kun je Insights exporteren naar een network share vanuit een flow.",
 			"useSmb": "Gebruik SMB bij export",
 			"smbShare": "Network share",
+			"smbPath": "Subdirectory",
 			"smbDomain": "Domein",
 			"smbUsername": "Gebruikersnaam",
 			"smbPassword": "Wachtwoord",

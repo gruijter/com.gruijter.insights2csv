@@ -52,6 +52,7 @@ function testSmb() {
 	const testData = {
 		useSmb: $('#useSmb').prop('checked'),
 		smbShare: $('#smbShare').val(),
+		smbPath: $('#smbPath').val() || '',
 		smbDomain: $('#smbDomain').val(),
 		smbUsername: $('#smbUsername').val(),
 		smbPassword: $('#smbPassword').val(),
@@ -101,6 +102,7 @@ function saveSmb() {
 	const saveData = {
 		useSmb: $('#useSmb').prop('checked'),
 		smbShare: $('#smbShare').val(),
+		smbPath: $('#smbPath').val() || '',
 		smbDomain: $('#smbDomain').val(),
 		smbUsername: $('#smbUsername').val(),
 		smbPassword: $('#smbPassword').val(),

@@ -240,7 +240,11 @@ class App extends Homey.App {
 					password: smbSettings.smbPassword,
 					autoCloseTimeout: 5000,
 				});
-				smb2Client.writeFile('insights2csv.txt', 'Homey can write to this folder!', { flag: 'w' }, (error) => {
+				let path = `${smbSettings.smbPath.replace(/\//gi, '\\')}\\`;
+				if (smbSettings.smbPath === '') {
+					path = '';
+				}
+				smb2Client.writeFile(`${path}insights2csv.txt`, 'Homey can write to this folder!', { flag: 'w' }, (error) => {
 					if (error) {
 						this.log(error.message);
 						reject(error);
@@ -525,7 +529,11 @@ class App extends Homey.App {
 		return new Promise(async (resolve, reject) => {
 			try {
 				await this.getSmb2Client();
-				this.smb2Client.createWriteStream(fileName, { flag: 'w' }, (error, smbWriteStream) => {
+				let path = `${this.smbSettings.smbPath.replace(/\//gi, '\\')}\\`;
+				if (this.smbSettings.smbPath === '') {
+					path = '';
+				}
+				this.smb2Client.createWriteStream(`${path}${fileName}`, { flag: 'w' }, (error, smbWriteStream) => {
 					if (error) {
 						this.log(error);
 						reject(error);
@@ -564,7 +572,11 @@ class App extends Homey.App {
 			try {
 				let selectList = [];
 				await this.getSmb2Client();
-				this.smb2Client.readdir('', async (err, files) => {
+				let path = `${this.smbSettings.smbPath.replace(/\//gi, '\\')}\\`;
+				if (this.smbSettings.smbPath === '') {
+					path = '';
+				}
+				this.smb2Client.readdir(path, async (err, files) => {
 					if (err) throw err;
 					selectList = files;
 					// select only zip files
@@ -592,7 +604,7 @@ class App extends Homey.App {
 					for (let idx = 0; idx < selectList.length; idx += 1) {
 						const item = selectList[idx];
 						this.log(`removing SMB file ${item}`);
-						this.smb2Client.unlink(item, (error) => {
+						this.smb2Client.unlink(`${path}${item}`, (error) => {
 							if (error) throw err;
 						});
 					}
