@@ -10,7 +10,9 @@ function loadSettings() {
 		$('#useSmb').prop('checked', false);
 		if (storedData) {
 			$('#useSmb').prop('checked', storedData.useSmb);
+			$('#smbUseSeperateFolderse').prop('checked', storedData.smbUseSeperateFolders);
 			$('#smbShare').val(storedData.smbShare);
+			$('#smbPath').val(storedData.smbPath);
 			$('#smbDomain').val(storedData.smbDomain);
 			$('#smbUsername').val(storedData.smbUsername);
 			$('#smbPassword').val(storedData.smbPassword);
@@ -24,6 +26,7 @@ function loadSettings() {
 		$('#useWebdav').prop('checked', false);
 		if (storedData) {
 			$('#useWebdav').prop('checked', storedData.useWebdav);
+			$('#webdavUseSeperateFolders').prop('checked', storedData.webdavUseSeperateFolders);
 			$('#webdavUrl').val(storedData.webdavUrl);
 			$('#webdavUsername').val(storedData.webdavUsername);
 			$('#webdavPassword').val(storedData.webdavPassword);
@@ -38,6 +41,7 @@ function loadSettings() {
 		$('#useSFTP').prop('checked', false);
 		if (storedData) {
 			$('#useFTP').prop('checked', storedData.useFTP);
+			$('#FTPUseSeperateFolders').prop('checked', storedData.FTPUseSeperateFolders);
 			$('#FTPHost').val(storedData.FTPHost);
 			$('#FTPPort').val(storedData.FTPPort);
 			$('#FTPFolder').val(storedData.FTPFolder);
@@ -51,6 +55,7 @@ function loadSettings() {
 function testSmb() {
 	const testData = {
 		useSmb: $('#useSmb').prop('checked'),
+		smbUseSeperateFolders: $('#smbUseSeperateFolders').prop('checked'),
 		smbShare: $('#smbShare').val(),
 		smbPath: $('#smbPath').val() || '',
 		smbDomain: $('#smbDomain').val(),
@@ -68,6 +73,7 @@ function testSmb() {
 function testWebdav() {
 	const testData = {
 		useWebdav: $('#useWebdav').prop('checked'),
+		webdavUseSeperateFolders: $('#webdavUseSeperateFolders').prop('checked'),
 		webdavUrl: $('#webdavUrl').val(),
 		webdavUsername: $('#webdavUsername').val(),
 		webdavPassword: $('#webdavPassword').val(),
@@ -83,6 +89,7 @@ function testWebdav() {
 function testFTP() {
 	const testData = {
 		useFTP: $('#useFTP').prop('checked'),
+		FTPUseSeperateFolders: $('#FTPUseSeperateFolders').prop('checked'),
 		FTPHost: $('#FTPHost').val(),
 		FTPPort: Number($('#FTPPort').val()),
 		FTPFolder: $('#FTPFolder').val(),
@@ -101,6 +108,7 @@ function testFTP() {
 function saveSmb() {
 	const saveData = {
 		useSmb: $('#useSmb').prop('checked'),
+		smbUseSeperateFolders: $('#smbUseSeperateFolders').prop('checked'),
 		smbShare: $('#smbShare').val(),
 		smbPath: $('#smbPath').val() || '',
 		smbDomain: $('#smbDomain').val(),
@@ -118,6 +126,7 @@ function saveSmb() {
 function saveWebdav() {
 	const saveData = {
 		useWebdav: $('#useWebdav').prop('checked'),
+		webdavUseSeperateFolders: $('#webdavUseSeperateFolders').prop('checked'),
 		webdavUrl: $('#webdavUrl').val(),
 		webdavUsername: $('#webdavUsername').val(),
 		webdavPassword: $('#webdavPassword').val(),
@@ -133,6 +142,7 @@ function saveWebdav() {
 function saveFTP() {
 	const saveData = {
 		useFTP: $('#useFTP').prop('checked'),
+		FTPUseSeperateFolders: $('#FTPUseSeperateFolders').prop('checked'),
 		FTPHost: $('#FTPHost').val(),
 		FTPPort: Number($('#FTPPort').val()),
 		FTPFolder: $('#FTPFolder').val(),

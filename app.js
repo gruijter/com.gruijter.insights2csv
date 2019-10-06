@@ -231,7 +231,7 @@ class App extends Homey.App {
 
 	testSmb(smbSettings) {
 		this.log('testing SMB settings from frontend');
-		return new Promise(async (resolve, reject) => {
+		return new Promise((resolve, reject) => {
 			try {
 				const smb2Client = new SMB2({
 					share: smbSettings.smbShare.replace(/\//gi, '\\'),
@@ -369,7 +369,7 @@ class App extends Homey.App {
 	async getManagerNameList() {
 		try {
 			const logs = await this.homeyAPI.insights.getLogs();
-			const list = logs.filter(log => log.uriObj.type === 'manager')
+			const list = logs.filter((log) => log.uriObj.type === 'manager')
 				.map((log) => {
 					const app = {
 						id: log.uriObj.id,
@@ -379,7 +379,7 @@ class App extends Homey.App {
 					};
 					return app;
 				});
-			const uniqueList = list.filter((elem, index) => index === list.findIndex(obj => JSON.stringify(obj) === JSON.stringify(elem)));
+			const uniqueList = list.filter((elem, index) => index === list.findIndex((obj) => JSON.stringify(obj) === JSON.stringify(elem)));
 			return Promise.resolve(uniqueList);
 		} catch (error) {
 			return Promise.reject(error);
@@ -404,13 +404,13 @@ class App extends Homey.App {
 			const appUri = `homey:app:${appId}`;
 			const managerUri = `homey:manager:${appId}`;
 			// look for app logs
-			const appLogs = this.logs.filter(log => (log.uri === appUri || log.uri === managerUri));
+			const appLogs = this.logs.filter((log) => (log.uri === appUri || log.uri === managerUri));
 			appRelatedLogs = appRelatedLogs.concat(appLogs);
 			// find app related devices and add their logs
 			Object.keys(this.devices).forEach((key) => {
 				if (this.devices[key].driverUri === appUri) {
 					const deviceUri = `homey:device:${this.devices[key].id}`;
-					const deviceLogs = this.logs.filter(log => (log.uri === deviceUri));
+					const deviceLogs = this.logs.filter((log) => (log.uri === deviceUri));
 					appRelatedLogs = appRelatedLogs.concat(deviceLogs);
 				}
 			});
@@ -442,11 +442,15 @@ class App extends Homey.App {
 			this.webdavSettings = Homey.ManagerSettings.get('webdavSettings');
 			this.smbSettings = Homey.ManagerSettings.get('smbSettings');
 			this.FTPSettings = Homey.ManagerSettings.get('FTPSettings');
+			this.timestamp = new Date().toISOString()
+				.replace(/:/g, '')	// delete :
+				.replace(/-/g, '')	// delete -
+				.replace(/\..+/, 'Z');	// delete the dot and everything after
 			await this.loginHomeyApi();
 			await this.getAllLogs();
 			await this.getAllDevices();
 			await this.getAllNames();
-			return true;
+			return Promise.resolve(true);
 		} catch (error) {
 			return Promise.reject(error);
 		}
@@ -471,17 +475,26 @@ class App extends Homey.App {
 	}
 
 	// save a file to WebDAV as promise; resolves webdav filename
-	saveWebDav(filename) {	// filename is appId
-		return new Promise((resolve, reject) => {
-			try {
-				this.getWebdavClient();
-				const options = {
-					format: 'binary',
-					overwrite: true,
-				};
-				const fileName = `/${filename}`;
-				const webDavWriteStream = this.webdavClient.createWriteStream(fileName, options);
-				const fileStream = fs.createReadStream(`./userdata/${fileName}`);
+	async saveWebDav(fileName) {	// filename is appId
+		try {
+			await this.getWebdavClient();
+			let webdavFileName = `/${fileName}`;
+			// save to seperate folder when selected by user
+			if (this.webdavSettings.webdavUseSeperateFolders) {
+				await this.webdavClient.createDirectory(`/${this.timestamp}/`)
+					.then(() => {
+						this.log(`${this.timestamp} directory created!`);
+					})
+					.catch(() => null);
+				webdavFileName = `/${this.timestamp}/${fileName}`;
+			}
+			const options = {
+				format: 'binary',
+				overwrite: true,
+			};
+			const webDavWriteStream = this.webdavClient.createWriteStream(webdavFileName, options);
+			const fileStream = fs.createReadStream(`./userdata/${fileName}`);
+			return new Promise((resolve, reject) => {
 				fileStream.on('open', () => {
 					// this.log('piping to webdav');
 					fileStream.pipe(webDavWriteStream);
@@ -496,13 +509,15 @@ class App extends Homey.App {
 					this.log('filestream error: ', err);
 				});
 				webDavWriteStream.on('error', (err) => {
-					this.log('webdavwritestream error: ', err);
+					this.log('webdavwritestream error');
+					return reject(err);
 				});
-			} catch (error) {
-				this.error('error:', error);
-				reject(error);
-			}
-		});
+			});
+
+		} catch (error) {
+			// this.error('error:', error);
+			return Promise.reject(error);
+		}
 	}
 
 	// ============================================================
@@ -525,14 +540,37 @@ class App extends Homey.App {
 	}
 
 	// save a file to a network share via SMB as promise; resolves smb2 filename
-	saveSmb(fileName) {
-		return new Promise(async (resolve, reject) => {
-			try {
-				await this.getSmb2Client();
-				let path = `${this.smbSettings.smbPath.replace(/\//gi, '\\')}\\`;
+	async saveSmb(fileName) {
+		try {
+			await this.getSmb2Client();
+			let path = `${this.smbSettings.smbPath.replace(/\//gi, '\\')}\\`;
+			if (this.smbSettings.smbPath === '') {
+				path = '';
+			}
+			// save to seperate folder when selected by user
+			if (this.smbSettings.smbUseSeperateFolders) {
+				path = `${path}${this.timestamp}\\`;
 				if (this.smbSettings.smbPath === '') {
-					path = '';
+					path = `${this.timestamp}\\`;
 				}
+				const folderExists = await new Promise((resolve, reject) => {
+					this.smb2Client.exists(path, async (error, exists) => {
+						if (error) reject(error);
+						// console.log(exists ? "it's there" : "it's not there!");
+						resolve(exists);
+					});
+				});
+				if (!folderExists) {
+					await new Promise((res, rej) => {
+						this.smb2Client.mkdir(path, (err) => {
+							if (err) rej(err);
+							this.log(`${path} directory created!`);
+							res(true);
+						});
+					});
+				}
+			}
+			return new Promise((resolve, reject) => {
 				this.smb2Client.createWriteStream(`${path}${fileName}`, { flag: 'w' }, (error, smbWriteStream) => {
 					if (error) {
 						this.log(error);
@@ -557,37 +595,37 @@ class App extends Homey.App {
 						reject(err);
 					});
 				});
-			} catch (error) {
-				this.error('error:', error);
-				// this.smb2Client.close();
-				// this.getSmb2Client();
-				reject(error);
-			}
-		});
+			});
+		} catch (error) {
+			// this.error('error:', error);
+			// this.smb2Client.close();
+			// this.getSmb2Client();
+			return Promise.reject(error);
+		}
 	}
 
 	// purge SMB folder
 	async purgeSMB(daysOld, allTypes) {
-		return new Promise(async (resolve, reject) => {
-			try {
-				let selectList = [];
-				await this.getSmb2Client();
-				let path = `${this.smbSettings.smbPath.replace(/\//gi, '\\')}\\`;
-				if (this.smbSettings.smbPath === '') {
-					path = '';
-				}
-				this.smb2Client.readdir(path, async (err, files) => {
-					if (err) throw err;
+		try {
+			let selectList = [];
+			await this.getSmb2Client();
+			let path = `${this.smbSettings.smbPath.replace(/\//gi, '\\')}\\`;
+			if (this.smbSettings.smbPath === '') {
+				path = '';
+			}
+			return new Promise((resolve, reject) => {
+				this.smb2Client.readdir(path, (err, files) => {
+					if (err) return reject(err);
 					selectList = files;
 					// select only zip files
 					if (!allTypes) {
-						selectList = await selectList.filter((item) => {
+						selectList = selectList.filter((item) => {
 							const isZip = item.toLowerCase().slice(-4) === '.zip';
 							return isZip;
 						});
 					}
 					// select older then daysOld
-					selectList = await selectList.filter((item) => {
+					selectList = selectList.filter((item) => {
 						let dateString = item.match(/_(.*?)_/)[1];
 						if (dateString.length !== 16) return false;
 						const YYYY = dateString.substring(0, 4);
@@ -605,15 +643,15 @@ class App extends Homey.App {
 						const item = selectList[idx];
 						this.log(`removing SMB file ${item}`);
 						this.smb2Client.unlink(`${path}${item}`, (error) => {
-							if (error) throw err;
+							if (error) this.error(error);
 						});
 					}
+					return resolve(selectList);
 				});
-				return resolve(selectList);
-			} catch (error) {
-				return reject(error);
-			}
-		});
+			});
+		} catch (error) {
+			return Promise.reject(error);
+		}
 	}
 
 	// ============================================================
@@ -635,7 +673,6 @@ class App extends Homey.App {
 				password: this.FTPSettings.FTPPassword,
 				secure: this.FTPSettings.useSFTP,
 			});
-			await this.FTPClient.ensureDir(this.FTPSettings.FTPFolder);
 			return Promise.resolve(this.FTPClient);
 		} catch (error) {
 			return Promise.reject(error);
@@ -646,13 +683,18 @@ class App extends Homey.App {
 	async saveFTP(fileName) {
 		try {
 			await this.getFTPClient();
+			await this.FTPClient.ensureDir(`//${this.FTPSettings.FTPFolder}`);
+			// save to seperate folder when selected by user
+			if (this.FTPSettings.FTPUseSeperateFolders) {
+				await this.FTPClient.ensureDir(`//${this.FTPSettings.FTPFolder}/${this.timestamp}`);
+			}
 			const fileStream = fs.createReadStream(`./userdata/${fileName}`);
 			await this.FTPClient.upload(fileStream, fileName);
 			this.log(`${fileName} has been saved to FTP`);
-			Promise.resolve(fileName);
+			return Promise.resolve(fileName);
 		} catch (error) {
 			this.error('error:', error);
-			Promise.reject(error);
+			return Promise.reject(error);
 		}
 	}
 
@@ -660,6 +702,7 @@ class App extends Homey.App {
 	async purgeFTP(daysOld, allTypes) {
 		try {
 			await this.getFTPClient();
+			await this.FTPClient.ensureDir(`//${this.FTPSettings.FTPFolder}`);
 			let selectList = await this.FTPClient.list();
 			// select only zip files
 			if (!allTypes) {
@@ -703,43 +746,45 @@ class App extends Homey.App {
 	// zip all log entries from one app as promise; resolves zipfilename
 	async zipAppLogs(appId, resolution) {
 		// this.log(`Zipping all logs for ${appId}`);
-		return new Promise(async (resolve, reject) => {
-			try {
-				// create a file to stream archive data to.
-				const timeStamp = new Date().toISOString()
-					.replace(/:/g, '')	// delete :
-					.replace(/-/g, '')	// delete -
-					.replace(/\..+/, '');	// delete the dot and everything after
-				const fileName = `${appId}_${timeStamp}Z_${resolution}.zip`;
-				const output = fs.createWriteStream(`./userdata/${fileName}`);
-				const archive = archiver('zip', {
-					zlib: { level: 9 },	// Sets the compression level.
-				});
-				archive.pipe(output);	// pipe archive data to the file
+		try {
+			// create a file to stream archive data to.
+			const timeStamp = new Date().toISOString()
+				.replace(/:/g, '')	// delete :
+				.replace(/-/g, '')	// delete -
+				.replace(/\..+/, '');	// delete the dot and everything after
+			const fileName = `${appId}_${timeStamp}Z_${resolution}.zip`;
+			const output = fs.createWriteStream(`./userdata/${fileName}`);
+			const archive = archiver('zip', {
+				zlib: { level: 9 },	// Sets the compression level.
+			});
+			archive.pipe(output);	// pipe archive data to the file
 
-				const logs = await this.getAppRelatedLogs(appId);
-				for (let idx = 0; idx < logs.length; idx += 1) {
-					const log = logs[idx];
-					const entries = await this.getLogEntries(log, resolution);
-					const data = await log2csv(entries);
-					const allMeta = Object.assign(data.meta, log);
-					const fileNameCsv = `${log.uriObj.name}/${log.id}.csv`;
-					const fileNameMeta = `${log.uriObj.name}/${log.id}_meta.json`;
-					const fileNameJson = `${log.uriObj.name}/${log.id}.json`;
-					// this.log('zipping now ....');
-					await archive.append(data.csv, { name: fileNameCsv });
-					await archive.append(JSON.stringify(allMeta), { name: fileNameMeta });
-					await archive.append(JSON.stringify(entries), { name: fileNameJson });
-				}
-				// this.log(`${logs.length} files zipped`);
-				archive.finalize();
+			const logs = await this.getAppRelatedLogs(appId);
+			for (let idx = 0; idx < logs.length; idx += 1) {
+				const log = logs[idx];
+				const entries = await this.getLogEntries(log, resolution);
+				const data = await log2csv(entries);
+				const allMeta = Object.assign(data.meta, log);
+				const fileNameCsv = `${log.uriObj.name}/${log.id}.csv`;
+				const fileNameMeta = `${log.uriObj.name}/${log.id}_meta.json`;
+				const fileNameJson = `${log.uriObj.name}/${log.id}.json`;
+				// this.log('zipping now ....');
+				archive.append(data.csv, { name: fileNameCsv });
+				archive.append(JSON.stringify(allMeta), { name: fileNameMeta });
+				archive.append(JSON.stringify(entries), { name: fileNameJson });
+			}
+			// this.log(`${logs.length} files zipped`);
+			archive.finalize();
+
+			return new Promise((resolve, reject) => {
 				output.on('close', () => {	// when zipping and storing is done...
 					this.log(`${logs.length} files zipped, ${archive.pointer()} total bytes`);
 					// this.log(`${appId} has been zipped.`);
 					return resolve(fileName);
 				});
 				output.on('error', (err) => {	// when storing gave an error
-					this.log(err);
+					this.log('error saving zipfile');
+					return reject(err);
 				});
 				archive.on('error', (err) => {	// when zipping gave an error
 					this.log(err);
@@ -747,10 +792,10 @@ class App extends Homey.App {
 				archive.on('warning', (warning) => {
 					this.log(warning);
 				});
-			} catch (error) {
-				reject(error);
-			}
-		});
+			});
+		} catch (error) {
+			return Promise.reject(error);
+		}
 	}
 
 	exportAll(resolution) {

@@ -29,15 +29,26 @@
 					</fieldset>
 
 					<div class="settings-itemgroup">
-							<div class="settings-item-text">
-									<span data-i18n="settings.tab1.useSmb">Use SMB</span>
-							</div>
-							<div class="settings-item-last">
-									<label class="form-switch">
-											<input type="checkbox" id="useSmb" checked="false">
-											<i></i>
-									</label>
-							</div>
+						<div class="settings-item-text">
+								<span data-i18n="settings.tab1.useSmb">Use SMB</span>
+						</div>
+						<div class="settings-item-last">
+								<label class="form-switch">
+										<input type="checkbox" id="useSmb" checked="false">
+										<i></i>
+								</label>
+						</div>
+					</div>
+					<div class="settings-itemgroup">
+						<div class="settings-item-text">
+							<span data-i18n="settings.tab1.smbUseSeperateFolders">Use seperate folders</span>
+						</div>
+						<div class="settings-item-last">
+							<label class="form-switch">
+									<input type="checkbox" id="smbUseSeperateFolders" checked="true">
+									<i></i>
+							</label>
+						</div>
 					</div>
 					<label class="settings-item-description" data-i18n="settings.tab1.smbShare">SMB Share</label>
 					<div class="settings-itemgroup">
@@ -84,6 +95,17 @@
 									</label>
 							</div>
 					</div>
+					<div class="settings-itemgroup">
+						<div class="settings-item-text">
+							<span data-i18n="settings.tab2.webdavUseSeperateFolders">Use seperate folders</span>
+						</div>
+						<div class="settings-item-last">
+							<label class="form-switch">
+									<input type="checkbox" id="webdavUseSeperateFolders" checked="true">
+									<i></i>
+							</label>
+						</div>
+					</div>
 					<label class="settings-item-description" data-i18n="settings.tab2.webdavUrl">WebDAV Url</label>
 					<div class="settings-itemgroup">
 						<input id="webdavUrl" type="text" placeholder="e.g. https://mynas/webdav/Backup" value="">
@@ -129,6 +151,17 @@
 										<input type="checkbox" id="useSFTP" checked="false">
 										<i></i>
 								</label>
+						</div>
+					</div>
+					<div class="settings-itemgroup">
+						<div class="settings-item-text">
+							<span data-i18n="settings.tab3.FTPUseSeperateFolders">Use seperate folders</span>
+						</div>
+						<div class="settings-item-last">
+							<label class="form-switch">
+									<input type="checkbox" id="FTPUseSeperateFolders" checked="true">
+									<i></i>
+							</label>
 						</div>
 					</div>
 					<label class="settings-item-description" data-i18n="settings.tab3.FTPHost">FTP Host</label>

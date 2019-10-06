@@ -9,8 +9,9 @@ schedule a full export, or an export per app.
 
 ![image][flow-cards-image]
 
-To setup enter the local share (NAS) information and/or the webDAV information.
-It is possible to use a local share and a webDAV storage simultaneously.
+To setup enter the local share (NAS), and/or the FTP, and/or the webDAV information.
+It is possible to use a local share, FTP and a webDAV storage simultaneously. Select
+'Seperate folder for each export' if you want to create a new folder for each export.
 
 ![image][setup-image]
 

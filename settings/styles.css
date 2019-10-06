@@ -1,5 +1,5 @@
 html {
-    font-family: sans-serif;
+    /* font-family: sans-serif; */
     -webkit-text-size-adjust: 100%;
 }
 
@@ -80,16 +80,7 @@ input[type=text] {
     border: none !important;
     width: 100% !important;
     padding: 10px !important;
-    font-size: smaller !important;
-    vertical-align: middle !important;
-    background: white !important;
-}
-
-input[type=number] {
-    border: none !important;
-    width: 100% !important;
-    padding: 10px !important;
-    font-size: large !important;
+    font-size: small !important;
     vertical-align: middle !important;
     background: white !important;
 }
@@ -98,18 +89,27 @@ input[type=password] {
     border: none !important;
     width: 100% !important;
     padding: 10px !important;
-    font-size: smaller !important;
+    font-size: large !important;
+    vertical-align: middle !important;
+    background: white !important;
+}
+
+input[type=number] {
+    border: none !important;
+    width: 100% !important;
+    padding: 10px !important;
+    font-size: small !important;
     vertical-align: middle !important;
     background: white !important;
 }
 
 button {
-    /* display: block !important; */
+    display: block !important;
     width: 100% !important;
     margin: 0 !important;
     padding: 10px !important;
-    font-size: large !important;
-    vertical-align: middle !important;
+    font-size: small !important;
+    /* vertical-align: middle !important; */
     border: 1px solid rgb(220,220,220) !important;
 }
 
@@ -150,7 +150,6 @@ button {
     border-radius: 2px;
     margin: 1px;
     overflow: hidden;
-    font-size: medium;
 }
 
 .settings-item {
@@ -179,8 +178,7 @@ button {
     padding-bottom: 13px;
     vertical-align: middle;
     white-space: nowrap;
-    font-family: -apple-system sans-serif;
-    font-size: smaller;
+    font-size: small;
 }
 
 .settings-item-last {
@@ -235,7 +233,7 @@ a:active {
 }
 
 .btn {
-    /* display: inline-block; */
+    display: inline-block;
     margin-bottom: 0px;
     font-size: 12px;
     font-weight: 400;
@@ -522,12 +520,7 @@ a:active {
     font-size: smaller;
 }
 
-#testMessage {
-    padding: 10px;
-    font-size: smaller;
-}
-
-#testResult {
+#instructions {
     padding: 10px;
     font-size: smaller;
 }
