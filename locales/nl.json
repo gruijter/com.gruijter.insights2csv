@@ -48,6 +48,20 @@
 			"settingsSaved": "instellingen zijn opgeslagen"
 		},
 		"tab4": {
+			"title": "Export",
+			"instructionsTitle": "Instructions",
+			"instructions": "Stel eerst NAS en/of FTP en/of WebDAV in. Kies vervolgens de app die je wilt exporteren, en de resolutie.",
+			"allApps": "Alle apps",
+			"app": "App",
+			"resolution": "Resolutie",
+			"export": "Exporteer nu",
+			"confirmExport": "Zeker weten? Exporteren van Insights kan langer dan 10 minuten duren!",
+			"stopExport": "Export afbreken",
+			"confirmStopExport": "Lopende export afbreken?",
+			"exportStopped": "Lopende export is afgebroken",
+			"backupInitiated": "Export van Insights is begonnen."
+		},
+		"tab5": {
 			"title": "Logs",
 			"deleteLogs": "Verwijder logs",
 			"deleteWarning": "Verwijder alle logs?",

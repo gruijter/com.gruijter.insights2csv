@@ -1,7 +1,7 @@
 /* eslint-disable no-await-in-loop */
 
 /*
-Copyright 2017 - 2019 Robin de Gruijter
+Copyright 2017 - 2020 Robin de Gruijter
 
 This file is part of com.gruijter.insights2csv.
 
@@ -32,7 +32,6 @@ const ftp = require('basic-ftp');
 const Logger = require('./captureLogs.js');
 
 const setTimeoutPromise = util.promisify(setTimeout);
-
 
 // ============================================================
 // Some helper functions here
@@ -82,6 +81,8 @@ class App extends Homey.App {
 			this.webdavSettings = {};
 			this.smbSettings = {};
 			this.FTPSettings = {};
+			this.resolutionSelection = ['lastHour', 'last6Hours', 'last24Hours', 'last7Days', 'last14Days', 'last31Days',
+				'last2Years', 'today', 'thisWeek', 'thisMonth', 'thisYear', 'yesterday', 'lastWeek', 'lastMonth', 'lastYear'];
 
 			// queue properties
 			this.queue = [];
@@ -202,6 +203,14 @@ class App extends Homey.App {
 		return item;
 	}
 
+	flushQueue() {
+		this.queue = [];
+		this.head = 0;
+		this.tail = 0;
+		this.queueRunning = false;
+		this.log('Export queue is flushed');
+	}
+
 	async runQueue() {
 		this.queueRunning = true;
 		const item = this.deQueue();
@@ -295,11 +304,37 @@ class App extends Homey.App {
 			await client.ensureDir(FTPSettings.FTPFolder);
 			// console.log(await client.list());
 			this.log('Connection successfull!');
+			client.close();
 			return Promise.resolve();
 		} catch (error) {
 			this.log(error);
 			return Promise.reject(error);
 		}
+	}
+
+	getResolutions() {
+		return this.resolutionSelection;
+	}
+
+	getAppList() {
+		return this.allNames;
+	}
+
+	exportAll(resolution) {
+		this.allNames.forEach((name) => {
+			this.exportApp(name.id, resolution);
+		});
+		return true;
+	}
+
+	exportApp(appId, resolution) {
+		this.enQueue({ appId, resolution });
+		return true;
+	}
+
+	stopExport() {
+		this.flushQueue();
+		return true;
 	}
 
 	// ============================================================
@@ -501,7 +536,7 @@ class App extends Homey.App {
 				});
 				fileStream.on('close', () => {
 					// The file has been read completely
-					this.log(`${fileName}.zip has been saved to webDav`);
+					this.log(`${fileName} has been saved to webDav`);
 					webDavWriteStream.end();
 					resolve(fileName);
 				});
@@ -663,6 +698,10 @@ class App extends Homey.App {
 			if ((this.FTPClient.closed === false) && !this.FTPsettingsHaveChanged) {
 				return Promise.resolve(this.FTPClient);
 			}
+			if (this.FTPClient instanceof ftp.Client) {
+				this.log('closing FTP client');
+				this.FTPClient.close();
+			}
 			this.FTPClient = new ftp.Client();
 			this.FTPsettingsHaveChanged = false;
 			// client.ftp.verbose = true;
@@ -672,6 +711,7 @@ class App extends Homey.App {
 				user: this.FTPSettings.FTPUsername,
 				password: this.FTPSettings.FTPPassword,
 				secure: this.FTPSettings.useSFTP,
+				secureOptions: { host: this.FTPSettings.FTPHost },
 			});
 			return Promise.resolve(this.FTPClient);
 		} catch (error) {
@@ -796,18 +836,6 @@ class App extends Homey.App {
 		} catch (error) {
 			return Promise.reject(error);
 		}
-	}
-
-	exportAll(resolution) {
-		this.allNames.forEach((name) => {
-			this.exportApp(name.id, resolution);
-		});
-		return true;
-	}
-
-	exportApp(appId, resolution) {
-		this.enQueue({ appId, resolution });
-		return true;
 	}
 
 	async _exportApp(appId, resolution) {

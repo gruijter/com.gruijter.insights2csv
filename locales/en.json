@@ -48,6 +48,20 @@
 			"settingsSaved": "FTP settings are saved"
 		},
 		"tab4": {
+			"title": "Export",
+			"instructionsTitle": "Instructions",
+			"instructions": "First setup NAS and/or FTP and/or WebDAV. Then select which app to export, and the resolution.",
+			"allApps": "All apps",
+			"app": "App",
+			"resolution": "Resolution",
+			"export": "Export now",
+			"confirmExport": "Are you sure? Exporting Insights can take more then 10 minutes!",
+			"stopExport": "Cancel export",
+			"confirmStopExport": "Cancel running export?",
+			"exportStopped": "Running export is canceled",
+			"backupInitiated": "Insights export has started."
+		},
+		"tab5": {
 			"title": "Logs",
 			"deleteLogs": "Delete logs",
 			"deleteWarning": "Delete all logs?",
