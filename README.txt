@@ -1,5 +1,3 @@
-Archive Insights
-
 Export all your insights to your NAS, to a FTP server, or to a WebDAV compliant storage. The insights are zipped and stored in .csv format so you can open them in excel and create all kinds of statistics and charts. The export also includes a JSON version of the data.
 
 Exports can be easily scheduled by using the trigger card in a flow. You can schedule a full export, or an export per app.

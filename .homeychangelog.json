@@ -1,5 +1,8 @@
 {
   "2.5.1": {
     "en": "Packages update. athom-api@2.1.220. webdav@2.10.2. basic-ftp@4.5.3 FTP fixes. Added Export and Cancel Export via app settings."
+  },
+  "2.5.2": {
+    "en": "Packages update. athom-api@2.1.220. webdav@2.10.2. basic-ftp@4.5.3 FTP fixes. Added Export and Cancel Export via app settings."
   }
 }
