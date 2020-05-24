@@ -38,27 +38,31 @@ const setTimeoutPromise = util.promisify(setTimeout);
 
 const JSDateToExcelDate = (inDate) => {
 	// convert to yyyy-MM-dd HH:mm:ss
-	const returnDateTime = inDate.toISOString().replace(/T/, ' ').replace(/\..+/, '');
-	return returnDateTime;
+	const dateTime = inDate.toISOString().replace(/T/, ' ').replace(/\..+/, '');
+	return dateTime;
 };
 
-const log2csv = async (logEntries) => {
+const log2csv = (logEntries) => {
 	try {
-		const meta = JSON.parse(JSON.stringify(logEntries));
-		delete meta.values;
-		const entries = logEntries.values.map((entry) => {
-			const newEntry = {
-				t: JSDateToExcelDate(new Date(entry.t)),
-				v: JSON.stringify(entry.v).replace('.', ','),
-			};
-			return newEntry;
+		const meta = {
+			entries: logEntries.values.length,
+		};
+		Object.keys(logEntries).forEach((key) => {
+			if (key === 'values') return;
+			meta[key] = logEntries[key];
 		});
+
 		const delimiter = ';';
 		const header = `Zulu dateTime${delimiter}${logEntries.id}\r\n`;
-		const csv = entries.reduce((txt, entry) => `${txt}${entry.t}${delimiter}${entry.v}\r\n`, header);
-		return Promise.resolve({ csv, meta });	// csv is string. meta is object.
+		let csv = header;
+		logEntries.values.forEach((entry) => {
+			const time = JSDateToExcelDate(new Date(entry.t));
+			const value = JSON.stringify(entry.v).replace('.', ',');
+			csv += `${time}${delimiter}${value}\r\n`;
+		});
+		return { csv, meta };	// csv is string. meta is object.
 	} catch (error) {
-		return Promise.reject(error);
+		return error;
 	}
 };
 
@@ -71,7 +75,7 @@ class App extends Homey.App {
 			this.logger = new Logger('log', 200);	// [logName] [, logLength]
 
 			// generic properties
-			this.homeyAPI = {};
+			this.homeyAPI = undefined;
 			this.devices = {};
 			this.logs = [];
 			this.allNames = [];
@@ -85,6 +89,7 @@ class App extends Homey.App {
 				'last2Years', 'today', 'thisWeek', 'thisMonth', 'thisYear', 'yesterday', 'lastWeek', 'lastMonth', 'lastYear'];
 
 			// queue properties
+			this.abort = false;
 			this.queue = [];
 			this.head = 0;
 			this.tail = 0;
@@ -105,6 +110,10 @@ class App extends Homey.App {
 				})
 				.on('memwarn', () => {
 					this.log('memwarn!');
+					// global.gc();
+				})
+				.on('cpuwarn', () => {
+					this.log('cpuwarn!');
 				});
 			Homey.ManagerSettings.on('set', (key) => {
 				this.log(`${key} changed from frontend`);
@@ -218,8 +227,8 @@ class App extends Homey.App {
 			await this._exportApp(item.appId, item.resolution)
 				.catch(this.error);
 			// wait a bit to reduce cpu and mem load?
-			await setTimeoutPromise(10 * 1000, 'waiting is done');
 			global.gc();
+			await setTimeoutPromise(10 * 1000, 'waiting is done');
 			this.runQueue();
 		} else {
 			this.queueRunning = false;
@@ -333,6 +342,8 @@ class App extends Homey.App {
 	}
 
 	stopExport() {
+		if (this.queueRunning) this.log('aborting export');
+		this.abort = true;
 		this.flushQueue();
 		return true;
 	}
@@ -366,6 +377,7 @@ class App extends Homey.App {
 	// ============================================================
 	// Homey API stuff here
 	async loginHomeyApi() {
+		if (this.homeyAPI) return Promise.resolve(this.homeyAPI);
 		// Authenticate against the current Homey.
 		this.homeyAPI = await HomeyAPI.forCurrentHomey();
 		return Promise.resolve(this.homeyAPI);
@@ -394,7 +406,7 @@ class App extends Homey.App {
 				};
 				return map;
 			});
-			return Promise.resolve(mappedArray);
+			return Promise.all(mappedArray);
 		} catch (error) {
 			return Promise.reject(error);
 		}
@@ -415,7 +427,7 @@ class App extends Homey.App {
 					return app;
 				});
 			const uniqueList = list.filter((elem, index) => index === list.findIndex((obj) => JSON.stringify(obj) === JSON.stringify(elem)));
-			return Promise.resolve(uniqueList);
+			return Promise.all(uniqueList);
 		} catch (error) {
 			return Promise.reject(error);
 		}
@@ -426,7 +438,7 @@ class App extends Homey.App {
 			const managerNameList = await this.getManagerNameList();
 			const appNameList = await this.getAppNameList();
 			this.allNames = appNameList.concat(managerNameList);
-			return Promise.resolve(this.allNames);
+			return Promise.all(this.allNames);
 		} catch (error) {
 			return Promise.reject(error);
 		}
@@ -465,6 +477,12 @@ class App extends Homey.App {
 				opts.resolution = resolution;
 			}
 			const logEntries = await this.homeyAPI.insights.getLogEntries(opts);
+			if (logEntries.values.length > 2925) {
+				this.error(`Insights data is corrupt for ${log.uriObj.name} ${logEntries.id}`); //  ${logEntries.uri}`);
+				logEntries.values = logEntries.values.slice(0, 2925);
+				global.gc();
+				await setTimeoutPromise(10 * 1000, 'waiting is done');
+			}
 			return Promise.resolve(logEntries);
 		} catch (error) {
 			return Promise.reject(error);
@@ -474,6 +492,7 @@ class App extends Homey.App {
 
 	async initExport() {
 		try {
+			this.abort = false;
 			this.webdavSettings = Homey.ManagerSettings.get('webdavSettings');
 			this.smbSettings = Homey.ManagerSettings.get('smbSettings');
 			this.FTPSettings = Homey.ManagerSettings.get('FTPSettings');
@@ -801,17 +820,19 @@ class App extends Homey.App {
 
 			const logs = await this.getAppRelatedLogs(appId);
 			for (let idx = 0; idx < logs.length; idx += 1) {
-				const log = logs[idx];
-				const entries = await this.getLogEntries(log, resolution);
-				const data = await log2csv(entries);
-				const allMeta = Object.assign(data.meta, log);
-				const fileNameCsv = `${log.uriObj.name}/${log.id}.csv`;
-				const fileNameMeta = `${log.uriObj.name}/${log.id}_meta.json`;
-				const fileNameJson = `${log.uriObj.name}/${log.id}.json`;
-				// this.log('zipping now ....');
-				archive.append(data.csv, { name: fileNameCsv });
-				archive.append(JSON.stringify(allMeta), { name: fileNameMeta });
-				archive.append(JSON.stringify(entries), { name: fileNameJson });
+				if (!this.abort) {
+					const log = logs[idx];
+					const entries = await this.getLogEntries(log, resolution);
+					const data = await log2csv(entries);
+					const allMeta = Object.assign(data.meta, log);
+					const fileNameCsv = `${log.uriObj.name}/${log.id}.csv`;
+					const fileNameMeta = `${log.uriObj.name}/${log.id}_meta.json`;
+					const fileNameJson = `${log.uriObj.name}/${log.id}.json`;
+					// this.log('zipping now ....');
+					archive.append(data.csv, { name: fileNameCsv });
+					archive.append(JSON.stringify(allMeta), { name: fileNameMeta });
+					archive.append(JSON.stringify(entries), { name: fileNameJson });
+				}
 			}
 			// this.log(`${logs.length} files zipped`);
 			archive.finalize();
@@ -852,7 +873,7 @@ class App extends Homey.App {
 			}
 			this.deleteFile(fileName);
 			// this.log(`Export of ${appId} finished`);
-			return true;
+			return Promise.resolve(true);
 		} catch (error) {
 			return Promise.reject(error);
 		}

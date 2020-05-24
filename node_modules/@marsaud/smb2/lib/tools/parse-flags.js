@@ -1,8 +1,8 @@
 var c = require('../structures/constants');
 
 module.exports = function parseFlags(flags) {
-  const chars = { __proto__: null };
-  for (let i = 0, n = flags.length; i < n; ++i) {
+  var chars = { __proto__: null };
+  for (var i = 0, n = flags.length; i < n; ++i) {
     chars[flags[i]] = true;
   }
 

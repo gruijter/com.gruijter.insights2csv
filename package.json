@@ -1,15 +1,15 @@
 {
   "name": "com.gruijter.insights2csv",
-  "version": "2.5.1",
+  "version": "2.6.0",
   "description": "Make a backup of all your insights to your NAS or WebDAV compliant storage.\r The insights are zipped and stored in .csv format so you can open them in excel\r and create all kinds of statistics and charts.",
   "main": "api.js",
   "dependencies": {
-    "@marsaud/smb2": "^0.13.0",
-    "archiver": "^3.1.1",
-    "athom-api": "^2.1.220",
-    "basic-ftp": "^4.5.3",
+    "@marsaud/smb2": "^0.16.0",
+    "archiver": "^4.0.1",
+    "athom-api": "^3.2.3",
+    "basic-ftp": "^4.5.4",
     "fixture-stdout": "^0.2.1",
-    "webdav": "^2.10.2"
+    "webdav": "^3.3.0"
   },
   "devDependencies": {},
   "scripts": {

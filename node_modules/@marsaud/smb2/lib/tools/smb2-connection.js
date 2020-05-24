@@ -90,6 +90,12 @@ function connect(connection, cb) {
 
   cb = scheduleAutoClose(connection, cb);
 
+  // set message id
+  connection.messageId = 0;
+
+  // set session id
+  connection.SessionId = Math.floor(Math.random() * 256) & 0xff;
+
   // open TCP socket
   connection.socket.connect(
     connection.port,

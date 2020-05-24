@@ -39,7 +39,7 @@ module.exports = function write(file, buffer, offset, length, start, cb) {
   }
   function writeChunk() {
     if (length <= 0) {
-      cb(null, pos - start, buffer);
+      return cb(null, pos - start, buffer);
     }
 
     chunkLength = Math.min(MAX_WRITE_LENGTH, length);

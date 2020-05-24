@@ -24,7 +24,8 @@ module.exports = function createReadStream(path, options, cb) {
     }
 
     var offset = options.start || 0;
-    var end = BigInt.fromBuffer(file.EndofFile).toNumber();
+    var fileSize = BigInt.fromBuffer(file.EndofFile).toNumber();
+    var end = fileSize;
 
     if (options.end < end) {
       end = options.end + 1; // end option is inclusive
@@ -33,6 +34,7 @@ module.exports = function createReadStream(path, options, cb) {
     var close = request.bind(undefined, 'close', file, connection);
 
     var stream = new Readable();
+    stream.fileSize = fileSize;
     if (shouldClose) {
       stream._destroy = function(err, cb) {
         close(function(err2) {
