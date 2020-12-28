@@ -4,7 +4,7 @@
     "en": "Archive Insights",
     "nl": "Exporteer Insights"
   },
-  "version": "2.6.1",
+  "version": "2.7.0",
   "sdk": 2,
   "compatibility": ">= 3",
   "author": {
@@ -40,7 +40,9 @@
     "url": "https://github.com/gruijter/com.gruijter.insights2csv/issues"
   },
   "homeyCommunityTopicId": 10976,
-  "category": [ "tools" ],
+  "category": [
+    "tools"
+  ],
   "description": {
     "en": "Make backups of all insights",
     "nl": "Maak backups van alle insights"
