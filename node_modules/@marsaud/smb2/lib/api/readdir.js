@@ -1,6 +1,6 @@
 var SMB2Forge = require('../tools/smb2-forge');
 var SMB2Request = SMB2Forge.request;
-
+var stats = require('../tools/stats.js');
 /*
  * readdir
  * =======
@@ -14,33 +14,44 @@ var SMB2Request = SMB2Forge.request;
  *  - close the directory
  *
  */
-module.exports = function readdir(path, cb) {
+module.exports = function readdir(path, options, cb) {
   var connection = this;
+
+  if (typeof options === 'function') {
+    cb = options;
+    options = {};
+  }
+
+  var mapping = options.stats
+    ? function(v) {
+        var obj = stats(v);
+        obj.name = v.Filename;
+        return obj;
+      }
+    : function(v) {
+        return v.Filename;
+      };
 
   function queryDirectory(filesBatch, file, connection, cb) {
     SMB2Request('query_directory', file, connection, function(err, files) {
       if (err) {
-        if(err.code === 'STATUS_NO_MORE_FILES') {
+        if (err.code === 'STATUS_NO_MORE_FILES') {
           cb(null, filesBatch);
         } else {
           cb(err);
         }
-      
       } else {
         filesBatch.push(
           files
-          .map(function(v) {
-            // get the filename only
-            return v.Filename;
-          }) 
-          .filter(function(v) {
-            // remove '.' and '..' values
-            return v !== '.' && v !== '..';
-          })
+            .filter(function(v) {
+              // remove '.' and '..' values
+              return v.Filename !== '.' && v.Filename !== '..';
+            })
+            .map(mapping)
         );
         queryDirectory(filesBatch, file, connection, cb);
-      } 
-    });  
+      }
+    });
   }
 
   function openDirectory(path, connection, cb) {
@@ -54,18 +65,17 @@ module.exports = function readdir(path, cb) {
   }
 
   function closeDirectory(file, connection, cb) {
-    // SMB2 query directory  
+    // SMB2 query directory
     SMB2Request('close', file, connection, function(err, res) {
       if (err) {
-        if(err.code !== 'STATUS_FILE_CLOSED') {
+        if (err.code !== 'STATUS_FILE_CLOSED') {
           cb(err);
         }
       }
       // SMB2 close directory
-      cb(null, res);    
+      cb(null, res);
     });
   }
-
 
   openDirectory(path, connection, function(err, file) {
     var totalFiles = [];
@@ -83,10 +93,10 @@ module.exports = function readdir(path, cb) {
             } else {
               totalFiles = [].concat(...filesBatch);
               cb(null, totalFiles);
-            }              
+            }
           });
-        }          
-      })
+        }
+      });
     }
   });
 };

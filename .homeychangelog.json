@@ -7,5 +7,8 @@
   },
   "2.6.0": {
     "en": "Packages update. athom-api@3.2.3. webdav@3.3.0. basic-ftp@4.5.4. @marsaud/smb2@0.16.0 archiver@4.0.1. Fix crash on corrupt Insights data."
+  },
+  "2.6.1": {
+    "en": "Packages update. athom-api@3.2.13. basic-ftp@4.6.2 archiver@4.0.2"
   }
 }

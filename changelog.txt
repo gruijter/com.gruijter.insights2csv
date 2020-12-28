@@ -1,5 +1,7 @@
 Version changelog
 
+v2.7.0  28.12.2020 Packages update. athom-api@3.2.14 webdav@3.6.1 basic-ftp@4.6.3 @marsaud/smb2@0.17.2 archiver@5.1.0
+v2.6.1  06.09.2020 Packages update. athom-api@3.2.13. basic-ftp@4.6.2 archiver@4.0.2
 v2.6.0  24.05.2020 Packages update. athom-api@3.2.3. webdav@3.3.0. basic-ftp@4.5.4. @marsaud/smb2@0.16.0 archiver@4.0.1. Fix crash on corrupt Insights data.
 v2.5.2  08.03.2020 Packages update. athom-api@2.1.220. webdav@2.10.2. basic-ftp@4.5.3 FTP fixes. Added Export and Cancel Export via app settings.
 v2.5.0  06.10.2019 Packages update. athom-api@2.1.215. basic-ftp@3.8.7. Add export to seperate folders. Bugfixes. Code refactored.

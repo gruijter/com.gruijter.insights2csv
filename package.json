@@ -4,12 +4,12 @@
   "description": "Make a backup of all your insights to your NAS or WebDAV compliant storage.\r The insights are zipped and stored in .csv format so you can open them in excel\r and create all kinds of statistics and charts.",
   "main": "api.js",
   "dependencies": {
-    "@marsaud/smb2": "^0.16.0",
-    "archiver": "^4.0.1",
-    "athom-api": "^3.2.3",
-    "basic-ftp": "^4.5.4",
+    "@marsaud/smb2": "^0.17.2",
+    "archiver": "^5.1.0",
+    "athom-api": "^3.2.14",
+    "basic-ftp": "^4.6.3",
     "fixture-stdout": "^0.2.1",
-    "webdav": "^3.3.0"
+    "webdav": "^3.6.1"
   },
   "devDependencies": {},
   "scripts": {
