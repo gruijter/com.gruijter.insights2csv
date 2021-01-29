@@ -1,7 +1,7 @@
 /* eslint-disable no-await-in-loop */
 
 /*
-Copyright 2017 - 2020 Robin de Gruijter
+Copyright 2017 - 2021 Robin de Gruijter
 
 This file is part of com.gruijter.insights2csv.
 
