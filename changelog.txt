@@ -1,5 +1,6 @@
 Version changelog
 
+v2.8.0  07.03.2021 Packages update. athom-api@3.3.0 webdav@4.2.1
 v2.7.1  29.01.2021 Packages update. athom-api@3.2.18 webdav@3.6.2 archiver@5.2.0
 v2.7.0  28.12.2020 Packages update. athom-api@3.2.14 webdav@3.6.1 basic-ftp@4.6.3 @marsaud/smb2@0.17.2 archiver@5.1.0
 v2.6.1  06.09.2020 Packages update. athom-api@3.2.13. basic-ftp@4.6.2 archiver@4.0.2

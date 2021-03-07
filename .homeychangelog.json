@@ -13,5 +13,11 @@
   },
   "2.7.0": {
     "en": "Packages update. athom-api@3.2.14 webdav@3.6.1 basic-ftp@4.6.3 @marsaud/smb2@0.17.2 archiver@5.1.0"
+  },
+  "2.7.1": {
+    "en": "Packages update. athom-api@3.2.18 webdav@3.6.2 archiver@5.2.0"
+  },
+  "2.8.0": {
+    "en": "Packages update. athom-api@3.3.0 webdav@4.2.1"
   }
 }
