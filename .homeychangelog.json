@@ -19,5 +19,8 @@
   },
   "2.8.0": {
     "en": "Packages update. athom-api@3.3.0 webdav@4.2.1"
+  },
+  "2.9.0": {
+    "en": "Packages update. athom-api@3.6.3 webdav@4.6.0 basic-ftp@4.6.6 @marsaud/smb2@0.18.0 archiver@5.3.0. Allow unauthorized FTPS certificates."
   }
 }

@@ -14,6 +14,11 @@ module.exports = {
   MAX_READ_LENGTH: 0x00010000,
   MAX_WRITE_LENGTH: 0x00010000 - 0x71,
 
+  FILE_SHARE_NONE: 0x00000000,
+  FILE_SHARE_READ: 0x00000001,
+  FILE_SHARE_WRITE: 0x00000002,
+  FILE_SHARE_DELETE: 0x00000004,
+
   /**
    * 2.2.13.1.1 SMB2 File_Pipe_Printer_Access_Mask
    * https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-smb2/77b36d0f-6016-458a-a7a0-0f4a72ae1534

@@ -28,30 +28,27 @@ SMB2Connection.requireConnect = function(method) {
   return function() {
     var connection = this;
     var args = Array.prototype.slice.call(arguments);
-    connect(
-      connection,
-      function(err) {
-        // process the cb
-        var cb = args.pop();
-        if (typeof cb !== 'function') {
-          args.push(cb);
-          cb = function(err) {
-            if (err) {
-              if (!(err instanceof Error)) {
-                err = new Error(String(err));
-              }
-              throw err;
-            }
-          };
-        }
-        cb = scheduleAutoClose(connection, cb);
+    connect(connection, function(err) {
+      // process the cb
+      var cb = args.pop();
+      if (typeof cb !== 'function') {
         args.push(cb);
-
-        // manage the connection error
-        if (err) cb(err);
-        else method.apply(connection, args);
+        cb = function(err) {
+          if (err) {
+            if (!(err instanceof Error)) {
+              err = new Error(String(err));
+            }
+            throw err;
+          }
+        };
       }
-    );
+      cb = scheduleAutoClose(connection, cb);
+      args.push(cb);
+
+      // manage the connection error
+      if (err) cb(err);
+      else method.apply(connection, args);
+    });
   };
 };
 
@@ -97,10 +94,7 @@ function connect(connection, cb) {
   connection.SessionId = Math.floor(Math.random() * 256) & 0xff;
 
   // open TCP socket
-  connection.socket.connect(
-    connection.port,
-    connection.ip
-  );
+  connection.socket.connect(connection.port, connection.ip);
 
   // SMB2 negotiate connection
   SMB2Request('negotiate', {}, connection, function(err) {

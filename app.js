@@ -66,7 +66,6 @@ const log2csv = (logEntries) => {
 	}
 };
 
-
 class App extends Homey.App {
 
 	async onInit() {
@@ -161,7 +160,6 @@ class App extends Homey.App {
 					return Promise.resolve(true);
 				});
 
-
 			this.deleteAllFiles();
 			await this.initExport();
 
@@ -236,7 +234,6 @@ class App extends Homey.App {
 		}
 	}
 
-
 	// ============================================================
 	// stuff for frontend API here
 	deleteLogs() {
@@ -309,6 +306,7 @@ class App extends Homey.App {
 				user: FTPSettings.FTPUsername,
 				password: FTPSettings.FTPPassword,
 				secure: FTPSettings.useSFTP,
+				secureOptions: { rejectUnauthorized: false },
 			});
 			await client.ensureDir(FTPSettings.FTPFolder);
 			// console.log(await client.list());
@@ -372,7 +370,6 @@ class App extends Homey.App {
 			// else { this.log(`deleted ${filename}`); }
 		});
 	}
-
 
 	// ============================================================
 	// Homey API stuff here
@@ -489,7 +486,6 @@ class App extends Homey.App {
 		}
 	}
 
-
 	async initExport() {
 		try {
 			this.abort = false;
@@ -509,7 +505,6 @@ class App extends Homey.App {
 			return Promise.reject(error);
 		}
 	}
-
 
 	// ============================================================
 	// WebDAV file handling here
@@ -730,7 +725,10 @@ class App extends Homey.App {
 				user: this.FTPSettings.FTPUsername,
 				password: this.FTPSettings.FTPPassword,
 				secure: this.FTPSettings.useSFTP,
-				secureOptions: { host: this.FTPSettings.FTPHost },
+				secureOptions: {
+					host: this.FTPSettings.FTPHost,
+					rejectUnauthorized: false,
+				},
 			});
 			return Promise.resolve(this.FTPClient);
 		} catch (error) {
@@ -882,7 +880,6 @@ class App extends Homey.App {
 }
 
 module.exports = App;
-
 
 /*
 _downloadEntries = log => {

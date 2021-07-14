@@ -16,7 +16,7 @@ module.exports = function createReadStream(path, options, cb) {
 
   var fd = options.fd;
   var isFd = fd != null;
-  var shouldClose = !isFd || (options.autoClose == null || options.autoClose);
+  var shouldClose = !isFd || options.autoClose == null || options.autoClose;
 
   function onOpen(err, file) {
     if (err != null) {

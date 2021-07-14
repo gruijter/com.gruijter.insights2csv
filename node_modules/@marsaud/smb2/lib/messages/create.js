@@ -20,11 +20,18 @@ module.exports = message({
   generate: function(connection, params) {
     var buffer = Buffer.from(params.path, 'ucs2');
     var createDisposition = params.createDisposition;
+    var shareAccess = params.shareAccess;
 
     /* See: https://msdn.microsoft.com/en-us/library/cc246502.aspx
        6 values for CreateDisposition. */
     if (!(createDisposition >= 0 && createDisposition <= 5)) {
       createDisposition = constants.FILE_OVERWRITE_IF;
+    }
+
+    /* See: https://msdn.microsoft.com/en-us/library/cc246502.aspx
+       7 possible values for ShareAccess. */
+    if (!(shareAccess >= 0 && shareAccess <= 7)) {
+      shareAccess = constants.FILE_SHARE_NONE;
     }
 
     return new SMB2Message({
@@ -38,7 +45,7 @@ module.exports = message({
         Buffer: buffer,
         DesiredAccess: desiredAccess,
         FileAttributes: 0x00000080,
-        ShareAccess: 0x00000000,
+        ShareAccess: shareAccess,
         CreateDisposition: createDisposition,
         CreateOptions: 0x00000044,
         NameOffset: 0x0078,
