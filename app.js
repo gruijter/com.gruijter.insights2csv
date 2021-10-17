@@ -532,7 +532,7 @@ class App extends Homey.App {
 			if (this.webdavSettings.webdavUseSeperateFolders) {
 				await this.webdavClient.createDirectory(`/${this.timestamp}/`)
 					.then(() => {
-						this.log(`${this.timestamp} directory created!`);
+						this.log(`${this.timestamp} folder created!`);
 					})
 					.catch(() => null);
 				webdavFileName = `/${this.timestamp}/${fileName}`;
@@ -613,7 +613,7 @@ class App extends Homey.App {
 					await new Promise((res, rej) => {
 						this.smb2Client.mkdir(path, (err) => {
 							if (err) rej(err);
-							this.log(`${path} directory created!`);
+							this.log(`${path} folder created!`);
 							res(true);
 						});
 					});
@@ -747,7 +747,7 @@ class App extends Homey.App {
 			}
 			const fileStream = fs.createReadStream(`./userdata/${fileName}`);
 			await this.FTPClient.upload(fileStream, fileName);
-			this.log(`${fileName} has been saved to FTP`);
+			this.log(`${fileName} has been saved to FTP(S)`);
 			return Promise.resolve(fileName);
 		} catch (error) {
 			this.error('error:', error);

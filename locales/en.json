@@ -39,7 +39,7 @@
 			"FTPUseSeperateFolders": "Seperate folder for each export",
 			"FTPHost": "FTP Host",
 			"FTPFolder": "FTP Folder",
-			"SFTP": "Use secure SFTP",
+			"SFTP": "Use secure FTPS",
 			"FTPUsername": "Username",
 			"FTPPassword": "Password",
 			"testFTP": "Test the FTP settings",

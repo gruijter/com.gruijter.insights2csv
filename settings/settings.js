@@ -42,7 +42,6 @@ function saveSmb() {
 	Homey.alert(`${Homey.__('settings.tab1.settingsSaved')}`, 'info');
 }
 
-
 // tab 2
 
 function testWebdav() {
@@ -76,7 +75,6 @@ function saveWebdav() {
 	});
 	Homey.alert(`${Homey.__('settings.tab2.settingsSaved')}`, 'info');
 }
-
 
 // tab 3
 
@@ -117,7 +115,6 @@ function saveFTP() {
 	});
 	Homey.alert(`${Homey.__('settings.tab3.settingsSaved')}`, 'info');
 }
-
 
 // tab 4
 
@@ -216,7 +213,6 @@ function exportNow() {
 		}
 	});
 }
-
 
 // tab 5
 
