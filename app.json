@@ -4,7 +4,7 @@
     "en": "Archive Insights",
     "nl": "Exporteer Insights"
   },
-  "version": "2.9.1",
+  "version": "2.9.2",
   "brandColor": "#2020df",
   "sdk": 2,
   "compatibility": ">= 3",

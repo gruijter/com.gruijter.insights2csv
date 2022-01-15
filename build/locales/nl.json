@@ -1,0 +1,71 @@
+{
+	"settings": {
+		"benefit": "Exporteer alle Insights via een flow",
+		"tab1": {
+			"title": "NAS",
+			"instructionsTitle": "Instructies",
+			"instructions": "Exporteer naar NAS, of een andere windows network share, via het SAMBA protocol. Zet 'Gebruik SMB' aan, en vul de benodigde parameters in om de network share te benaderen. ZIE DE VOORBEELDEN HOE SLASH (/) TE GEBRUIKEN! Test om te controleren of de instellingen correct zijn, en sla ze op. Nu kun je Insights exporteren naar een network share vanuit een flow.",
+			"useSmb": "Gebruik SMB bij export",
+			"smbUseSeperateFolders": "Iedere export in separate folder",
+			"smbShare": "Network share",
+			"smbPath": "Subdirectory",
+			"smbDomain": "Domein",
+			"smbUsername": "Gebruikersnaam",
+			"smbPassword": "Wachtwoord",
+			"testSmb": "Test de SMB instellingen",
+			"testOk": "OK! Sla de instellnigen nu op.",
+			"saveSmb": "Opslaan",
+			"settingsSaved": "SMB instellnigen zijn opgeslagen"
+		},
+		"tab2": {
+			"title": "WebDAV",
+			"instructionsTitle": "Instructies",
+			"instructions": "Exporteer naar een web folder via het WebDAV protocol. Zet 'Gebruik WebDAV' aan, en vul de benodigde parameters in om de web folder te benaderen. Test om te controleren of de instellingen correct zijn, en sla ze op. Nu kun je Insights exporteren naar een web folder vanuit een flow.",
+			"useWebdav": "Gebruik WebDAV bij export",
+			"webdavUseSeperateFolders": "Iedere export in separate folder",
+			"webdavUrl": "WebDAV URL",
+			"webdavUsername": "Gebruikersnaam",
+			"webdavPassword": "Wachtwoord",
+			"testWebdav": "Test de WebDAV instellingen",
+			"testOk": "OK! Sla de instellingen nu op.",
+			"saveWebdav": "Opslaan",
+			"settingsSaved": "WebDAV instellingen zijn opgeslagen"
+		},
+		"tab3": {
+			"title": "FTP",
+			"instructionsTitle": "Instructies",
+			"instructions": "Exporteren naar een FTP folder via het (S)FTP protocol. zet 'Gebruik FTP' aan, en vul de benodigde parameters in om de web folder te benaderen. Test om te controleren of de instellingen correct zijn, en sla ze op. Nu kun je Insights exporteren naar een web folder vanuit een flow.",
+			"useFTP": "Gebruik FTP bij export",
+			"FTPUseSeperateFolders": "Iedere export in separate folder",
+			"FTPHost": "FTP Host",
+			"FTPFolder": "FTP Folder",
+			"SFTP": "Gebruik secure SFTP",
+			"FTPUsername": "Gebruikersnaam",
+			"FTPPassword": "Wachtwoord",
+			"testFTP": "Test de FTP instellingen",
+			"testOk": "OK! Sla de instellingen nu op.",
+			"saveFTP": "Opslaan",
+			"settingsSaved": "instellingen zijn opgeslagen"
+		},
+		"tab4": {
+			"title": "Export",
+			"instructionsTitle": "Instructions",
+			"instructions": "Stel eerst NAS en/of FTP en/of WebDAV in. Kies vervolgens de app die je wilt exporteren, en de resolutie.",
+			"allApps": "Alle apps",
+			"app": "App",
+			"resolution": "Resolutie",
+			"export": "Exporteer nu",
+			"confirmExport": "Zeker weten? Exporteren van Insights kan langer dan 10 minuten duren!",
+			"stopExport": "Export afbreken",
+			"confirmStopExport": "Lopende export afbreken?",
+			"exportStopped": "Lopende export is afgebroken",
+			"backupInitiated": "Export van Insights is begonnen."
+		},
+		"tab5": {
+			"title": "Logs",
+			"deleteLogs": "Verwijder logs",
+			"deleteWarning": "Verwijder alle logs?",
+			"deleted": "Alle logs zijn verwijderd"
+		}
+	}
+}

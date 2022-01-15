@@ -25,5 +25,8 @@
   },
   "2.9.1": {
     "en": "Packages update. athom-api@3.6.7 webdav@4.7.0"
+  },
+  "2.9.2": {
+    "en": "Packages update. athom-api@3.7.1 webdav@4.8.0. Extended error logging."
   }
 }

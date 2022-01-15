@@ -1,7 +1,7 @@
 /* eslint-disable no-await-in-loop */
 
 /*
-Copyright 2017 - 2021 Robin de Gruijter
+Copyright 2017 - 2022 Robin de Gruijter
 
 This file is part of com.gruijter.insights2csv.
 
@@ -269,7 +269,7 @@ class App extends Homey.App {
 					}
 				});
 			} catch (error) {
-				this.log(error);
+				this.error(error);
 				reject(error);
 			}
 		});
@@ -290,7 +290,7 @@ class App extends Homey.App {
 			this.log('Connection successfull!');
 			return Promise.resolve(quota);
 		} catch (error) {
-			this.log(error);
+			this.error(error);
 			return Promise.reject(error);
 		}
 	}
@@ -314,7 +314,7 @@ class App extends Homey.App {
 			client.close();
 			return Promise.resolve();
 		} catch (error) {
-			this.log(error);
+			this.error(error);
 			return Promise.reject(error);
 		}
 	}
@@ -558,6 +558,7 @@ class App extends Homey.App {
 					this.log('filestream error: ', err);
 				});
 				webDavWriteStream.on('error', (err) => {
+					this.error(err.message);
 					this.log('webdavwritestream error');
 					return reject(err);
 				});
@@ -622,7 +623,7 @@ class App extends Homey.App {
 			return new Promise((resolve, reject) => {
 				this.smb2Client.createWriteStream(`${path}${fileName}`, { flag: 'w' }, (error, smbWriteStream) => {
 					if (error) {
-						this.log(error);
+						this.error(error);
 						reject(error);
 						return;
 					}
@@ -846,7 +847,7 @@ class App extends Homey.App {
 					return reject(err);
 				});
 				archive.on('error', (err) => {	// when zipping gave an error
-					this.log(err);
+					this.error(err);
 				});
 				archive.on('warning', (warning) => {
 					this.log(warning);

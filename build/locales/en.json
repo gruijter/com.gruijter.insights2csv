@@ -1,0 +1,71 @@
+{
+	"settings": {
+		"benefit": "Let Homey export all Insights from a flow",
+		"tab1": {
+			"title": "NAS",
+			"instructionsTitle": "Instructions",
+			"instructions": "Export to NAS, or any other windows network share, is possible via the SAMBA protocol. Enable 'Use SMB', and fill in the required parameters to access the network share. SEE THE EXAMPLES ON HOW TO USE SLASH (/)! Test to verify if the settings are correct, and save them. Now you can start exporting Insights to a network share from a flow.",
+			"useSmb": "Use SMB when exporting",
+			"smbUseSeperateFolders": "Seperate folder for each export",
+			"smbShare": "Network share",
+			"smbPath": "Subdirectory",
+			"smbDomain": "Domain",
+			"smbUsername": "Username",
+			"smbPassword": "Password",
+			"testSmb": "Test the SMB settings",
+			"testOk": "OK! Now save the settings.",
+			"saveSmb": "Save",
+			"settingsSaved": "SMB settings are saved"
+		},
+		"tab2": {
+			"title": "WebDAV",
+			"instructionsTitle": "Instructions",
+			"instructions": "Export to a web folder is possible via the WebDAV protocol. Enable 'Use WebDAV', and fill in the required parameters to access the WebDAV folder. Test to verify if the settings are correct, and save them. Now you can start exporting Insights to a web folder from a flow.",
+			"useWebdav": "Use WebDAV when exporting",
+			"webdavUseSeperateFolders": "Seperate folder for each export",
+			"webdavUrl": "WebDAV URL",
+			"webdavUsername": "Username",
+			"webdavPassword": "Password",
+			"testWebdav": "Test the WebDAV settings",
+			"testOk": "OK! Now save the settings.",
+			"saveWebdav": "Save",
+			"settingsSaved": "WebDAV settings are saved"
+		},
+		"tab3": {
+			"title": "FTP",
+			"instructionsTitle": "Instructions",
+			"instructions": "Export to a FTP folder is possible via the FTP protocol. Enable 'Use FTP', and fill in the required parameters to access the FTP folder. Test to verify if the settings are correct, and save them. Now you can start exporting Insights to a FTP folder from a flow.",
+			"useFTP": "Use FTP when exporting",
+			"FTPUseSeperateFolders": "Seperate folder for each export",
+			"FTPHost": "FTP Host",
+			"FTPFolder": "FTP Folder",
+			"SFTP": "Use secure FTPS",
+			"FTPUsername": "Username",
+			"FTPPassword": "Password",
+			"testFTP": "Test the FTP settings",
+			"testOk": "OK! Now save the settings.",
+			"saveFTP": "Save",
+			"settingsSaved": "FTP settings are saved"
+		},
+		"tab4": {
+			"title": "Export",
+			"instructionsTitle": "Instructions",
+			"instructions": "First setup NAS and/or FTP and/or WebDAV. Then select which app to export, and the resolution.",
+			"allApps": "All apps",
+			"app": "App",
+			"resolution": "Resolution",
+			"export": "Export now",
+			"confirmExport": "Are you sure? Exporting Insights can take more then 10 minutes!",
+			"stopExport": "Cancel export",
+			"confirmStopExport": "Cancel running export?",
+			"exportStopped": "Running export is canceled",
+			"backupInitiated": "Insights export has started."
+		},
+		"tab5": {
+			"title": "Logs",
+			"deleteLogs": "Delete logs",
+			"deleteWarning": "Delete all logs?",
+			"deleted": "All logs have been deleted"
+		}
+	}
+}

@@ -1,0 +1,21 @@
+Version changelog
+
+v2.9.1  17.10.2021 Packages update. athom-api@3.6.7 webdav@4.7.0
+v2.9.0  14.07.2021 Packages update. athom-api@3.6.3 webdav@4.6.0 basic-ftp@4.6.6 @marsaud/smb2@0.18.0 archiver@5.3.0. Allow unauthorized FTPS certificates.
+v2.8.0  07.03.2021 Packages update. athom-api@3.3.0 webdav@4.2.1
+v2.7.1  29.01.2021 Packages update. athom-api@3.2.18 webdav@3.6.2 archiver@5.2.0
+v2.7.0  28.12.2020 Packages update. athom-api@3.2.14 webdav@3.6.1 basic-ftp@4.6.3 @marsaud/smb2@0.17.2 archiver@5.1.0
+v2.6.1  06.09.2020 Packages update. athom-api@3.2.13. basic-ftp@4.6.2 archiver@4.0.2
+v2.6.0  24.05.2020 Packages update. athom-api@3.2.3. webdav@3.3.0. basic-ftp@4.5.4. @marsaud/smb2@0.16.0 archiver@4.0.1. Fix crash on corrupt Insights data.
+v2.5.2  08.03.2020 Packages update. athom-api@2.1.220. webdav@2.10.2. basic-ftp@4.5.3 FTP fixes. Added Export and Cancel Export via app settings.
+v2.5.0  06.10.2019 Packages update. athom-api@2.1.215. basic-ftp@3.8.7. Add export to seperate folders. Bugfixes. Code refactored.
+v2.4.2  24.08.2019 Packages update. athom-api@2.1.200. basic-ftp@3.8.1. archiver@3.1.1. Added save to for SMB subdir.
+v2.4.1  29.07.2019 Packages update. athom-api@2.1.194. basic-ftp@3.8.0. Fix for save SMB settings.
+v2.4.0  20.07.2019 Packages update. athom-api@2.1.193. webdav@2.9.1. Added ftp support. Added FTP and SMB auto-delete support.
+v2.3.1  12.06.2019 Packages update. athom-api@2.1.192. webdav@2.8.0.
+v2.3.0  15.04.2019 Job queueing added. Reduced memory and cpu load. Athom-api@v2.1.179
+v2.2.0  24.03.2019 complete rewrite for Homey V2 Insights.
+v2.1.0  2018.02.05 Added backup to local network share (smb).
+v2.0.0  2018.02.04 Complete rewrite to SDK2. Flows need to be repaired!
+v0.0.2  2017.06.05 Added per-app backup
+v0.0.1  2017.05.19 Initial release
