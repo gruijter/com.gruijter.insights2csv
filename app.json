@@ -4,10 +4,10 @@
     "en": "Archive Insights",
     "nl": "Exporteer Insights"
   },
-  "version": "2.9.2",
+  "version": "3.0.1",
   "brandColor": "#2020df",
-  "sdk": 2,
-  "compatibility": ">= 3",
+  "sdk": 3,
+  "compatibility": ">= 5",
   "author": {
     "name": "Robin de Gruijter",
     "email": "gruijter@hotmail.com"
@@ -19,14 +19,6 @@
       {
         "name": "Robin de Gruijter",
         "email": "gruijter@hotmail.com"
-      }
-    ],
-    "translators": [
-      {
-        "name": "🇬🇧 Robin"
-      },
-      {
-        "name": "🇳🇱 Robin"
       }
     ]
   },
@@ -75,6 +67,51 @@
   "permissions": [
     "homey:manager:api"
   ],
+  "platforms": [
+    "local"
+  ],
+  "api": {
+    "getLogs": {
+      "method": "GET",
+      "path": "/getlogs"
+    },
+    "deleteLogs": {
+      "method": "GET",
+      "path": "/deletelogs"
+    },
+    "getResolutions": {
+      "method": "GET",
+      "path": "/getResolutions"
+    },
+    "getAppList": {
+      "method": "GET",
+      "path": "/getAppList"
+    },
+    "stopExport": {
+      "method": "GET",
+      "path": "/stopExport"
+    },
+    "exportAll": {
+      "method": "POST",
+      "path": "/exportAll"
+    },
+    "exportApp": {
+      "method": "POST",
+      "path": "/exportApp"
+    },
+    "testSmb": {
+      "method": "POST",
+      "path": "/testSmb"
+    },
+    "testFTP": {
+      "method": "POST",
+      "path": "/testFTP"
+    },
+    "testWebdav": {
+      "method": "POST",
+      "path": "/testWebdav"
+    }
+  },
   "flow": {
     "actions": [
       {
@@ -82,6 +119,10 @@
         "title": {
           "en": "Export all insights",
           "nl": "Exporteer alle insights"
+        },
+        "titleFormatted": {
+          "en": "Export all insights [[resolution]]",
+          "nl": "Exporteer alle insights [[resolution]]"
         },
         "args": [
           {
@@ -185,8 +226,12 @@
       {
         "id": "archive_app",
         "title": {
-          "en": "Export insights of:",
-          "nl": "Exporteer insights van:"
+          "en": "Export insights of app",
+          "nl": "Exporteer insights van app"
+        },
+        "titleFormatted": {
+          "en": "Export all insights of [[selectedApp]] [[resolution]]",
+          "nl": "Exporteer alle insights [[selectedApp]] [[resolution]]"
         },
         "args": [
           {
@@ -200,91 +245,106 @@
               {
                 "id": "lastHour",
                 "label": {
-                  "en": "last hour"
+                  "en": "last hour",
+                  "nl": "laatse uur"
                 }
               },
               {
                 "id": "last6Hours",
                 "label": {
-                  "en": "last 6 hours"
+                  "en": "last 6 hours",
+                  "nl": "afgelopen 6 uur"
                 }
               },
               {
                 "id": "last24Hours",
                 "label": {
-                  "en": "last 24 hours"
+                  "en": "last 24 hours",
+                  "nl": "afgelopen 24 uur"
                 }
               },
               {
                 "id": "last7Days",
                 "label": {
-                  "en": "last 7 days"
+                  "en": "last 7 days",
+                  "nl": "afgelopen 7 dagen"
                 }
               },
               {
                 "id": "last14Days",
                 "label": {
-                  "en": "last 14 days"
+                  "en": "last 14 days",
+                  "nl": "afgelopen 14 dagen"
                 }
               },
               {
                 "id": "last31Days",
                 "label": {
-                  "en": "last 31 days"
+                  "en": "last 31 days",
+                  "nl": "afgelopen 31 dagen"
                 }
               },
               {
                 "id": "today",
                 "label": {
-                  "en": "today"
+                  "en": "today",
+                  "nl": "vandaag"
                 }
               },
               {
                 "id": "yesterday",
                 "label": {
-                  "en": "yesterday"
+                  "en": "yesterday",
+                  "nl": "gisteren"
                 }
               },
               {
                 "id": "thisWeek",
                 "label": {
-                  "en": "this week"
+                  "en": "this week",
+                  "nl": "deze week"
                 }
               },
               {
                 "id": "lastWeek",
                 "label": {
-                  "en": "last week"
+                  "en": "last week",
+                  "nl": "vorige week"
                 }
               },
               {
                 "id": "thisMonth",
                 "label": {
-                  "en": "this month"
+                  "en": "this month",
+                  "nl": "deze maand"
                 }
               },
               {
                 "id": "lastMonth",
                 "label": {
-                  "en": "last month"
+                  "en": "last month",
+                  "nl": "vorige maand"
                 }
               },
               {
                 "id": "thisYear",
                 "label": {
-                  "en": "this year"
+                  "en": "this year",
+                  "nl": "dit jaar"
                 }
               },
               {
                 "id": "lastYear",
                 "label": {
-                  "en": "last year"
+                  "en": "last year",
+                  "nl": "afgelopen jaar"
                 }
               },
               {
                 "id": "last2Years",
                 "label": {
-                  "en": "last 2 years"
+                  "en": "last 2 years",
+                  "nl": "afgelopen 2 jaar"
                 }
               }
             ]
@@ -296,6 +356,10 @@
         "title": {
           "en": "Purge old files and folders",
           "nl": "Verwijder oude bestanden en mappen"
+        },
+        "titleFormatted": {
+          "en": "Purge [[types]] older then [[daysOld]] days on [[storage]]",
+          "nl": "Verwijder [[types]] ouder dan [[daysOld]] dagen op [[storage]]"
         },
         "args": [
           {
@@ -323,13 +387,15 @@
               {
                 "id": "onlyZip",
                 "label": {
-                  "en": "only ZIP files"
+                  "en": "only ZIP files",
+                  "nl": "alleen ZIP files"
                 }
               },
               {
                 "id": "allTypes",
                 "label": {
-                  "en": "all files and folders"
+                  "en": "all files and folders",
+                  "nl": "alle bestanden en folders"
                 }
               }
             ]
@@ -339,7 +405,8 @@
             "type": "number",
             "min": 1,
             "placeholder": {
-              "en": "delete older then number of days"
+              "en": "number of days",
+              "nl": "aantal dagen"
             }
           }
         ]

@@ -16,7 +16,7 @@ function testSmb() {
 		smbUsername: $('#smbUsername').val(),
 		smbPassword: $('#smbPassword').val(),
 	};
-	Homey.api('POST', 'testSmb/', testData, (err, result) => {
+	Homey.api('POST', '/testSmb', testData, (err, result) => {
 		if (err) {
 			return Homey.alert(err, 'error');
 		}
@@ -52,7 +52,7 @@ function testWebdav() {
 		webdavUsername: $('#webdavUsername').val(),
 		webdavPassword: $('#webdavPassword').val(),
 	};
-	Homey.api('POST', 'testWebdav/', testData, (err, result) => {
+	Homey.api('POST', '/testWebdav', testData, (err, result) => {
 		if (err) {
 			return Homey.alert(err, 'error');
 		}
@@ -89,7 +89,7 @@ function testFTP() {
 		FTPUsername: $('#FTPUsername').val(),
 		FTPPassword: $('#FTPPassword').val(),
 	};
-	Homey.api('POST', 'testFTP/', testData, (err, result) => {
+	Homey.api('POST', '/testFTP', testData, (err, result) => {
 		if (err) {
 			return Homey.alert(err, 'error');
 		}
@@ -192,7 +192,7 @@ function exportNow() {
 		if (!r) { return; }
 		stopExportNoConfirm();
 		if (appId === '') {
-			Homey.api('POST', '/archiveAll', { resolution }, (error, res) => {
+			Homey.api('POST', '/exportAll', { resolution }, (error, res) => {
 				if (error) {
 					Homey.alert(error, 'error');
 				} else {
@@ -202,7 +202,7 @@ function exportNow() {
 		} else {
 			Homey.confirm(Homey.__('settings.tab4.confirmExport'), 'warning', (err, result) => {
 				if (!result) { return; }
-				Homey.api('POST', '/archiveApp', { appId, resolution }, (error, res) => {
+				Homey.api('POST', '/exportApp', { appId, resolution }, (error, res) => {
 					if (error) {
 						Homey.alert(error, 'error');
 					} else {

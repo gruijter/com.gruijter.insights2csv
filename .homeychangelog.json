@@ -28,5 +28,11 @@
   },
   "2.9.2": {
     "en": "Packages update. athom-api@3.7.1 webdav@4.8.0. Extended error logging."
+  },
+  "3.0.0": {
+    "en": "Migrated to SDK3. replaced athom-api with homey-api@1.5.22"
+  },
+  "3.0.1": {
+    "en": "Migrated to SDK3. replaced athom-api with homey-api@1.5.23. Fixed resolution selection."
   }
 }

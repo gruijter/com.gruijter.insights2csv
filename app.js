@@ -22,14 +22,14 @@ with com.gruijter.insights2csv. If not, see <http://www.gnu.org/licenses/>.
 'use strict';
 
 const Homey = require('homey');
-const { HomeyAPI } = require('athom-api');
+const { HomeyAPIApp } = require('homey-api');
 const fs = require('fs');
 const util = require('util');
 const archiver = require('archiver');
 const SMB2 = require('@marsaud/smb2');
 const { createClient } = require('webdav');
 const ftp = require('basic-ftp');
-const Logger = require('./captureLogs.js');
+const Logger = require('./captureLogs');
 
 const setTimeoutPromise = util.promisify(setTimeout);
 
@@ -70,8 +70,7 @@ class App extends Homey.App {
 
 	async onInit() {
 		try {
-			this.log('ExportInsights App is running!');
-			this.logger = new Logger('log', 200);	// [logName] [, logLength]
+			if (!this.logger) this.logger = new Logger({ name: 'log', length: 200, homey: this.homey });
 
 			// generic properties
 			this.homeyAPI = undefined;
@@ -101,7 +100,7 @@ class App extends Homey.App {
 			process.on('uncaughtException', (error) => {
 				this.error('uncaughtException! ', error);
 			});
-			Homey
+			this.homey
 				.on('unload', () => {
 					this.log('app unload called');
 					// save logs to persistant storage
@@ -114,41 +113,40 @@ class App extends Homey.App {
 				.on('cpuwarn', () => {
 					this.log('cpuwarn!');
 				});
-			Homey.ManagerSettings.on('set', (key) => {
+			this.homey.settings.on('set', (key) => {
 				this.log(`${key} changed from frontend`);
 				// this.FTPsettingsHaveChanged = true;
 			});
 
 			// ==============FLOW CARD STUFF======================================
-			const archiveAllAction = new Homey.FlowCardAction('archive_all');
+			const archiveAllAction = this.homey.flow.getActionCard('archive_all');
 			archiveAllAction
-				.register()
 				.registerRunListener((args) => {
 					this.log(`Exporting all insights ${args.resolution}`);
 					this.exportAll(args.resolution);
 					return Promise.resolve(true);
 				});
 
-			const archiveAppAction = new Homey.FlowCardAction('archive_app');
+			const archiveAppAction = this.homey.flow.getActionCard('archive_app');
 			archiveAppAction
-				.register()
 				.registerRunListener((args) => {
 					this.exportApp(args.selectedApp.id, args.resolution);
 					return Promise.resolve(true);
 				})
-				.getArgument('selectedApp')
-				.registerAutocompleteListener(async (query) => {
-					const results = this.allNames.filter((result) => {		// filter for query on appId and appName
-						const appIdFound = result.id.toLowerCase().indexOf(query.toLowerCase()) > -1;
-						const appNameFound = result.name.toLowerCase().indexOf(query.toLowerCase()) > -1;
-						return appIdFound || appNameFound;
-					});
-					return Promise.resolve(results);
-				});
+				.registerArgumentAutocompleteListener(
+					'selectedApp',
+					async (query) => {
+						const results = this.allNames.filter((result) => {		// filter for query on appId and appName
+							const appIdFound = result.id.toLowerCase().indexOf(query.toLowerCase()) > -1;
+							const appNameFound = result.name.toLowerCase().indexOf(query.toLowerCase()) > -1;
+							return appIdFound || appNameFound;
+						});
+						return Promise.resolve(results);
+					},
+				);
 
-			const purgeAction = new Homey.FlowCardAction('purge');
+			const purgeAction = this.homey.flow.getActionCard('purge');
 			purgeAction
-				.register()
 				.registerRunListener((args) => {
 					this.log(`Deleting old data on ${args.storage}`);
 					if (args.storage === 'FTP') {
@@ -166,6 +164,7 @@ class App extends Homey.App {
 			// initiate test stuff from here
 			this.test();
 
+			this.log('ExportInsights App is running!');
 		} catch (error) {
 			this.error(error);
 		}
@@ -376,7 +375,7 @@ class App extends Homey.App {
 	async loginHomeyApi() {
 		if (this.homeyAPI) return Promise.resolve(this.homeyAPI);
 		// Authenticate against the current Homey.
-		this.homeyAPI = await HomeyAPI.forCurrentHomey();
+		this.homeyAPI = new HomeyAPIApp({ homey: this.homey });
 		return Promise.resolve(this.homeyAPI);
 	}
 
@@ -473,13 +472,16 @@ class App extends Homey.App {
 			if (log.type !== 'boolean') {
 				opts.resolution = resolution;
 			}
+			console.log(opts);
 			const logEntries = await this.homeyAPI.insights.getLogEntries(opts);
 			if (logEntries.values.length > 2925) {
-				this.error(`Insights data is corrupt for ${log.uriObj.name} ${logEntries.id}`); //  ${logEntries.uri}`);
+				this.error(`Insights data is corrupt and will be truncated to the first 2925 records for ${log.uriObj.name} ${logEntries.id}.`);
+				//  ${logEntries.uri}`);
 				logEntries.values = logEntries.values.slice(0, 2925);
 				global.gc();
 				await setTimeoutPromise(10 * 1000, 'waiting is done');
 			}
+			console.dir(logEntries);
 			return Promise.resolve(logEntries);
 		} catch (error) {
 			return Promise.reject(error);
@@ -489,9 +491,9 @@ class App extends Homey.App {
 	async initExport() {
 		try {
 			this.abort = false;
-			this.webdavSettings = Homey.ManagerSettings.get('webdavSettings');
-			this.smbSettings = Homey.ManagerSettings.get('smbSettings');
-			this.FTPSettings = Homey.ManagerSettings.get('FTPSettings');
+			this.webdavSettings = this.homey.settings.get('webdavSettings');
+			this.smbSettings = this.homey.settings.get('smbSettings');
+			this.FTPSettings = this.homey.settings.get('FTPSettings');
 			this.timestamp = new Date().toISOString()
 				.replace(/:/g, '')	// delete :
 				.replace(/-/g, '')	// delete -

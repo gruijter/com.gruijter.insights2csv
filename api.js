@@ -1,117 +1,52 @@
-const Homey = require('homey');
-
-module.exports = [
-	{
-		description: 'Test the SMB settings',
-		method: 'POST',
-		path: '/testSmb/',
-		requires_authorization: true,
-		role: 'owner',
-		fn: function fn(args, callback) {
-			Homey.app.testSmb(args.body)
-				.then((result) => callback(null, result))
-				.catch((error) => callback(error));
-		},
+module.exports = {
+	// retrieve logs
+	async getLogs({ homey }) {
+		const result = await homey.app.getLogs();
+		return result;
 	},
-	{
-		description: 'Test the FTP settings',
-		method: 'POST',
-		path: '/testFTP/',
-		requires_authorization: true,
-		role: 'owner',
-		fn: function fn(args, callback) {
-			Homey.app.testFTP(args.body)
-				.then((result) => callback(null, result))
-				.catch((error) => callback(error));
-		},
+	// delete logs
+	async deleteLogs({ homey }) {
+		const result = await homey.app.deleteLogs();
+		return result;
 	},
-	{
-		description: 'Test the WebDAV settings',
-		method: 'POST',
-		path: '/testWebdav/',
-		requires_authorization: true,
-		role: 'owner',
-		fn: function fn(args, callback) {
-			Homey.app.testWebdav(args.body)
-				.then((result) => callback(null, result))
-				.catch((error) => callback(error));
-		},
+	// get resolution list
+	async getResolutions({ homey }) {
+		const result = await homey.app.getResolutions();
+		return result;
 	},
-	{
-		description: 'get resolution selections',
-		method: 'GET',
-		path: '/getResolutions/',
-		requires_authorization: true,
-		role: 'owner',
-		fn: function fn(args, callback) {
-			const result = Homey.app.getResolutions();
-			callback(null, result);
-		},
+	// get app list
+	async getAppList({ homey }) {
+		const result = await homey.app.getAppList();
+		return result;
 	},
-	{
-		description: 'get app list',
-		method: 'GET',
-		path: '/getAppList/',
-		requires_authorization: true,
-		role: 'owner',
-		fn: function fn(args, callback) {
-			const result = Homey.app.getAppList();
-			callback(null, result);
-		},
+	// stop export
+	async stopExport({ homey }) {
+		const result = await homey.app.stopExport();
+		return result;
 	},
-	{
-		description: 'Make a full backup',
-		method: 'POST',
-		path: '/archiveAll/',
-		requires_authorization: true,
-		role: 'owner',
-		fn: function fn(args, callback) {
-			const result = Homey.app.exportAll(args.body.resolution);
-			callback(null, result);
-		},
+	// make full backup from frontend
+	async exportAll({ homey, body }) {
+		// access the post body and perform some action on it.
+		return homey.app.exportAll(body.resolution);
 	},
-	{
-		description: 'Make app backup',
-		method: 'POST',
-		path: '/archiveApp/',
-		requires_authorization: true,
-		role: 'owner',
-		fn: function fn(args, callback) {
-			const result = Homey.app.exportApp(args.body.appId, args.body.resolution);
-			callback(null, result);
-		},
+	// make app backup from frontend
+	async exportApp({ homey, body }) {
+		// access the post body and perform some action on it.
+		return homey.app.exportApp(body.appId, body.resolution);
 	},
-	{
-		description: 'Stop Export',
-		method: 'GET',
-		path: '/stopExport/',
-		requires_authorization: true,
-		role: 'owner',
-		fn: function fn(args, callback) {
-			const result = Homey.app.stopExport();
-			callback(null, result);
-		},
+	// test SMB settings from frontend
+	async testSmb({ homey, body }) {
+		// access the post body and perform some action on it.
+		return homey.app.testSmb(body);
 	},
-	{
-		description: 'Show loglines',
-		method: 'GET',
-		path: '/getlogs/',
-		requires_authorization: true,
-		role: 'owner',
-		fn: function fn(args, callback) {
-			const result = Homey.app.getLogs();
-			callback(null, result);
-		},
+	// test FTP settings from frontend
+	async testFTP({ homey, body }) {
+		// access the post body and perform some action on it.
+		return homey.app.testFTP(body);
 	},
-	{
-		description: 'Delete logs',
-		method: 'GET',
-		path: '/deletelogs/',
-		requires_authorization: true,
-		role: 'owner',
-		fn: function fn(args, callback) {
-			const result = Homey.app.deleteLogs();
-			callback(null, result);
-		},
+	// test WebDAV settings from frontend
+	async testWebdav({ homey, body }) {
+		// access the post body and perform some action on it.
+		return homey.app.testWebdav(body);
 	},
-];
+};

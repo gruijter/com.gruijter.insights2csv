@@ -1,6 +1,6 @@
 /* eslint-disable import/no-extraneous-dependencies */
 /*
-Copyright 2017 - 2021 Robin de Gruijter
+Copyright 2017 - 2022 Robin de Gruijter
 
 This file is part of com.gruijter.insights2csv.
 
@@ -20,7 +20,6 @@ with com.gruijter.insights2csv. If not, see <http://www.gnu.org/licenses/>.
 
 'use strict';
 
-const Homey = require('homey');
 const StdOutFixture = require('fixture-stdout');
 const fs = require('fs');
 
@@ -28,9 +27,10 @@ class captureLogs {
 	// Log object to keep logs in memory and in persistent storage
 	// captures and reroutes Homey's this.log (stdout) and this.err (stderr)
 
-	constructor(logName, logLength) {
-		this.logName = logName || 'log';
-		this.logLength = logLength || 50;
+	constructor(opts) {
+		this.homey = opts.homey;
+		this.logName = opts.name || 'log';
+		this.logLength = opts.length || 50;
 		this.logFile = `/userdata/${this.logName}.json`;
 		this.logArray = [];
 		this.getLogs();
@@ -42,11 +42,11 @@ class captureLogs {
 		try {
 			const log = fs.readFileSync(this.logFile, 'utf8');
 			this.logArray = JSON.parse(log);
-			Homey.app.log('logfile retrieved');
+			this.homey.log('logfile retrieved');
 			return this.logArray;
 		} catch (error) {
 			if (error.message.includes('ENOENT')) return [];
-			Homey.app.error('error parsing logfile: ', error.message);
+			this.homey.error('error parsing logfile: ', error.message);
 			return [];
 		}
 	}
@@ -54,10 +54,10 @@ class captureLogs {
 	saveLogs() {
 		try {
 			fs.writeFileSync(this.logFile, JSON.stringify(this.logArray));
-			Homey.app.log('logfile saved');
+			this.homey.log('logfile saved');
 			return true;
 		} catch (error) {
-			Homey.app.error('error writing logfile: ', error.message);
+			this.homey.error('error writing logfile: ', error.message);
 			return false;
 		}
 	}
@@ -66,11 +66,11 @@ class captureLogs {
 		try {
 			fs.unlinkSync(this.logFile);
 			this.logArray = [];
-			Homey.app.log('logfile deleted');
+			this.homey.log('logfile deleted');
 			return true;
 		} catch (error) {
 			if (error.message.includes('ENOENT')) return false;
-			Homey.app.error('error deleting logfile: ', error.message);
+			this.homey.error('error deleting logfile: ', error.message);
 			return false;
 		}
 	}
@@ -85,7 +85,7 @@ class captureLogs {
 			this.logArray.push(string);
 			// return false;	// prevent the write to the original stream
 		});
-		Homey.app.log('capturing stdout');
+		this.homey.log('capturing stdout');
 		// captureStdout.release();
 	}
 
@@ -99,7 +99,7 @@ class captureLogs {
 			this.logArray.push(string);
 			// return false;	// prevent the write to the original stream
 		});
-		Homey.app.log('capturing stderr');
+		this.homey.log('capturing stderr');
 		// captureStderr.release();
 	}
 
