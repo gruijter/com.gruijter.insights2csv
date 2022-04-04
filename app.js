@@ -472,7 +472,6 @@ class App extends Homey.App {
 			if (log.type !== 'boolean') {
 				opts.resolution = resolution;
 			}
-			console.log(opts);
 			const logEntries = await this.homeyAPI.insights.getLogEntries(opts);
 			if (logEntries.values.length > 2925) {
 				this.error(`Insights data is corrupt and will be truncated to the first 2925 records for ${log.uriObj.name} ${logEntries.id}.`);
@@ -481,7 +480,6 @@ class App extends Homey.App {
 				global.gc();
 				await setTimeoutPromise(10 * 1000, 'waiting is done');
 			}
-			console.dir(logEntries);
 			return Promise.resolve(logEntries);
 		} catch (error) {
 			return Promise.reject(error);

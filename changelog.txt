@@ -1,6 +1,6 @@
 Version changelog
 
-v3.0.1  04.04.2022 Migrated to SDK3. replaced athom-api with homey-api@1.5.23. Fixed resolution selection.
+v3.0.2  04.04.2022 Migrated to SDK3. replaced athom-api with homey-api@1.5.23. Fixed resolution selection.
 v3.0.0  31.03.2022 Migrated to SDK3. replaced athom-api with homey-api@1.5.22
 v2.9.2  15.01.2022 Packages update. athom-api@3.7.1 webdav@4.8.0. Extended error logging.
 v2.9.1  17.10.2021 Packages update. athom-api@3.6.7 webdav@4.7.0
