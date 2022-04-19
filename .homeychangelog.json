@@ -37,5 +37,8 @@
   },
   "3.0.2": {
     "en": "Migrated to SDK3. replaced athom-api with homey-api@1.5.23. Fixed resolution selection."
+  },
+  "3.0.3": {
+    "en": "Packages update. homey-api@1.5.26 archiver@5.3.1"
   }
 }
