@@ -8,8 +8,8 @@
     "archiver": "^5.3.1",
     "basic-ftp": "^4.6.6",
     "fixture-stdout": "^0.2.1",
-    "homey-api": "^1.5.26",
-    "webdav": "^4.8.0"
+    "homey-api": "^1.5.30",
+    "webdav": "^4.10.0"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

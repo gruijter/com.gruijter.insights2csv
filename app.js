@@ -375,24 +375,24 @@ class App extends Homey.App {
 	async loginHomeyApi() {
 		if (this.homeyAPI) return Promise.resolve(this.homeyAPI);
 		// Authenticate against the current Homey.
-		this.homeyAPI = new HomeyAPIApp({ homey: this.homey });
+		this.homeyAPI = new HomeyAPIApp({ homey: this.homey, $timeout: 60000 });
 		return Promise.resolve(this.homeyAPI);
 	}
 
 	async getAllLogs() {
-		this.logs = await this.homeyAPI.insights.getLogs();
+		this.logs = await this.homeyAPI.insights.getLogs({ $timeout: 60000 });
 		return Promise.resolve(this.logs);
 	}
 
 	async getAllDevices() {
-		this.devices = await this.homeyAPI.devices.getDevices();
+		this.devices = await this.homeyAPI.devices.getDevices({ $timeout: 60000 });
 		return Promise.resolve(this.devices);
 	}
 
 	// Get a list of all app names
 	async getAppNameList() {
 		try {
-			const allApps = await this.homeyAPI.apps.getApps();
+			const allApps = await this.homeyAPI.apps.getApps({ $timeout: 60000 });
 			const mappedArray = Object.entries(allApps).map((app) => {
 				const map =	{
 					id: app[1].id,
@@ -411,7 +411,7 @@ class App extends Homey.App {
 	// Get a list of all logged manager names
 	async getManagerNameList() {
 		try {
-			const logs = await this.homeyAPI.insights.getLogs();
+			const logs = await this.homeyAPI.insights.getLogs({ $timeout: 60000 });
 			const list = logs.filter((log) => log.uriObj.type === 'manager')
 				.map((log) => {
 					const app = {
@@ -468,6 +468,7 @@ class App extends Homey.App {
 			const opts = {
 				uri: log.uri,
 				id: log.id,
+				$timeout: 60000,
 			};
 			if (log.type !== 'boolean') {
 				opts.resolution = resolution;
@@ -482,6 +483,8 @@ class App extends Homey.App {
 			}
 			return Promise.resolve(logEntries);
 		} catch (error) {
+			global.gc();
+			await setTimeoutPromise(10 * 1000, 'waiting is done');
 			return Promise.reject(error);
 		}
 	}
@@ -827,10 +830,11 @@ class App extends Homey.App {
 					const fileNameCsv = `${log.uriObj.name}/${log.id}.csv`;
 					const fileNameMeta = `${log.uriObj.name}/${log.id}_meta.json`;
 					const fileNameJson = `${log.uriObj.name}/${log.id}.json`;
-					// this.log('zipping now ....');
+					// console.log(`zipping ${fileNameCsv} now ....`);
 					archive.append(data.csv, { name: fileNameCsv });
 					archive.append(JSON.stringify(allMeta), { name: fileNameMeta });
 					archive.append(JSON.stringify(entries), { name: fileNameJson });
+					await setTimeoutPromise(0.5 * 1000, 'waiting is done'); // relax Homey a bit...
 				}
 			}
 			// this.log(`${logs.length} files zipped`);
