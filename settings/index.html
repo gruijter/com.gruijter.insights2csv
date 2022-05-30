@@ -197,6 +197,17 @@
 						<legend data-i18n="settings.tab4.instructionsTitle">Instructions</legend>
 						<p data-i18n="settings.tab4.instructions" class="instructions">Instructions</p>
 					</fieldset>
+					<div class="settings-itemgroup">
+						<div class="settings-item-text">
+								<span data-i18n="settings.tab4.lowCPU"> Low CPU load</span>
+						</div>
+						<div class="settings-item-last">
+								<label class="form-switch">
+										<input type="checkbox" id="lowCPU" checked="false" onclick="saveCPU()">
+										<i></i>
+								</label>
+						</div>
+					</div>
 					<div class="field row">
 						<label for="appList" data-i18n="settings.tab4.app"> App </label>
 						<select id="appList" onchange="appSelected()" > </select>

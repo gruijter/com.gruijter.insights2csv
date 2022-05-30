@@ -50,10 +50,11 @@
 		"tab4": {
 			"title": "Export",
 			"instructionsTitle": "Instructions",
-			"instructions": "Stel eerst NAS en/of FTP en/of WebDAV in. Kies vervolgens de app die je wilt exporteren, en de resolutie.",
+			"instructions": "Stel eerst NAS en/of FTP en/of WebDAV in. TDe Lage CPU belasting kan worden geselecteerd om de belasting van Homey te reduceren tijdens een export. De export duurt dan wel langer en de bestanden zijn minder gecomprimeerd. Om nu handmatig een export te starten kies de app die je wilt exporteren en kies de resolutie.",
 			"allApps": "Alle apps",
 			"app": "App",
 			"resolution": "Resolutie",
+			"lowCPU": "Lage CPU belasting",
 			"export": "Exporteer nu",
 			"confirmExport": "Zeker weten? Exporteren van Insights kan langer dan 10 minuten duren!",
 			"stopExport": "Export afbreken",

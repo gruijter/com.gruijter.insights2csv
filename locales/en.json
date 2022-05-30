@@ -50,10 +50,11 @@
 		"tab4": {
 			"title": "Export",
 			"instructionsTitle": "Instructions",
-			"instructions": "First setup NAS and/or FTP and/or WebDAV. Then select which app to export, and the resolution.",
+			"instructions": "First setup NAS and/or FTP and/or WebDAV. The Low CPU load option can be selected to reduce the load on Homey. The export will however take longer, and the files will be less compressed. To manually start an export now, select which app to export and select the resolution.",
 			"allApps": "All apps",
 			"app": "App",
 			"resolution": "Resolution",
+			"lowCPU": "Low CPU load",
 			"export": "Export now",
 			"confirmExport": "Are you sure? Exporting Insights can take more then 10 minutes!",
 			"stopExport": "Cancel export",

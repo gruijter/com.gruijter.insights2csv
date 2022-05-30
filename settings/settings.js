@@ -187,6 +187,17 @@ function stopExport() {
 	});
 }
 
+function saveCPU() {
+	const saveData = {
+		lowCPU: $('#lowCPU').prop('checked'),
+	};
+	Homey.set('CPUSettings', saveData, (error) => {
+		if (error) {
+			Homey.alert(error, 'error');
+		}
+	});
+}
+
 function exportNow() {
 	Homey.confirm(Homey.__('settings.tab4.confirmExport'), 'warning', (e, r) => {
 		if (!r) { return; }
@@ -307,6 +318,16 @@ function loadSettings() {
 			$('#useSFTP').prop('checked', storedData.useSFTP);
 			$('#FTPUsername').val(storedData.FTPUsername);
 			$('#FTPPassword').val(storedData.FTPPassword);
+		}
+	});
+	Homey.get('CPUSettings', (err, storedData) => {
+		if (err) {
+			Homey.alert(err);
+			return;
+		}
+		$('#lowCPU').prop('checked', false);
+		if (storedData) {
+			$('#lowCPU').prop('checked', storedData.lowCPU);
 		}
 	});
 	fillDropdown();
