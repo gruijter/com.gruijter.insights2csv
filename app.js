@@ -376,7 +376,7 @@ class App extends Homey.App {
 	async loginHomeyApi() {
 		if (this.homeyAPI) return Promise.resolve(this.homeyAPI);
 		// Authenticate against the current Homey.
-		this.homeyAPI = new HomeyAPIApp({ homey: this.homey, $timeout: 120000 });
+		this.homeyAPI = new HomeyAPIApp({ homey: this.homey, $timeout: 90000 });
 		return Promise.resolve(this.homeyAPI);
 	}
 
@@ -469,7 +469,7 @@ class App extends Homey.App {
 			const opts = {
 				uri: log.uri,
 				id: log.id,
-				$timeout: 120000,
+				$timeout: 90000,
 			};
 			if (log.type !== 'boolean') {
 				opts.resolution = resolution;
@@ -497,7 +497,7 @@ class App extends Homey.App {
 			this.smbSettings = this.homey.settings.get('smbSettings');
 			this.FTPSettings = this.homey.settings.get('FTPSettings');
 			this.CPUSettings = this.homey.settings.get('CPUSettings');
-			if (this.CPUSettings.lowCPU) this.log('Low CPU load selected for export');
+			if (this.CPUSettings && this.CPUSettings.lowCPU) this.log('Low CPU load selected for export');
 			this.timestamp = new Date().toISOString()
 				.replace(/:/g, '')	// delete :
 				.replace(/-/g, '')	// delete -
@@ -724,8 +724,9 @@ class App extends Homey.App {
 				this.FTPClient.close();
 			}
 			this.FTPClient = new ftp.Client();
-			this.FTPsettingsHaveChanged = false;
 			// client.ftp.verbose = true;
+			this.FTPsettingsHaveChanged = false;
+			this.FTPClient.on('error', (err) => { this.error(err); });
 			await this.FTPClient.access({
 				host: this.FTPSettings.FTPHost,
 				port: this.FTPSettings.FTPPort,
@@ -818,7 +819,7 @@ class App extends Homey.App {
 				.replace(/\..+/, '');	// delete the dot and everything after
 			const fileName = `${appId}_${timeStamp}Z_${resolution}.zip`;
 			const output = fs.createWriteStream(`./userdata/${fileName}`);
-			const level = this.CPUSettings.lowCPU ? 3 : 9;
+			const level = this.CPUSettings && this.CPUSettings.lowCPU ? 3 : 9;
 			const archive = archiver('zip', {
 				zlib: { level },	// Sets the compression level.
 			});
@@ -838,7 +839,7 @@ class App extends Homey.App {
 					archive.append(data.csv, { name: fileNameCsv });
 					archive.append(JSON.stringify(allMeta), { name: fileNameMeta });
 					archive.append(JSON.stringify(entries), { name: fileNameJson });
-					if (this.CPUSettings.lowCPU) await setTimeoutPromise(2 * 1000, 'waiting is done'); // relax Homey a bit...
+					if (this.CPUSettings && this.CPUSettings.lowCPU) await setTimeoutPromise(2 * 1000, 'waiting is done'); // relax Homey a bit...
 				}
 			}
 			// this.log(`${logs.length} files zipped`);

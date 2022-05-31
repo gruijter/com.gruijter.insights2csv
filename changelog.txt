@@ -1,5 +1,6 @@
 Version changelog
 
+v3.1.2  31.05.2022 Decrease homey-api timeout to 90s. Fixed lowCPU crash. Catch FTP connection errors.
 v3.1.1  30.05.2022 Increase homey-api timeout to 120s. Added low CPU load option during export.
 v3.1.0  29.05.2022 Increase homey-api timeout to 60s. Reduced CPU load. Packages update: homey-api@1.5.30 archiver@5.3.1 webdav@4.10.0.
 v3.0.2  04.04.2022 Migrated to SDK3. replaced athom-api with homey-api@1.5.23. Fixed resolution selection.
