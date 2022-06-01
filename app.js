@@ -726,7 +726,6 @@ class App extends Homey.App {
 			this.FTPClient = new ftp.Client();
 			// client.ftp.verbose = true;
 			this.FTPsettingsHaveChanged = false;
-			this.FTPClient.on('error', (err) => { this.error(err); });
 			await this.FTPClient.access({
 				host: this.FTPSettings.FTPHost,
 				port: this.FTPSettings.FTPPort,
