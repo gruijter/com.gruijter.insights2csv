@@ -4,7 +4,7 @@
     "en": "Archive Insights",
     "nl": "Exporteer Insights"
   },
-  "version": "3.1.3",
+  "version": "3.2.0",
   "brandColor": "#2020df",
   "sdk": 3,
   "compatibility": ">= 5",
@@ -19,6 +19,10 @@
       {
         "name": "Robin de Gruijter",
         "email": "gruijter@hotmail.com"
+      },
+      {
+        "name": "Arie J. Godschalk",
+        "email": "arie@qluster-it.nl"
       }
     ]
   },

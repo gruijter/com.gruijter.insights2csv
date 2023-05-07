@@ -23,6 +23,7 @@ with com.gruijter.insights2csv. If not, see <http://www.gnu.org/licenses/>.
 
 const Homey = require('homey');
 const { HomeyAPIApp } = require('homey-api');
+//const { HomeyAPI } = require('homey-api');
 const fs = require('fs');
 const util = require('util');
 const archiver = require('archiver');
@@ -42,7 +43,7 @@ const JSDateToExcelDate = (inDate) => {
 	return dateTime;
 };
 
-const log2csv = (logEntries) => {
+const log2csv = (logEntries, log) => {
 	try {
 		const meta = {
 			entries: logEntries.values.length,
@@ -53,7 +54,11 @@ const log2csv = (logEntries) => {
 		});
 
 		const delimiter = ';';
-		const header = `Zulu dateTime${delimiter}${logEntries.id}\r\n`;
+		let id = logEntries.id;
+		if(id.indexOf(':')>-1)  { id=id.split(':'); id=id[id.length-1];}
+		if(log.ownerUri === 'homey:manager:logic') id = log.title;
+
+		const header = `Zulu dateTime${delimiter}${id}\r\n`;
 		let csv = header;
 		logEntries.values.forEach((entry) => {
 			const time = JSDateToExcelDate(new Date(entry.t));
@@ -71,6 +76,14 @@ class App extends Homey.App {
 	async onInit() {
 		try {
 			if (!this.logger) this.logger = new Logger({ name: 'log', length: 200, homey: this.homey });
+			if (process.env.DEBUG === '1' || false) {
+				try {
+					require('inspector').waitForDebugger();
+				}
+				catch (error) {
+					require('inspector').open(9325, '0.0.0.0', true);
+				}
+			}
 
 			// generic properties
 			this.homeyAPI = undefined;
@@ -377,6 +390,10 @@ class App extends Homey.App {
 		if (this.homeyAPI) return Promise.resolve(this.homeyAPI);
 		// Authenticate against the current Homey.
 		this.homeyAPI = new HomeyAPIApp({ homey: this.homey, $timeout: 90000 });
+		// this.homeyAPI = await HomeyAPI.createAppAPI({
+		// 	homey: this.homey, 
+		// 	$timeout: 90000
+		// });
 		return Promise.resolve(this.homeyAPI);
 	}
 
@@ -409,21 +426,38 @@ class App extends Homey.App {
 		}
 	}
 
+	// getUriObj(log) {
+	// 	if (log.uriObj) return log.uriObj;
+	// 	else 
+	// 	{
+	// 		this.log(log);
+	// 		return {id:log.ownerId};
+	// 	}
+	// }
+
 	// Get a list of all logged manager names
 	async getManagerNameList() {
 		try {
 			const logs = await this.homeyAPI.insights.getLogs({ $timeout: 60000 });
-			const list = logs.filter((log) => log.uriObj.type === 'manager')
+			const list = logs.filter((log) =>  log.uriObj ? log.uriObj.type == 'manager' : log.ownerUri.startsWith('homey:manager:') )
 				.map((log) => {
-					const app = {
-						id: log.uriObj.id,
-						name: log.uriObj.name,
+					//let uriObj = this.getUriObj(log);
+					let ids = log.ownerUri.split(':');
+					let id = ids[ids.length-1];
+					//const dev = this.devices[id[id.length-1]];					
+					//const app = dev ? null : this.allNames.find(x=>x.id===id);
+
+					const name = log.uriObj ? log.uriObj.name : log.ownerName;//: app ? app.name : null;
+					if(!name) return;
+					const _app = {
+						id: log.uriObj ? log.uriObj.id : (id) , //+ log.ownerId
+						name: name,
 						icon: '',
-						type: log.uriObj.type,
+						type: log.uriObj ? log.uriObj.type : ids[1] //app ? app.type : null,
 					};
-					return app;
+					return _app;
 				});
-			const uniqueList = list.filter((elem, index) => index === list.findIndex((obj) => JSON.stringify(obj) === JSON.stringify(elem)));
+			const uniqueList = list.filter((elem, index) => elem && index === list.findIndex((obj) => JSON.stringify(obj) === JSON.stringify(elem)));
 			return Promise.all(uniqueList);
 		} catch (error) {
 			return Promise.reject(error);
@@ -448,13 +482,13 @@ class App extends Homey.App {
 			const appUri = `homey:app:${appId}`;
 			const managerUri = `homey:manager:${appId}`;
 			// look for app logs
-			const appLogs = this.logs.filter((log) => (log.uri === appUri || log.uri === managerUri));
+			const appLogs = this.logs.filter((log) => ((log.uri || log.ownerUri) === appUri || ((log.uri || log.ownerUri) === managerUri) && log.ownerName));
 			appRelatedLogs = appRelatedLogs.concat(appLogs);
 			// find app related devices and add their logs
 			Object.keys(this.devices).forEach((key) => {
 				if (this.devices[key].driverUri === appUri) {
 					const deviceUri = `homey:device:${this.devices[key].id}`;
-					const deviceLogs = this.logs.filter((log) => (log.uri === deviceUri));
+					const deviceLogs = this.logs.filter((log) => ((log.uri || log.ownerUri) === deviceUri));
 					appRelatedLogs = appRelatedLogs.concat(deviceLogs);
 				}
 			});
@@ -467,7 +501,7 @@ class App extends Homey.App {
 	async getLogEntries(log, resolution) {
 		try {
 			const opts = {
-				uri: log.uri,
+				uri: (log.uri || log.ownerUri),
 				id: log.id,
 				$timeout: 90000,
 			};
@@ -476,7 +510,7 @@ class App extends Homey.App {
 			}
 			const logEntries = await this.homeyAPI.insights.getLogEntries(opts);
 			if (logEntries.values.length > 2925) {
-				this.error(`Insights data is corrupt and will be truncated to the first 2925 records for ${log.uriObj.name} ${logEntries.id}.`);
+				this.error(`Insights data is corrupt and will be truncated to the first 2925 records for ${(log.uriObj ? log.uriObj.name : log.ownerName)} ${logEntries.id}.`);
 				//  ${logEntries.uri}`);
 				logEntries.values = logEntries.values.slice(0, 2925);
 				global.gc();
@@ -829,16 +863,23 @@ class App extends Homey.App {
 				if (!this.abort) {
 					const log = logs[idx];
 					const entries = await this.getLogEntries(log, resolution);
-					const data = await log2csv(entries);
+					const data = await log2csv(entries, log);
 					const allMeta = Object.assign(data.meta, log);
-					const fileNameCsv = `${log.uriObj.name}/${log.id}.csv`;
-					const fileNameMeta = `${log.uriObj.name}/${log.id}_meta.json`;
-					const fileNameJson = `${log.uriObj.name}/${log.id}.json`;
+					let ids = log.ownerUri.split(':');
+					//if(ids.length)
+					let id = ids[ids.length-1];
+					const dev = this.devices[id];
+					const app = dev ? null : this.allNames.find(x=>x.id===id);
+					const name = log.uriObj ? log.uriObj.name : dev ? dev.name : app ? app.name : null;
+					const fileNameCsv = `${name}/${(log.ownerId || log.id)}.csv`;
+					const fileNameMeta = `${name}/${(log.ownerId || log.id)}_meta.json`;
+					const fileNameJson = `${name}/${(log.ownerId || log.id)}.json`;
 					// console.log(`zipping ${fileNameCsv} now ....`);
 					archive.append(data.csv, { name: fileNameCsv });
 					archive.append(JSON.stringify(allMeta), { name: fileNameMeta });
 					archive.append(JSON.stringify(entries), { name: fileNameJson });
 					if (this.CPUSettings && this.CPUSettings.lowCPU) await setTimeoutPromise(2 * 1000, 'waiting is done'); // relax Homey a bit...
+					else await setTimeoutPromise(1, 'mini-waiting is done'); // relax Homey a bit...
 				}
 			}
 			// this.log(`${logs.length} files zipped`);
