@@ -538,7 +538,7 @@ class App extends Homey.App {
 			this.CPUSettings = this.homey.settings.get('CPUSettings');
 			this.WaitBetweenEntities = this.homey.settings.get('WaitBetweenEntities');
 			if (!this.WaitBetweenEntities) {
-				this.WaitBetweenEntities = { waitBetweenEntities: 10 };
+				this.WaitBetweenEntities = { waitBetweenEntities: 0 };
 				this.homey.settings.set('WaitBetweenEntities', this.WaitBetweenEntities);
 			}
 			if (this.CPUSettings && this.CPUSettings.lowCPU) this.log('Low CPU load selected for export');
