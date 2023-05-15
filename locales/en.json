@@ -60,7 +60,8 @@
 			"stopExport": "Cancel export",
 			"confirmStopExport": "Cancel running export?",
 			"exportStopped": "Running export is canceled",
-			"backupInitiated": "Insights export has started."
+			"backupInitiated": "Insights export has started.",
+			"waitBetweenEntities":"Wait between exporting entities (Seconds)"
 		},
 		"tab5": {
 			"title": "Logs",

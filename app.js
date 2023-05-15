@@ -22,8 +22,8 @@ with com.gruijter.insights2csv. If not, see <http://www.gnu.org/licenses/>.
 'use strict';
 
 const Homey = require('homey');
-const { HomeyAPIApp } = require('homey-api');
-//const { HomeyAPI } = require('homey-api');
+//const { HomeyAPIApp } = require('homey-api');
+const { HomeyAPI } = require('homey-api');
 const fs = require('fs');
 const util = require('util');
 const archiver = require('archiver');
@@ -33,6 +33,7 @@ const ftp = require('basic-ftp');
 const Logger = require('./captureLogs');
 
 const setTimeoutPromise = util.promisify(setTimeout);
+
 
 // ============================================================
 // Some helper functions here
@@ -55,8 +56,8 @@ const log2csv = (logEntries, log) => {
 
 		const delimiter = ';';
 		let id = logEntries.id;
-		if(id.indexOf(':')>-1)  { id=id.split(':'); id=id[id.length-1];}
-		if(log.ownerUri === 'homey:manager:logic') id = log.title;
+		if (id.indexOf(':') > -1) { id = id.split(':'); id = id[id.length - 1]; }
+		if (log.ownerUri === 'homey:manager:logic') id = log.title;
 
 		const header = `Zulu dateTime${delimiter}${id}\r\n`;
 		let csv = header;
@@ -135,16 +136,16 @@ class App extends Homey.App {
 			// ==============FLOW CARD STUFF======================================
 			const archiveAllAction = this.homey.flow.getActionCard('archive_all');
 			archiveAllAction
-				.registerRunListener((args) => {
+				.registerRunListener(async (args) => {
 					this.log(`Exporting all insights ${args.resolution}`);
-					this.exportAll(args.resolution);
+					this.exportAll(args.resolution, new Date());
 					return Promise.resolve(true);
 				});
 
 			const archiveAppAction = this.homey.flow.getActionCard('archive_app');
 			archiveAppAction
-				.registerRunListener((args) => {
-					this.exportApp(args.selectedApp.id, args.resolution);
+				.registerRunListener(async (args) => {
+					this.exportApp(args.selectedApp.id, args.resolution, new Date());
 					return Promise.resolve(true);
 				})
 				.registerArgumentAutocompleteListener(
@@ -173,7 +174,7 @@ class App extends Homey.App {
 				});
 
 			this.deleteAllFiles();
-			await this.initExport();
+			await this.initExport(new Date());
 
 			// initiate test stuff from here
 			this.test();
@@ -204,7 +205,7 @@ class App extends Homey.App {
 		this.tail += 1;
 		if (!this.queueRunning) {
 			this.queueRunning = true;
-			await this.initExport();
+			//await this.initExport(item.date);
 			this.runQueue();
 		}
 	}
@@ -235,11 +236,11 @@ class App extends Homey.App {
 		this.queueRunning = true;
 		const item = this.deQueue();
 		if (item) {
-			await this._exportApp(item.appId, item.resolution)
+			await this._exportApp(item.appId, item.resolution, item.date)
 				.catch(this.error);
 			// wait a bit to reduce cpu and mem load?
-			global.gc();
-			await setTimeoutPromise(10 * 1000, 'waiting is done');
+			if(global.gc) global.gc();
+			await setTimeoutPromise(this.WaitBetweenEntities ? this.WaitBetweenEntities * 1_000 : 1, 'waiting is done');
 			this.runQueue();
 		} else {
 			this.queueRunning = false;
@@ -340,15 +341,20 @@ class App extends Homey.App {
 		return this.allNames;
 	}
 
-	exportAll(resolution) {
+	async exportAll(resolution, date) {
+		date = date || new Date();
+		await this.initExport(date);
 		this.allNames.forEach((name) => {
-			this.exportApp(name.id, resolution);
+			this.exportApp(name.id, resolution, date, false);
 		});
 		return true;
 	}
 
-	exportApp(appId, resolution) {
-		this.enQueue({ appId, resolution });
+	async exportApp(appId, resolution, date, reload) {
+		//date = date || new Date();
+		date = new Date();
+		if(reload!==false) await this.initExport(date);
+		this.enQueue({ appId, resolution, date });
 		return true;
 	}
 
@@ -389,16 +395,16 @@ class App extends Homey.App {
 	async loginHomeyApi() {
 		if (this.homeyAPI) return Promise.resolve(this.homeyAPI);
 		// Authenticate against the current Homey.
-		this.homeyAPI = new HomeyAPIApp({ homey: this.homey, $timeout: 90000 });
-		// this.homeyAPI = await HomeyAPI.createAppAPI({
-		// 	homey: this.homey, 
-		// 	$timeout: 90000
-		// });
+		//this.homeyAPI = new HomeyAPIApp({ homey: this.homey, $timeout: 90000 });
+		this.homeyAPI = await HomeyAPI.createAppAPI({
+			homey: this.homey,
+			$timeout: 90000
+		});
 		return Promise.resolve(this.homeyAPI);
 	}
 
 	async getAllLogs() {
-		this.logs = await this.homeyAPI.insights.getLogs({ $timeout: 60000 });
+		this.logs = Object.values(await this.homeyAPI.insights.getLogs({ $timeout: 60000 }));
 		return Promise.resolve(this.logs);
 	}
 
@@ -412,7 +418,7 @@ class App extends Homey.App {
 		try {
 			const allApps = await this.homeyAPI.apps.getApps({ $timeout: 60000 });
 			const mappedArray = Object.entries(allApps).map((app) => {
-				const map =	{
+				const map = {
 					id: app[1].id,
 					name: app[1].name,
 					icon: `${app[1].id}${app[1].icon}`,
@@ -438,19 +444,17 @@ class App extends Homey.App {
 	// Get a list of all logged manager names
 	async getManagerNameList() {
 		try {
-			const logs = await this.homeyAPI.insights.getLogs({ $timeout: 60000 });
-			const list = logs.filter((log) =>  log.uriObj ? log.uriObj.type == 'manager' : log.ownerUri.startsWith('homey:manager:') )
+			const logs = this.logs;// Object.values(await this.homeyAPI.insights.getLogs({ $timeout: 60000 }));
+			const list = logs.filter((log) => log.uriObj ? log.uriObj.type == 'manager' : log.ownerUri.startsWith('homey:manager:'))
 				.map((log) => {
 					//let uriObj = this.getUriObj(log);
 					let ids = log.ownerUri.split(':');
-					let id = ids[ids.length-1];
-					//const dev = this.devices[id[id.length-1]];					
-					//const app = dev ? null : this.allNames.find(x=>x.id===id);
+					let id = ids[ids.length - 1];
 
-					const name = log.uriObj ? log.uriObj.name : log.ownerName;//: app ? app.name : null;
-					if(!name) return;
+					const name = (log.uriObj ? log.uriObj.name : log.ownerName) || id;//: app ? app.name : null;
+					if (!name) return;
 					const _app = {
-						id: log.uriObj ? log.uriObj.id : (id) , //+ log.ownerId
+						id: log.uriObj ? log.uriObj.id : (id), //+ log.ownerId
 						name: name,
 						icon: '',
 						type: log.uriObj ? log.uriObj.type : ids[1] //app ? app.type : null,
@@ -482,13 +486,13 @@ class App extends Homey.App {
 			const appUri = `homey:app:${appId}`;
 			const managerUri = `homey:manager:${appId}`;
 			// look for app logs
-			const appLogs = this.logs.filter((log) => ((log.uri || log.ownerUri) === appUri || ((log.uri || log.ownerUri) === managerUri) && log.ownerName));
+			const appLogs = this.logs.filter((log) => (log.ownerUri === appUri || log.ownerUri === managerUri));
 			appRelatedLogs = appRelatedLogs.concat(appLogs);
 			// find app related devices and add their logs
 			Object.keys(this.devices).forEach((key) => {
-				if (this.devices[key].driverUri === appUri) {
+				if (this.devices[key].ownerUri == appUri || (this.devices[key].driverId && this.devices[key].driverId.startsWith(appUri))) {
 					const deviceUri = `homey:device:${this.devices[key].id}`;
-					const deviceLogs = this.logs.filter((log) => ((log.uri || log.ownerUri) === deviceUri));
+					const deviceLogs = this.logs.filter((log) => (log.ownerUri === deviceUri));
 					appRelatedLogs = appRelatedLogs.concat(deviceLogs);
 				}
 			});
@@ -513,26 +517,32 @@ class App extends Homey.App {
 				this.error(`Insights data is corrupt and will be truncated to the first 2925 records for ${(log.uriObj ? log.uriObj.name : log.ownerName)} ${logEntries.id}.`);
 				//  ${logEntries.uri}`);
 				logEntries.values = logEntries.values.slice(0, 2925);
-				global.gc();
-				await setTimeoutPromise(10 * 1000, 'waiting is done');
+				if(global.gc)global.gc();
+				await setTimeoutPromise(this.WaitBetweenEntities ? this.WaitBetweenEntities * 1_000 : 1, 'waiting is done');
 			}
 			return Promise.resolve(logEntries);
 		} catch (error) {
-			global.gc();
-			await setTimeoutPromise(10 * 1000, 'waiting is done');
+			if(global.gc)global.gc();
+			await setTimeoutPromise(this.WaitBetweenEntities ? this.WaitBetweenEntities * 1_000 : 1, 'waiting is done');
+			//await setTimeoutPromise(10 * 1000, 'waiting is done');
 			return Promise.reject(error);
 		}
 	}
 
-	async initExport() {
+	async initExport(date) {
 		try {
 			this.abort = false;
 			this.webdavSettings = this.homey.settings.get('webdavSettings');
 			this.smbSettings = this.homey.settings.get('smbSettings');
 			this.FTPSettings = this.homey.settings.get('FTPSettings');
 			this.CPUSettings = this.homey.settings.get('CPUSettings');
+			this.WaitBetweenEntities = this.homey.settings.get('WaitBetweenEntities');
+			if (!this.WaitBetweenEntities) {
+				this.WaitBetweenEntities = { waitBetweenEntities: 10 };
+				this.homey.settings.set('WaitBetweenEntities', this.WaitBetweenEntities);
+			}
 			if (this.CPUSettings && this.CPUSettings.lowCPU) this.log('Low CPU load selected for export');
-			this.timestamp = new Date().toISOString()
+			this.timestamp = date.toISOString()
 				.replace(/:/g, '')	// delete :
 				.replace(/-/g, '')	// delete -
 				.replace(/\..+/, 'Z');	// delete the dot and everything after
@@ -842,11 +852,11 @@ class App extends Homey.App {
 	// ============================================================
 	// ZIP handling here
 	// zip all log entries from one app as promise; resolves zipfilename
-	async zipAppLogs(appId, resolution) {
+	async zipAppLogs(appId, resolution, date) {
 		// this.log(`Zipping all logs for ${appId}`);
 		try {
 			// create a file to stream archive data to.
-			const timeStamp = new Date().toISOString()
+			const timeStamp = date.toISOString()
 				.replace(/:/g, '')	// delete :
 				.replace(/-/g, '')	// delete -
 				.replace(/\..+/, '');	// delete the dot and everything after
@@ -867,9 +877,9 @@ class App extends Homey.App {
 					const allMeta = Object.assign(data.meta, log);
 					let ids = log.ownerUri.split(':');
 					//if(ids.length)
-					let id = ids[ids.length-1];
+					let id = ids[ids.length - 1];
 					const dev = this.devices[id];
-					const app = dev ? null : this.allNames.find(x=>x.id===id);
+					const app = dev ? null : this.allNames.find(x => x.id === id);
 					const name = log.uriObj ? log.uriObj.name : dev ? dev.name : app ? app.name : null;
 					const fileNameCsv = `${name}/${(log.ownerId || log.id)}.csv`;
 					const fileNameMeta = `${name}/${(log.ownerId || log.id)}_meta.json`;
@@ -883,7 +893,7 @@ class App extends Homey.App {
 				}
 			}
 			// this.log(`${logs.length} files zipped`);
-			archive.finalize();
+			await archive.finalize();
 
 			return new Promise((resolve, reject) => {
 				output.on('close', () => {	// when zipping and storing is done...
@@ -907,9 +917,10 @@ class App extends Homey.App {
 		}
 	}
 
-	async _exportApp(appId, resolution) {
+	async _exportApp(appId, resolution, date) {
 		try {
-			const fileName = await this.zipAppLogs(appId, resolution);
+			date = new  Date();
+			const fileName = await this.zipAppLogs(appId, resolution, date);
 			if (this.smbSettings && this.smbSettings.useSmb) {
 				await this.saveSmb(fileName);
 			}
@@ -933,24 +944,24 @@ module.exports = App;
 
 /*
 _downloadEntries = log => {
-    const {
-      entries,
-    } = this.state;
+	const {
+	  entries,
+	} = this.state;
 
-    const delimiter = '\t';
-    const { title: resolutionTitle } = this._getResolution();
+	const delimiter = '\t';
+	const { title: resolutionTitle } = this._getResolution();
 
-    const filename = `${log.uriObj.name} — ${log.title} (${resolutionTitle}).csv`;
-    const csv = entries[log.key].map(entry => {
-      const date = moment(entry.date).format('YYYY-MM-DD HH:mm:ss');
+	const filename = `${log.uriObj.name} — ${log.title} (${resolutionTitle}).csv`;
+	const csv = entries[log.key].map(entry => {
+	  const date = moment(entry.date).format('YYYY-MM-DD HH:mm:ss');
 
-      return `${date}${delimiter}${entry.value}`;
-    });
+	  return `${date}${delimiter}${entry.value}`;
+	});
 
-    // add header
-    csv.unshift(`Date${delimiter}Value`);
+	// add header
+	csv.unshift(`Date${delimiter}Value`);
 
-    fileDownload(csv.join('\n'), filename);
+	fileDownload(csv.join('\n'), filename);
 	}
 
 const resolutionSelection = ['lastHour', 'last6Hours', 'last24Hours', 'last7Days', 'last14Days', 'last31Days',
