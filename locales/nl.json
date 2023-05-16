@@ -60,7 +60,9 @@
 			"stopExport": "Export afbreken",
 			"confirmStopExport": "Lopende export afbreken?",
 			"exportStopped": "Lopende export is afgebroken",
-			"backupInitiated": "Export van Insights is begonnen."
+			"backupInitiated": "Export van Insights is begonnen.",
+			"waitBetweenEntities":"Wacht tussen exporterende entiteiten (seconden)",
+			"onlyZipWithLogs":"Maak alleen bestanden aan voor entiteiten met logs"
 		},
 		"tab5": {
 			"title": "Logs",

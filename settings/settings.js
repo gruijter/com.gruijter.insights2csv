@@ -198,6 +198,31 @@ function saveCPU() {
 	});
 }
 
+function saveWaitBetweenEntities() {
+	const saveData = {
+		waitBetweenEntities: $('#waitBetweenEntities').prop('value'),
+	};
+	Homey.set('WaitBetweenEntities', saveData, (error) => {
+		if (error) {
+			Homey.alert(error, 'error');
+		}
+	});
+}
+
+function saveOnlyZipWithLogs() {
+	const saveData = {
+		onlyZipWithLogs: $('#onlyZipWithLogs').prop('checked'),
+	};
+	Homey.set('OnlyZipWithLogs', saveData, (error) => {
+		if (error) {
+			Homey.alert(error, 'error');
+		}
+	});
+}
+
+
+
+
 function exportNow() {
 	Homey.confirm(Homey.__('settings.tab4.confirmExport'), 'warning', (e, r) => {
 		if (!r) { return; }
@@ -328,6 +353,26 @@ function loadSettings() {
 		$('#lowCPU').prop('checked', false);
 		if (storedData) {
 			$('#lowCPU').prop('checked', storedData.lowCPU);
+		}
+	});
+	Homey.get('OnlyZipWithLogs', (err, storedData) => {
+		if (err) {
+			Homey.alert(err);
+			return;
+		}
+		$('#onlyZipWithLogs').prop('checked', false);
+		if (storedData) {
+			$('#onlyZipWithLogs').prop('checked', storedData.onlyZipWithLogs);
+		}
+	});
+	Homey.get('WaitBetweenEntities', (err, storedData) => {
+		if (err) {
+			Homey.alert(err);
+			return;
+		}
+		$('#waitBetweenEntities').prop('value', 10);
+		if (storedData) {
+			$('#waitBetweenEntities').prop('value', storedData.waitBetweenEntities);
 		}
 	});
 	fillDropdown();

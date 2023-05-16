@@ -414,6 +414,158 @@
             }
           }
         ]
+      },
+      {
+        "id": "archive_all_type_folder",
+        "title": {
+          "en": "Export all insights of type into subfolder",
+          "nl": "Exporteer alle insights van een type in een subfolder"
+        },
+        "titleFormatted": {
+          "en": "Export all insights of [[resolution]] of type [[type]] into [[subfolder]]",
+          "nl": "Exporteer alle insights van [[resolution]] van type [[type]] in [[subfolder]]"
+        },
+        "args": [
+          {
+            "name": "resolution",
+            "type": "dropdown",
+            "values": [
+              {
+                "id": "lastHour",
+                "label": {
+                  "en": "last hour",
+                  "nl": "laatse uur"
+                }
+              },
+              {
+                "id": "last6Hours",
+                "label": {
+                  "en": "last 6 hours",
+                  "nl": "afgelopen 6 uur"
+                }
+              },
+              {
+                "id": "last24Hours",
+                "label": {
+                  "en": "last 24 hours",
+                  "nl": "afgelopen 24 uur"
+                }
+              },
+              {
+                "id": "last7Days",
+                "label": {
+                  "en": "last 7 days",
+                  "nl": "afgelopen 7 dagen"
+                }
+              },
+              {
+                "id": "last14Days",
+                "label": {
+                  "en": "last 14 days",
+                  "nl": "afgelopen 14 dagen"
+                }
+              },
+              {
+                "id": "last31Days",
+                "label": {
+                  "en": "last 31 days",
+                  "nl": "afgelopen 31 dagen"
+                }
+              },
+              {
+                "id": "today",
+                "label": {
+                  "en": "today",
+                  "nl": "vandaag"
+                }
+              },
+              {
+                "id": "yesterday",
+                "label": {
+                  "en": "yesterday",
+                  "nl": "gisteren"
+                }
+              },
+              {
+                "id": "thisWeek",
+                "label": {
+                  "en": "this week",
+                  "nl": "deze week"
+                }
+              },
+              {
+                "id": "lastWeek",
+                "label": {
+                  "en": "last week",
+                  "nl": "vorige week"
+                }
+              },
+              {
+                "id": "thisMonth",
+                "label": {
+                  "en": "this month",
+                  "nl": "deze maand"
+                }
+              },
+              {
+                "id": "lastMonth",
+                "label": {
+                  "en": "last month",
+                  "nl": "vorige maand"
+                }
+              },
+              {
+                "id": "thisYear",
+                "label": {
+                  "en": "this year",
+                  "nl": "dit jaar"
+                }
+              },
+              {
+                "id": "lastYear",
+                "label": {
+                  "en": "last year",
+                  "nl": "afgelopen jaar"
+                }
+              },
+              {
+                "id": "last2Years",
+                "label": {
+                  "en": "last 2 years",
+                  "nl": "afgelopen 2 jaar"
+                }
+              }
+            ]
+          },
+          {
+            "name": "type",
+            "type": "dropdown",
+            "title": {
+              "en": "type"
+            },
+            "values": [
+              {
+                "id": "number",
+                "label": {
+                  "en": "Number"
+                }
+              },
+              {
+                "id": "boolean",
+                "label": {
+                  "en": "Boolean"
+                }
+              }
+            ]
+          },
+          {
+            "name": "subfolder",
+            "type": "text",
+            "title": {
+              "en": "Subfolder"
+            }
+          }
+        ]
       }
     ]
   }
