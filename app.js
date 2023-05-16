@@ -460,8 +460,8 @@ class App extends Homey.App {
 			const list = logs.filter((log) => log.uriObj ? log.uriObj.type == 'manager' : log.ownerUri.startsWith('homey:manager:'))
 				.map((log) => {
 					//let uriObj = this.getUriObj(log);
-					let ids = log.ownerUri.split(':');
-					let id = ids[ids.length - 1];
+					let ids = log.ownerUri ?  log.ownerUri.split(':') : null;
+					let id = ids ?  ids[ids.length - 1] : null;
 
 					const name = (log.uriObj ? log.uriObj.name : log.ownerName) || id;//: app ? app.name : null;
 					if (!name) return;
@@ -498,13 +498,13 @@ class App extends Homey.App {
 			const appUri = `homey:app:${appId}`;
 			const managerUri = `homey:manager:${appId}`;
 			// look for app logs
-			const appLogs = this.logs.filter((log) => (log.ownerUri === appUri || log.ownerUri === managerUri) && (!type || log.type == type));
+			const appLogs = this.logs.filter((log) => ((log.ownerUri && (log.ownerUri === appUri || log.ownerUri === managerUri)) || (log.uri === appUri || log.uri === managerUri) ) && (!type || log.type == type));
 			appRelatedLogs = appRelatedLogs.concat(appLogs);
 			// find app related devices and add their logs
 			Object.keys(this.devices).forEach((key) => {
-				if (this.devices[key].ownerUri == appUri || (this.devices[key].driverId && this.devices[key].driverId.startsWith(appUri))) {
+				if (this.devices[key].ownerUri == appUri || this.devices[key].driverUri == appUri || (this.devices[key].driverId && this.devices[key].driverId.startsWith(appUri))) {
 					const deviceUri = `homey:device:${this.devices[key].id}`;
-					const deviceLogs = this.logs.filter((log) => (log.ownerUri === deviceUri) && (!type || log.type == type));
+					const deviceLogs = this.logs.filter((log) => (log.ownerUri === deviceUri || log.uri==deviceUri) && (!type || log.type == type));
 					appRelatedLogs = appRelatedLogs.concat(deviceLogs);
 				}
 			});
@@ -977,11 +977,11 @@ class App extends Homey.App {
 				if (!this.abort) {
 					const log = logs[idx];
 					const entries = await this.getLogEntries(log, resolution, date);
-					if (!entries.values.length) continue;
+					if (this.OnlyZipWithLogs.onlyZipWithLogs && !entries.values.length) continue;
 					//written = true;
 					const data = await log2csv(entries, log);
 					const allMeta = Object.assign(data.meta, log);
-					let ids = log.ownerUri.split(':');
+					let ids = (log.ownerUri || log.uri).split(':');
 					//if(ids.length)
 					let id = ids[ids.length - 1];
 					const dev = this.devices[id];
@@ -1000,7 +1000,7 @@ class App extends Homey.App {
 			}
 			// this.log(`${logs.length} files zipped`);
 			//archive.
-			if (!archive.pointer()) {
+			if (this.OnlyZipWithLogs.onlyZipWithLogs && !archive.pointer()) {
 				archive.abort();
 				output.close();
 				fs.unlink(`/userdata/${fileName}`, (error) => {
