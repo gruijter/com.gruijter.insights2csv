@@ -22,8 +22,8 @@ with com.gruijter.insights2csv. If not, see <http://www.gnu.org/licenses/>.
 'use strict';
 
 const Homey = require('homey');
-//const { HomeyAPIApp } = require('homey-api');
-const { HomeyAPI } = require('homey-api');
+const { HomeyAPIApp } = require('homey-api');
+//const { HomeyAPI } = require('homey-api');
 const fs = require('fs');
 const util = require('util');
 const archiver = require('archiver');
@@ -407,11 +407,11 @@ class App extends Homey.App {
 	async loginHomeyApi() {
 		if (this.homeyAPI) return Promise.resolve(this.homeyAPI);
 		// Authenticate against the current Homey.
-		//this.homeyAPI = new HomeyAPIApp({ homey: this.homey, $timeout: 90000 });
-		this.homeyAPI = await HomeyAPI.createAppAPI({
-			homey: this.homey,
-			$timeout: 90000
-		});
+		this.homeyAPI = new HomeyAPIApp({ homey: this.homey, $timeout: 90000 });
+		// this.homeyAPI = await HomeyAPI.createAppAPI({
+		// 	homey: this.homey,
+		// 	$timeout: 90000
+		// });
 		return Promise.resolve(this.homeyAPI);
 	}
 
