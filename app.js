@@ -98,6 +98,8 @@ class App extends Homey.App {
 			this.smbSettings = {};
 			this.FTPSettings = {};
 			this.CPUSettings = {};
+			this.WaitBetweenEntities = {};
+			this.OnlyZipWithLogs = {};
 			this.resolutionSelection = ['lastHour', 'last6Hours', 'last24Hours', 'last7Days', 'last14Days', 'last31Days',
 				'last2Years', 'today', 'thisWeek', 'thisMonth', 'thisYear', 'yesterday', 'lastWeek', 'lastMonth', 'lastYear'];
 
@@ -138,14 +140,14 @@ class App extends Homey.App {
 			archiveAllAction
 				.registerRunListener(async (args) => {
 					this.log(`Exporting all insights ${args.resolution}`);
-					this.exportAll(args.resolution, new Date());
+					this.exportAll(args.resolution);
 					return Promise.resolve(true);
 				});
 
 			const archiveAppAction = this.homey.flow.getActionCard('archive_app');
 			archiveAppAction
 				.registerRunListener(async (args) => {
-					this.exportApp(args.selectedApp.id, args.resolution, new Date());
+					this.exportApp(args.selectedApp.id, args.resolution);
 					return Promise.resolve(true);
 				})
 				.registerArgumentAutocompleteListener(
@@ -172,6 +174,16 @@ class App extends Homey.App {
 					}
 					return Promise.resolve(true);
 				});
+
+			const archiveAllTypeFolderAction = this.homey.flow.getActionCard('archive_all_type_folder');
+			archiveAllTypeFolderAction
+				.registerRunListener(async (args) => {
+					this.log(`Exporting all insights ${args.resolution} of type ${args.type} into subfolder ${args.subfolder} `);
+					this.exportAll(args.resolution, args.type, args.subfolder);
+					return Promise.resolve(true);
+				});
+
+
 
 			this.deleteAllFiles();
 			await this.initExport(new Date());
@@ -236,11 +248,11 @@ class App extends Homey.App {
 		this.queueRunning = true;
 		const item = this.deQueue();
 		if (item) {
-			await this._exportApp(item.appId, item.resolution, item.date)
+			await this._exportApp(item.appId, item.resolution, item.date, item.type, item.subfolder)
 				.catch(this.error);
 			// wait a bit to reduce cpu and mem load?
-			if(global.gc) global.gc();
-			await setTimeoutPromise(this.WaitBetweenEntities ? this.WaitBetweenEntities * 1_000 : 1, 'waiting is done');
+			if (global.gc) global.gc();
+			await setTimeoutPromise(this.WaitBetweenEntities.waitBetweenEntities ? this.WaitBetweenEntities.waitBetweenEntities * 1_000 : 1, 'waiting is done');
 			this.runQueue();
 		} else {
 			this.queueRunning = false;
@@ -341,20 +353,20 @@ class App extends Homey.App {
 		return this.allNames;
 	}
 
-	async exportAll(resolution, date) {
-		date = date || new Date();
+	async exportAll(resolution, type, subfolder) {
+		let date = new Date();
 		await this.initExport(date);
 		this.allNames.forEach((name) => {
-			this.exportApp(name.id, resolution, date, false);
+			this.exportApp(name.id, resolution, date, false, type, subfolder);
 		});
 		return true;
 	}
 
-	async exportApp(appId, resolution, date, reload) {
+	async exportApp(appId, resolution, date, reload, type, subfolder) {
 		//date = date || new Date();
 		date = new Date();
-		if(reload!==false) await this.initExport(date);
-		this.enQueue({ appId, resolution, date });
+		if (reload !== false) await this.initExport(date);
+		this.enQueue({ appId, resolution, date, type, subfolder });
 		return true;
 	}
 
@@ -368,13 +380,13 @@ class App extends Homey.App {
 	// ============================================================
 	// Local file handling in app userdata folder
 	deleteAllFiles() {
-		fs.readdir('./userdata/', (err, res) => {
+		fs.readdir('/userdata/', (err, res) => {
 			if (err) {
 				return this.log(err);
 			}
 			res.forEach((elem) => {
 				if (elem !== 'log.json') {
-					fs.unlink(`./userdata/${elem}`, (error) => {
+					fs.unlink(`/userdata/${elem}`, (error) => {
 						if (error) { this.log(error); } else { this.log(`deleted ${elem}`); }
 					});
 				}
@@ -384,7 +396,7 @@ class App extends Homey.App {
 	}
 
 	deleteFile(filename) {
-		fs.unlink(`./userdata/${filename}`, (error) => {
+		fs.unlink(`/userdata/${filename}`, (error) => {
 			if (error) { this.log(error); }
 			// else { this.log(`deleted ${filename}`); }
 		});
@@ -479,20 +491,20 @@ class App extends Homey.App {
 		}
 	}
 
-	async getAppRelatedLogs(appId) {
+	async getAppRelatedLogs(appId, type) {
 		try {
 			this.log(`getting logs related to ${appId}`);
 			let appRelatedLogs = [];
 			const appUri = `homey:app:${appId}`;
 			const managerUri = `homey:manager:${appId}`;
 			// look for app logs
-			const appLogs = this.logs.filter((log) => (log.ownerUri === appUri || log.ownerUri === managerUri));
+			const appLogs = this.logs.filter((log) => (log.ownerUri === appUri || log.ownerUri === managerUri) && (!type || log.type == type));
 			appRelatedLogs = appRelatedLogs.concat(appLogs);
 			// find app related devices and add their logs
 			Object.keys(this.devices).forEach((key) => {
 				if (this.devices[key].ownerUri == appUri || (this.devices[key].driverId && this.devices[key].driverId.startsWith(appUri))) {
 					const deviceUri = `homey:device:${this.devices[key].id}`;
-					const deviceLogs = this.logs.filter((log) => (log.ownerUri === deviceUri));
+					const deviceLogs = this.logs.filter((log) => (log.ownerUri === deviceUri) && (!type || log.type == type));
 					appRelatedLogs = appRelatedLogs.concat(deviceLogs);
 				}
 			});
@@ -502,7 +514,14 @@ class App extends Homey.App {
 		}
 	}
 
-	async getLogEntries(log, resolution) {
+	/**
+	 * 
+	 * @param {*} log 
+	 * @param {*} resolution 
+	 * @param {Date} date 
+	 * @returns 
+	 */
+	async getLogEntries(log, resolution, date) {
 		try {
 			const opts = {
 				uri: (log.uri || log.ownerUri),
@@ -513,17 +532,90 @@ class App extends Homey.App {
 				opts.resolution = resolution;
 			}
 			const logEntries = await this.homeyAPI.insights.getLogEntries(opts);
+			if (log.type === 'boolean') {
+				switch (resolution) {
+					case 'lastHour':
+						var _dateFrom = new Date(new Date(date).setHours(date.getHours() - 1))
+						logEntries.values = logEntries.values.filter(x => new Date(x.t) >= _dateFrom);
+						break;
+					case 'last6Hours':
+						var _dateFrom = new Date(new Date(date).setHours(date.getHours() - 6))
+						logEntries.values = logEntries.values.filter(x => new Date(x.t) >= _dateFrom);
+						break;
+					case 'last24Hours':
+						var _dateFrom = new Date(new Date(date).setHours(date.getHours() - 24))
+						logEntries.values = logEntries.values.filter(x => new Date(x.t) >= _dateFrom);
+						break;
+					case 'last7Days':
+						var _dateFrom = new Date(new Date(date).setDate(date.getDate() - 7))
+						logEntries.values = logEntries.values.filter(x => new Date(x.t) >= _dateFrom);
+						break;
+					case 'last14Days':
+						var _dateFrom = new Date(new Date(date).setDate(date.getDate() - 14))
+						logEntries.values = logEntries.values.filter(x => new Date(x.t) >= _dateFrom);
+						break;
+					case 'last31Days':
+						var _dateFrom = new Date(new Date(date).setDate(date.getDate() - 31))
+						logEntries.values = logEntries.values.filter(x => new Date(x.t) >= _dateFrom);
+						break;
+					case 'today':
+						var _dateFrom = new Date(new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0));//.setDate(date.getDate() - 1))
+						var _dateTo = new Date(date);
+						logEntries.values = logEntries.values.filter(x => new Date(x.t) >= _dateFrom && new Date(x.t) <= _dateTo);
+						break;
+					case 'yesterday':
+						var _dateFrom = new Date(new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0).setDate(date.getDate() - 1))
+						var _dateTo = new Date(new Date(_dateFrom).setDate(_dateFrom.getDate() + 1));
+						logEntries.values = logEntries.values.filter(x => new Date(x.t) >= _dateFrom && new Date(x.t) < _dateTo);
+						break;
+					case 'thisWeek':
+						var _dateFrom = new Date(new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0).setDate(date.getDate() - (date.getDay() - 1)))
+						var _dateTo = new Date(date);
+						logEntries.values = logEntries.values.filter(x => new Date(x.t) >= _dateFrom && new Date(x.t) <= _dateTo);
+						break;
+					case 'lastWeek':
+						var _dateFrom = new Date(new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0).setDate(date.getDate() - (date.getDay() - 1) - 7))
+						var _dateTo = new Date(new Date(_dateFrom).setDate(_dateFrom.getDate() + 7));
+						logEntries.values = logEntries.values.filter(x => new Date(x.t) >= _dateFrom && new Date(x.t) < _dateTo);
+						break;
+					case 'thisMonth':
+						var _dateFrom = new Date(new Date(date.getFullYear(), date.getMonth(), 1, 0, 0, 0, 0));
+						var _dateTo = new Date(date);
+						logEntries.values = logEntries.values.filter(x => new Date(x.t) >= _dateFrom && new Date(x.t) <= _dateTo);
+						break;
+					case 'lastMonth':
+						var _dateFrom = new Date(new Date(date.getFullYear(), date.getMonth(), 1, 0, 0, 0, 0).setMonth(date.getMonth() - 1));
+						var _dateTo = new Date(new Date(_dateFrom).setMonth(_dateFrom.getMonth() + 1));
+						logEntries.values = logEntries.values.filter(x => new Date(x.t) >= _dateFrom && new Date(x.t) < _dateTo);
+						break;
+					case 'thisYear':
+						var _dateFrom = new Date(new Date(date.getFullYear(), 0, 1, 0, 0, 0, 0));
+						var _dateTo = new Date(date);
+						logEntries.values = logEntries.values.filter(x => new Date(x.t) >= _dateFrom && new Date(x.t) <= _dateTo);
+						break;
+					case 'lastYear':
+						var _dateFrom = new Date(new Date(date.getFullYear(), 0, 1, 0, 0, 0, 0).setFullYear(date.getFullYear() - 1));
+						var _dateTo = new Date(new Date(_dateFrom).setFullYear(_dateFrom.getFullYear() + 1));
+						logEntries.values = logEntries.values.filter(x => new Date(x.t) >= _dateFrom && new Date(x.t) < _dateTo);
+						break;
+					case 'last2Years':
+						var _dateFrom = new Date(new Date(date).setFullYear(date.getFullYear() - 2));
+						var _dateTo = new Date(date);
+						logEntries.values = logEntries.values.filter(x => new Date(x.t) >= _dateFrom && new Date(x.t) <= _dateTo);
+						break;
+				}
+			}
 			if (logEntries.values.length > 2925) {
 				this.error(`Insights data is corrupt and will be truncated to the first 2925 records for ${(log.uriObj ? log.uriObj.name : log.ownerName)} ${logEntries.id}.`);
 				//  ${logEntries.uri}`);
 				logEntries.values = logEntries.values.slice(0, 2925);
-				if(global.gc)global.gc();
-				await setTimeoutPromise(this.WaitBetweenEntities ? this.WaitBetweenEntities * 1_000 : 1, 'waiting is done');
+				if (global.gc) global.gc();
+				await setTimeoutPromise(this.WaitBetweenEntities.waitBetweenEntities ? this.WaitBetweenEntities.waitBetweenEntities * 1_000 : 1, 'waiting is done');
 			}
 			return Promise.resolve(logEntries);
 		} catch (error) {
-			if(global.gc)global.gc();
-			await setTimeoutPromise(this.WaitBetweenEntities ? this.WaitBetweenEntities * 1_000 : 1, 'waiting is done');
+			if (global.gc) global.gc();
+			await setTimeoutPromise(this.WaitBetweenEntities.waitBetweenEntities ? this.WaitBetweenEntities.waitBetweenEntities * 1_000 : 1, 'waiting is done');
 			//await setTimeoutPromise(10 * 1000, 'waiting is done');
 			return Promise.reject(error);
 		}
@@ -541,6 +633,15 @@ class App extends Homey.App {
 				this.WaitBetweenEntities = { waitBetweenEntities: 0 };
 				this.homey.settings.set('WaitBetweenEntities', this.WaitBetweenEntities);
 			}
+			if (typeof (this.WaitBetweenEntities.waitBetweenEntities) == 'string') this.WaitBetweenEntities.waitBetweenEntities = Number.parseInt(this.WaitBetweenEntities.waitBetweenEntities);
+
+
+			this.OnlyZipWithLogs = this.homey.settings.get('OnlyZipWithLogs');
+			if (!this.OnlyZipWithLogs) {
+				this.OnlyZipWithLogs = { onlyZipWithLogs: 0 };
+				this.homey.settings.set('OnlyZipWithLogs', this.OnlyZipWithLogs);
+			}
+
 			if (this.CPUSettings && this.CPUSettings.lowCPU) this.log('Low CPU load selected for export');
 			this.timestamp = date.toISOString()
 				.replace(/:/g, '')	// delete :
@@ -574,25 +675,25 @@ class App extends Homey.App {
 	}
 
 	// save a file to WebDAV as promise; resolves webdav filename
-	async saveWebDav(fileName) {	// filename is appId
+	async saveWebDav(fileName, subfolder) {	// filename is appId
 		try {
 			await this.getWebdavClient();
-			let webdavFileName = `/${fileName}`;
+			let webdavFileName = `${subfolder ? '/' + subfolder : ''}/${fileName}`;
 			// save to seperate folder when selected by user
 			if (this.webdavSettings.webdavUseSeperateFolders) {
-				await this.webdavClient.createDirectory(`/${this.timestamp}/`)
+				await this.webdavClient.createDirectory(`${subfolder ? '/' + subfolder : ''}/${this.timestamp}/`)
 					.then(() => {
 						this.log(`${this.timestamp} folder created!`);
 					})
 					.catch(() => null);
-				webdavFileName = `/${this.timestamp}/${fileName}`;
+				webdavFileName = `${subfolder ? '/' + subfolder : ''}/${this.timestamp}/${fileName}`;
 			}
 			const options = {
 				format: 'binary',
 				overwrite: true,
 			};
 			const webDavWriteStream = this.webdavClient.createWriteStream(webdavFileName, options);
-			const fileStream = fs.createReadStream(`./userdata/${fileName}`);
+			const fileStream = fs.createReadStream(`/userdata/${fileName}`);
 			return new Promise((resolve, reject) => {
 				fileStream.on('open', () => {
 					// this.log('piping to webdav');
@@ -640,12 +741,12 @@ class App extends Homey.App {
 	}
 
 	// save a file to a network share via SMB as promise; resolves smb2 filename
-	async saveSmb(fileName) {
+	async saveSmb(fileName, subfolder) {
 		try {
 			await this.getSmb2Client();
-			let path = `${this.smbSettings.smbPath.replace(/\//gi, '\\')}\\`;
+			let path = `${this.smbSettings.smbPath.replace(/\//gi, '\\')}\\${subfolder ? 'subfolder' + '\\' : ''}`;
 			if (this.smbSettings.smbPath === '') {
-				path = '';
+				path = `${subfolder ? 'subfolder' + '\\' : ''}`;
 			}
 			// save to seperate folder when selected by user
 			if (this.smbSettings.smbUseSeperateFolders) {
@@ -677,7 +778,7 @@ class App extends Homey.App {
 						reject(error);
 						return;
 					}
-					const fileStream = fs.createReadStream(`./userdata/${fileName}`);
+					const fileStream = fs.createReadStream(`/userdata/${fileName}`);
 					fileStream.on('open', () => {
 						// this.log('piping to SMB2');
 						fileStream.pipe(smbWriteStream);
@@ -788,15 +889,16 @@ class App extends Homey.App {
 	}
 
 	// save a file to a network share via FTP as promise; resolves FTP filename
-	async saveFTP(fileName) {
+	async saveFTP(fileName, subfolder) {
 		try {
+			const folder = '//' + this.FTPSettings.FTPFolder + (subfolder ? '/' + subfolder : '');
 			await this.getFTPClient();
-			await this.FTPClient.ensureDir(`//${this.FTPSettings.FTPFolder}`);
+			await this.FTPClient.ensureDir(`//${folder}`);
 			// save to seperate folder when selected by user
 			if (this.FTPSettings.FTPUseSeperateFolders) {
-				await this.FTPClient.ensureDir(`//${this.FTPSettings.FTPFolder}/${this.timestamp}`);
+				await this.FTPClient.ensureDir(`//${folder}/${this.timestamp}`);
 			}
-			const fileStream = fs.createReadStream(`./userdata/${fileName}`);
+			const fileStream = fs.createReadStream(`/userdata/${fileName}`);
 			await this.FTPClient.upload(fileStream, fileName);
 			this.log(`${fileName} has been saved to FTP(S)`);
 			return Promise.resolve(fileName);
@@ -852,27 +954,31 @@ class App extends Homey.App {
 	// ============================================================
 	// ZIP handling here
 	// zip all log entries from one app as promise; resolves zipfilename
-	async zipAppLogs(appId, resolution, date) {
+	async zipAppLogs(appId, resolution, date, type) {
 		// this.log(`Zipping all logs for ${appId}`);
 		try {
+			const logs = await this.getAppRelatedLogs(appId, type);
+			if (this.OnlyZipWithLogs.onlyZipWithLogs && !logs.length) return;
+
 			// create a file to stream archive data to.
 			const timeStamp = date.toISOString()
 				.replace(/:/g, '')	// delete :
 				.replace(/-/g, '')	// delete -
 				.replace(/\..+/, '');	// delete the dot and everything after
 			const fileName = `${appId}_${timeStamp}Z_${resolution}.zip`;
-			const output = fs.createWriteStream(`./userdata/${fileName}`);
+			const output = fs.createWriteStream(`/userdata/${fileName}`);
 			const level = this.CPUSettings && this.CPUSettings.lowCPU ? 3 : 9;
 			const archive = archiver('zip', {
 				zlib: { level },	// Sets the compression level.
 			});
 			archive.pipe(output);	// pipe archive data to the file
-
-			const logs = await this.getAppRelatedLogs(appId);
+			//let written = false;
 			for (let idx = 0; idx < logs.length; idx += 1) {
 				if (!this.abort) {
 					const log = logs[idx];
-					const entries = await this.getLogEntries(log, resolution);
+					const entries = await this.getLogEntries(log, resolution, date);
+					if (!entries.values.length) continue;
+					//written = true;
 					const data = await log2csv(entries, log);
 					const allMeta = Object.assign(data.meta, log);
 					let ids = log.ownerUri.split(':');
@@ -893,7 +999,16 @@ class App extends Homey.App {
 				}
 			}
 			// this.log(`${logs.length} files zipped`);
-			await archive.finalize();
+			//archive.
+			if (!archive.pointer()) {
+				archive.abort();
+				output.close();
+				fs.unlink(`/userdata/${fileName}`, (error) => {
+					if (error) { this.log(error); } else { this.log(`deleted /userdata/${fileName}`); }
+				});
+				return null;
+			}
+			else await archive.finalize();
 
 			return new Promise((resolve, reject) => {
 				output.on('close', () => {	// when zipping and storing is done...
@@ -917,18 +1032,19 @@ class App extends Homey.App {
 		}
 	}
 
-	async _exportApp(appId, resolution, date) {
+	async _exportApp(appId, resolution, date, type, subfolder) {
 		try {
-			date = new  Date();
-			const fileName = await this.zipAppLogs(appId, resolution, date);
+			date = new Date();
+			const fileName = await this.zipAppLogs(appId, resolution, date, type);
+			if (!fileName) return false;
 			if (this.smbSettings && this.smbSettings.useSmb) {
-				await this.saveSmb(fileName);
+				await this.saveSmb(fileName, subfolder);
 			}
 			if (this.webdavSettings && this.webdavSettings.useWebdav) {
-				await this.saveWebDav(fileName);
+				await this.saveWebDav(fileName, subfolder);
 			}
 			if (this.FTPSettings && this.FTPSettings.useFTP) {
-				await this.saveFTP(fileName);
+				await this.saveFTP(fileName, subfolder);
 			}
 			this.deleteFile(fileName);
 			// this.log(`Export of ${appId} finished`);

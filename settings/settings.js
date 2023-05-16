@@ -209,6 +209,18 @@ function saveWaitBetweenEntities() {
 	});
 }
 
+function saveOnlyZipWithLogs() {
+	const saveData = {
+		onlyZipWithLogs: $('#onlyZipWithLogs').prop('checked'),
+	};
+	Homey.set('OnlyZipWithLogs', saveData, (error) => {
+		if (error) {
+			Homey.alert(error, 'error');
+		}
+	});
+}
+
+
 
 
 function exportNow() {
@@ -341,6 +353,16 @@ function loadSettings() {
 		$('#lowCPU').prop('checked', false);
 		if (storedData) {
 			$('#lowCPU').prop('checked', storedData.lowCPU);
+		}
+	});
+	Homey.get('OnlyZipWithLogs', (err, storedData) => {
+		if (err) {
+			Homey.alert(err);
+			return;
+		}
+		$('#onlyZipWithLogs').prop('checked', false);
+		if (storedData) {
+			$('#onlyZipWithLogs').prop('checked', storedData.onlyZipWithLogs);
 		}
 	});
 	Homey.get('WaitBetweenEntities', (err, storedData) => {
