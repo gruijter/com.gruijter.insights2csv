@@ -125,102 +125,121 @@
           "nl": "Exporteer alle insights"
         },
         "titleFormatted": {
-          "en": "Export all insights [[resolution]]",
-          "nl": "Exporteer alle insights [[resolution]]"
+          "en": "Export all insights from [[resolution]]",
+          "nl": "Exporteer alle insights van [[resolution]]"
         },
         "args": [
           {
             "name": "resolution",
             "type": "dropdown",
+            "title": {
+              "en": "Resolution",
+              "nl": "Resolutie"
+            },
             "values": [
               {
                 "id": "lastHour",
                 "label": {
-                  "en": "last hour"
+                  "en": "last hour",
+                  "nl": "laatse uur"
                 }
               },
               {
                 "id": "last6Hours",
                 "label": {
-                  "en": "last 6 hours"
+                  "en": "last 6 hours",
+                  "nl": "afgelopen 6 uur"
                 }
               },
               {
                 "id": "last24Hours",
                 "label": {
-                  "en": "last 24 hours"
+                  "en": "last 24 hours",
+                  "nl": "afgelopen 24 uur"
                 }
               },
               {
                 "id": "last7Days",
                 "label": {
-                  "en": "last 7 days"
+                  "en": "last 7 days",
+                  "nl": "afgelopen 7 dagen"
                 }
               },
               {
                 "id": "last14Days",
                 "label": {
-                  "en": "last 14 days"
+                  "en": "last 14 days",
+                  "nl": "afgelopen 14 dagen"
                 }
               },
               {
                 "id": "last31Days",
                 "label": {
-                  "en": "last 31 days"
+                  "en": "last 31 days",
+                  "nl": "afgelopen 31 dagen"
                 }
               },
               {
                 "id": "today",
                 "label": {
-                  "en": "today"
+                  "en": "today",
+                  "nl": "vandaag"
                 }
               },
               {
                 "id": "yesterday",
                 "label": {
-                  "en": "yesterday"
+                  "en": "yesterday",
+                  "nl": "gisteren"
                 }
               },
               {
                 "id": "thisWeek",
                 "label": {
-                  "en": "this week"
+                  "en": "this week",
+                  "nl": "deze week"
                 }
               },
               {
                 "id": "lastWeek",
                 "label": {
-                  "en": "last week"
+                  "en": "last week",
+                  "nl": "vorige week"
                 }
               },
               {
                 "id": "thisMonth",
                 "label": {
-                  "en": "this month"
+                  "en": "this month",
+                  "nl": "deze maand"
                 }
               },
               {
                 "id": "lastMonth",
                 "label": {
-                  "en": "last month"
+                  "en": "last month",
+                  "nl": "vorige maand"
                 }
               },
               {
                 "id": "thisYear",
                 "label": {
-                  "en": "this year"
+                  "en": "this year",
+                  "nl": "dit jaar"
                 }
               },
               {
                 "id": "lastYear",
                 "label": {
-                  "en": "last year"
+                  "en": "last year",
+                  "nl": "afgelopen jaar"
                 }
               },
               {
                 "id": "last2Years",
                 "label": {
-                  "en": "last 2 years"
+                  "en": "last 2 years",
+                  "nl": "afgelopen 2 jaar"
                 }
               }
             ]
@@ -234,17 +253,25 @@
           "nl": "Exporteer insights van app"
         },
         "titleFormatted": {
-          "en": "Export all insights of [[selectedApp]] [[resolution]]",
-          "nl": "Exporteer alle insights [[selectedApp]] [[resolution]]"
+          "en": "Export all insights of [[selectedApp]] from [[resolution]]",
+          "nl": "Exporteer alle insights van [[selectedApp]] van [[resolution]]"
         },
         "args": [
           {
             "name": "selectedApp",
-            "type": "autocomplete"
+            "type": "autocomplete",
+            "title": {
+              "en": "App",
+              "nl": "App"
+            }
           },
           {
             "name": "resolution",
             "type": "dropdown",
+            "title": {
+              "en": "Resolution",
+              "nl": "Resolutie"
+            },
             "values": [
               {
                 "id": "lastHour",
@@ -369,6 +396,10 @@
           {
             "name": "storage",
             "type": "dropdown",
+            "title": {
+              "en": "Storage",
+              "nl": "Opslagmedium"
+            },
             "values": [
               {
                 "id": "FTP",
@@ -387,6 +418,10 @@
           {
             "name": "types",
             "type": "dropdown",
+            "title": {
+              "en": "Types",
+              "nl": "Types"
+            },
             "values": [
               {
                 "id": "onlyZip",
@@ -418,17 +453,21 @@
       {
         "id": "archive_all_type_folder",
         "title": {
-          "en": "Export all insights of type into subfolder",
-          "nl": "Exporteer alle insights van een type in een subfolder"
+          "en": "Export insights of type (into subfolder)",
+          "nl": "Exporteer insights van een type (in een subfolder)"
         },
         "titleFormatted": {
-          "en": "Export all insights of [[resolution]] of type [[type]] into [[subfolder]]",
-          "nl": "Exporteer alle insights van [[resolution]] van type [[type]] in [[subfolder]]"
+          "en": "Export [[type]] insights from [[resolution]] (optional: into [[subfolder]])",
+          "nl": "Exporteer [[type]] insights van [[resolution]] (optioneel in [[subfolder]])"
         },
         "args": [
           {
             "name": "resolution",
             "type": "dropdown",
+            "title": {
+              "en": "Resolution",
+              "nl": "Resolutie"
+            },
             "values": [
               {
                 "id": "lastHour",
@@ -541,25 +580,29 @@
             "name": "type",
             "type": "dropdown",
             "title": {
-              "en": "type"
+              "en": "type",
+              "nl": "type"
             },
             "values": [
               {
                 "id": "all",
                 "label": {
-                  "en": "All"
+                  "en": "all",
+                  "nl": "alle"
                 }
               },
               {
                 "id": "number",
                 "label": {
-                  "en": "Number"
+                  "en": "Number",
+                  "nl": "Nummer"
                 }
               },
               {
                 "id": "boolean",
                 "label": {
-                  "en": "Boolean"
+                  "en": "Boolean",
+                  "nl": "Boolean"
                 }
               }
             ]
@@ -567,9 +610,186 @@
           {
             "name": "subfolder",
             "type": "text",
-            "required":false,
+            "required": false,
             "title": {
-              "en": "Subfolder"
+              "en": "Subfolder",
+              "nl": "Subfolder"
+            }
+          }
+        ]
+      },
+      {
+        "id": "archive_app_type_folder",
+        "title": {
+          "en": "Export insights of app of type (into subfolder)",
+          "nl": "Exporteer insights van app van een type (in een subfolder)"
+        },
+        "titleFormatted": {
+          "en": "Export [[type]] insights of [[selectedApp]] from [[resolution]] (optional: into [[subfolder]])",
+          "nl": "Exporteer [[type]] insights van [[selectedApp]] van [[resolution]] (optioneel in [[subfolder]])"
+        },
+        "args": [
+          {
+            "name": "resolution",
+            "type": "dropdown",
+            "title": {
+              "en": "Resolution",
+              "nl": "Resolutie"
+            },
+            "values": [
+              {
+                "id": "lastHour",
+                "label": {
+                  "en": "last hour",
+                  "nl": "laatse uur"
+                }
+              },
+              {
+                "id": "last6Hours",
+                "label": {
+                  "en": "last 6 hours",
+                  "nl": "afgelopen 6 uur"
+                }
+              },
+              {
+                "id": "last24Hours",
+                "label": {
+                  "en": "last 24 hours",
+                  "nl": "afgelopen 24 uur"
+                }
+              },
+              {
+                "id": "last7Days",
+                "label": {
+                  "en": "last 7 days",
+                  "nl": "afgelopen 7 dagen"
+                }
+              },
+              {
+                "id": "last14Days",
+                "label": {
+                  "en": "last 14 days",
+                  "nl": "afgelopen 14 dagen"
+                }
+              },
+              {
+                "id": "last31Days",
+                "label": {
+                  "en": "last 31 days",
+                  "nl": "afgelopen 31 dagen"
+                }
+              },
+              {
+                "id": "today",
+                "label": {
+                  "en": "today",
+                  "nl": "vandaag"
+                }
+              },
+              {
+                "id": "yesterday",
+                "label": {
+                  "en": "yesterday",
+                  "nl": "gisteren"
+                }
+              },
+              {
+                "id": "thisWeek",
+                "label": {
+                  "en": "this week",
+                  "nl": "deze week"
+                }
+              },
+              {
+                "id": "lastWeek",
+                "label": {
+                  "en": "last week",
+                  "nl": "vorige week"
+                }
+              },
+              {
+                "id": "thisMonth",
+                "label": {
+                  "en": "this month",
+                  "nl": "deze maand"
+                }
+              },
+              {
+                "id": "lastMonth",
+                "label": {
+                  "en": "last month",
+                  "nl": "vorige maand"
+                }
+              },
+              {
+                "id": "thisYear",
+                "label": {
+                  "en": "this year",
+                  "nl": "dit jaar"
+                }
+              },
+              {
+                "id": "lastYear",
+                "label": {
+                  "en": "last year",
+                  "nl": "afgelopen jaar"
+                }
+              },
+              {
+                "id": "last2Years",
+                "label": {
+                  "en": "last 2 years",
+                  "nl": "afgelopen 2 jaar"
+                }
+              }
+            ]
+          },
+          {
+            "name": "type",
+            "type": "dropdown",
+            "title": {
+              "en": "type",
+              "nl": "type"
+            },
+            "values": [
+              {
+                "id": "all",
+                "label": {
+                  "en": "all",
+                  "nl": "alle"
+                }
+              },
+              {
+                "id": "number",
+                "label": {
+                  "en": "Number",
+                  "nl": "Nummer"
+                }
+              },
+              {
+                "id": "boolean",
+                "label": {
+                  "en": "Boolean",
+                  "nl": "Boolean"
+                }
+              }
+            ]
+          },
+          {
+            "name": "subfolder",
+            "type": "text",
+            "required": false,
+            "title": {
+              "en": "Subfolder",
+              "nl": "Subfolder"
+            }
+          },
+          {
+            "name": "selectedApp",
+            "type": "autocomplete",
+            "title": {
+              "en": "App",
+              "nl": "App"
             }
           }
         ]

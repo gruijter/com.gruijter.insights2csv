@@ -179,9 +179,29 @@ class App extends Homey.App {
 			archiveAllTypeFolderAction
 				.registerRunListener(async (args) => {
 					this.log(`Exporting all insights ${args.resolution} of type ${args.type} into subfolder ${args.subfolder} `);
-					this.exportAll(args.resolution, args.type=='all' ? undefined : args.type, args.subfolder && args.subfolder!=='undefined' ? args.subfolder : undefined);
+					this.exportAll(args.resolution, args.type == 'all' ? undefined : args.type, args.subfolder && args.subfolder !== 'undefined' ? args.subfolder : undefined);
 					return Promise.resolve(true);
 				});
+
+			const archiveAppTypeFolderAction = this.homey.flow.getActionCard('archive_app_type_folder');
+			archiveAppTypeFolderAction
+				.registerRunListener(async (args) => {
+					
+					this.exportApp(args.selectedApp.id, args.resolution, null, true, args.type == 'all' ? undefined : args.type, args.subfolder && args.subfolder !== 'undefined' ? args.subfolder : undefined);
+					return Promise.resolve(true);
+
+				})
+				.registerArgumentAutocompleteListener(
+					'selectedApp',
+					async (query) => {
+						const results = this.allNames.filter((result) => {		// filter for query on appId and appName
+							const appIdFound = result.id.toLowerCase().indexOf(query.toLowerCase()) > -1;
+							const appNameFound = result.name.toLowerCase().indexOf(query.toLowerCase()) > -1;
+							return appIdFound || appNameFound;
+						});
+						return Promise.resolve(results);
+					},
+				);;
 
 
 
@@ -252,7 +272,7 @@ class App extends Homey.App {
 				.catch(this.error);
 			// wait a bit to reduce cpu and mem load?
 			if (global.gc) global.gc();
-			await setTimeoutPromise(this.CPUSettings && this.CPUSettings.lowCPU ? 10  * 1_000 : 1, 'waiting is done');
+			await setTimeoutPromise(this.CPUSettings && this.CPUSettings.lowCPU ? 10 * 1_000 : 1, 'waiting is done');
 			this.runQueue();
 		} else {
 			this.queueRunning = false;
@@ -631,7 +651,7 @@ class App extends Homey.App {
 			return Promise.resolve(logEntries);
 		} catch (error) {
 			if (global.gc) global.gc();
-			await setTimeoutPromise(this.CPUSettings && this.CPUSettings.lowCPU ? 10  * 1_000 : 1, 'waiting is done');
+			await setTimeoutPromise(this.CPUSettings && this.CPUSettings.lowCPU ? 10 * 1_000 : 1, 'waiting is done');
 			//await setTimeoutPromise(10 * 1000, 'waiting is done');
 			return Promise.reject(error);
 		}
