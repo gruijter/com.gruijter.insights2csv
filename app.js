@@ -460,8 +460,8 @@ class App extends Homey.App {
 			const list = logs.filter((log) => log.uriObj ? log.uriObj.type == 'manager' : log.ownerUri.startsWith('homey:manager:'))
 				.map((log) => {
 					//let uriObj = this.getUriObj(log);
-					let ids = log.ownerUri ?  log.ownerUri.split(':') : null;
-					let id = ids ?  ids[ids.length - 1] : null;
+					let ids = log.ownerUri ? log.ownerUri.split(':') : null;
+					let id = ids ? ids[ids.length - 1] : null;
 
 					const name = (log.uriObj ? log.uriObj.name : log.ownerName) || id;//: app ? app.name : null;
 					if (!name) return;
@@ -498,13 +498,13 @@ class App extends Homey.App {
 			const appUri = `homey:app:${appId}`;
 			const managerUri = `homey:manager:${appId}`;
 			// look for app logs
-			const appLogs = this.logs.filter((log) => ((log.ownerUri && (log.ownerUri === appUri || log.ownerUri === managerUri)) || (log.uri === appUri || log.uri === managerUri) ) && (!type || log.type == type));
+			const appLogs = this.logs.filter((log) => ((log.ownerUri && (log.ownerUri === appUri || log.ownerUri === managerUri)) || (log.uri === appUri || log.uri === managerUri)) && (!type || log.type == type));
 			appRelatedLogs = appRelatedLogs.concat(appLogs);
 			// find app related devices and add their logs
 			Object.keys(this.devices).forEach((key) => {
 				if (this.devices[key].ownerUri == appUri || this.devices[key].driverUri == appUri || (this.devices[key].driverId && this.devices[key].driverId.startsWith(appUri))) {
 					const deviceUri = `homey:device:${this.devices[key].id}`;
-					const deviceLogs = this.logs.filter((log) => (log.ownerUri === deviceUri || log.uri==deviceUri) && (!type || log.type == type));
+					const deviceLogs = this.logs.filter((log) => (log.ownerUri === deviceUri || log.uri == deviceUri) && (!type || log.type == type));
 					appRelatedLogs = appRelatedLogs.concat(deviceLogs);
 				}
 			});
@@ -533,6 +533,10 @@ class App extends Homey.App {
 			}
 			const logEntries = await this.homeyAPI.insights.getLogEntries(opts);
 			if (log.type === 'boolean') {
+				//const date = new Date();
+				const dateTimezoned = new Date(date.toLocaleString('en', { timeZone: this.homey.clock.getTimezone() }));
+				const hourOffset = date.getHours() - dateTimezoned.getHours();
+
 				switch (resolution) {
 					case 'lastHour':
 						var _dateFrom = new Date(new Date(date).setHours(date.getHours() - 1))
@@ -559,48 +563,61 @@ class App extends Homey.App {
 						logEntries.values = logEntries.values.filter(x => new Date(x.t) >= _dateFrom);
 						break;
 					case 'today':
-						var _dateFrom = new Date(new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0));//.setDate(date.getDate() - 1))
+						var _dateFrom = new Date(new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0));
 						var _dateTo = new Date(date);
+						// _dateFrom = new Date(new Date(_dateFrom).setHours(_dateFrom.getHours() + hourOffset));
 						logEntries.values = logEntries.values.filter(x => new Date(x.t) >= _dateFrom && new Date(x.t) <= _dateTo);
 						break;
 					case 'yesterday':
 						var _dateFrom = new Date(new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0).setDate(date.getDate() - 1))
 						var _dateTo = new Date(new Date(_dateFrom).setDate(_dateFrom.getDate() + 1));
+						// _dateFrom = new Date(new Date(_dateFrom).setHours(_dateFrom.getHours() + hourOffset));
+						// _dateTo = new Date(new Date(_dateTo).setHours(_dateTo.getHours() + hourOffset));
 						logEntries.values = logEntries.values.filter(x => new Date(x.t) >= _dateFrom && new Date(x.t) < _dateTo);
 						break;
 					case 'thisWeek':
 						var _dateFrom = new Date(new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0).setDate(date.getDate() - (date.getDay() - 1)))
 						var _dateTo = new Date(date);
+						// _dateFrom = new Date(new Date(_dateFrom).setHours(_dateFrom.getHours() + hourOffset));
 						logEntries.values = logEntries.values.filter(x => new Date(x.t) >= _dateFrom && new Date(x.t) <= _dateTo);
 						break;
 					case 'lastWeek':
 						var _dateFrom = new Date(new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0).setDate(date.getDate() - (date.getDay() - 1) - 7))
 						var _dateTo = new Date(new Date(_dateFrom).setDate(_dateFrom.getDate() + 7));
+						// _dateFrom = new Date(new Date(_dateFrom).setHours(_dateFrom.getHours() + hourOffset));
+						// _dateTo = new Date(new Date(_dateTo).setHours(_dateTo.getHours() + hourOffset));
 						logEntries.values = logEntries.values.filter(x => new Date(x.t) >= _dateFrom && new Date(x.t) < _dateTo);
 						break;
 					case 'thisMonth':
 						var _dateFrom = new Date(new Date(date.getFullYear(), date.getMonth(), 1, 0, 0, 0, 0));
 						var _dateTo = new Date(date);
+						// _dateFrom = new Date(new Date(_dateFrom).setHours(_dateFrom.getHours() + hourOffset));
 						logEntries.values = logEntries.values.filter(x => new Date(x.t) >= _dateFrom && new Date(x.t) <= _dateTo);
 						break;
 					case 'lastMonth':
 						var _dateFrom = new Date(new Date(date.getFullYear(), date.getMonth(), 1, 0, 0, 0, 0).setMonth(date.getMonth() - 1));
 						var _dateTo = new Date(new Date(_dateFrom).setMonth(_dateFrom.getMonth() + 1));
+						// _dateFrom = new Date(new Date(_dateFrom).setHours(_dateFrom.getHours() + hourOffset));
+						// _dateTo = new Date(new Date(_dateTo).setHours(_dateTo.getHours() + hourOffset));
 						logEntries.values = logEntries.values.filter(x => new Date(x.t) >= _dateFrom && new Date(x.t) < _dateTo);
 						break;
 					case 'thisYear':
 						var _dateFrom = new Date(new Date(date.getFullYear(), 0, 1, 0, 0, 0, 0));
 						var _dateTo = new Date(date);
+						// _dateFrom = new Date(new Date(_dateFrom).setHours(_dateFrom.getHours() + hourOffset));
 						logEntries.values = logEntries.values.filter(x => new Date(x.t) >= _dateFrom && new Date(x.t) <= _dateTo);
 						break;
 					case 'lastYear':
 						var _dateFrom = new Date(new Date(date.getFullYear(), 0, 1, 0, 0, 0, 0).setFullYear(date.getFullYear() - 1));
 						var _dateTo = new Date(new Date(_dateFrom).setFullYear(_dateFrom.getFullYear() + 1));
+						// _dateFrom = new Date(new Date(_dateFrom).setHours(_dateFrom.getHours() + hourOffset));
+						// _dateTo = new Date(new Date(_dateTo).setHours(_dateTo.getHours() + hourOffset));
 						logEntries.values = logEntries.values.filter(x => new Date(x.t) >= _dateFrom && new Date(x.t) < _dateTo);
 						break;
 					case 'last2Years':
 						var _dateFrom = new Date(new Date(date).setFullYear(date.getFullYear() - 2));
 						var _dateTo = new Date(date);
+						// _dateFrom = new Date(new Date(_dateFrom).setHours(_dateFrom.getHours() + hourOffset));
 						logEntries.values = logEntries.values.filter(x => new Date(x.t) >= _dateFrom && new Date(x.t) <= _dateTo);
 						break;
 				}
@@ -1004,6 +1021,7 @@ class App extends Homey.App {
 				archive.abort();
 				output.close();
 				fs.unlink(`/userdata/${fileName}`, (error) => {
+					h
 					if (error) { this.log(error); } else { this.log(`deleted /userdata/${fileName}`); }
 				});
 				return null;
