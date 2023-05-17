@@ -563,61 +563,60 @@ class App extends Homey.App {
 						logEntries.values = logEntries.values.filter(x => new Date(x.t) >= _dateFrom);
 						break;
 					case 'today':
-						var _dateFrom = new Date(new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0));
+						var _dateFrom = new Date(new Date(dateTimezoned.getFullYear(), dateTimezoned.getMonth(), dateTimezoned.getDate(), 0, 0, 0, 0));
 						var _dateTo = new Date(date);
-						// _dateFrom = new Date(new Date(_dateFrom).setHours(_dateFrom.getHours() + hourOffset));
+						_dateFrom = new Date(new Date(_dateFrom).setHours(_dateFrom.getHours() + hourOffset));
 						logEntries.values = logEntries.values.filter(x => new Date(x.t) >= _dateFrom && new Date(x.t) <= _dateTo);
 						break;
 					case 'yesterday':
-						var _dateFrom = new Date(new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0).setDate(date.getDate() - 1))
+						var _dateFrom = new Date(new Date(dateTimezoned.getFullYear(), dateTimezoned.getMonth(), dateTimezoned.getDate(), 0, 0, 0, 0).setDate(dateTimezoned.getDate() - 1))
 						var _dateTo = new Date(new Date(_dateFrom).setDate(_dateFrom.getDate() + 1));
-						// _dateFrom = new Date(new Date(_dateFrom).setHours(_dateFrom.getHours() + hourOffset));
-						// _dateTo = new Date(new Date(_dateTo).setHours(_dateTo.getHours() + hourOffset));
+						_dateFrom = new Date(new Date(_dateFrom).setHours(_dateFrom.getHours() + hourOffset));
+						_dateTo = new Date(new Date(_dateTo).setHours(_dateTo.getHours() + hourOffset));
 						logEntries.values = logEntries.values.filter(x => new Date(x.t) >= _dateFrom && new Date(x.t) < _dateTo);
 						break;
 					case 'thisWeek':
-						var _dateFrom = new Date(new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0).setDate(date.getDate() - (date.getDay() - 1)))
+						var _dateFrom = new Date(new Date(dateTimezoned.getFullYear(), dateTimezoned.getMonth(), dateTimezoned.getDate(), 0, 0, 0, 0).setDate(dateTimezoned.getDate() - (dateTimezoned.getDay() - 1)))
 						var _dateTo = new Date(date);
-						// _dateFrom = new Date(new Date(_dateFrom).setHours(_dateFrom.getHours() + hourOffset));
+						_dateFrom = new Date(new Date(_dateFrom).setHours(_dateFrom.getHours() + hourOffset));
 						logEntries.values = logEntries.values.filter(x => new Date(x.t) >= _dateFrom && new Date(x.t) <= _dateTo);
 						break;
 					case 'lastWeek':
-						var _dateFrom = new Date(new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0).setDate(date.getDate() - (date.getDay() - 1) - 7))
+						var _dateFrom = new Date(new Date(dateTimezoned.getFullYear(), dateTimezoned.getMonth(), dateTimezoned.getDate(), 0, 0, 0, 0).setDate(dateTimezoned.getDate() - (dateTimezoned.getDay() - 1) - 7))
 						var _dateTo = new Date(new Date(_dateFrom).setDate(_dateFrom.getDate() + 7));
-						// _dateFrom = new Date(new Date(_dateFrom).setHours(_dateFrom.getHours() + hourOffset));
-						// _dateTo = new Date(new Date(_dateTo).setHours(_dateTo.getHours() + hourOffset));
+						_dateFrom = new Date(new Date(_dateFrom).setHours(_dateFrom.getHours() + hourOffset));
+						_dateTo = new Date(new Date(_dateTo).setHours(_dateTo.getHours() + hourOffset));
 						logEntries.values = logEntries.values.filter(x => new Date(x.t) >= _dateFrom && new Date(x.t) < _dateTo);
 						break;
 					case 'thisMonth':
-						var _dateFrom = new Date(new Date(date.getFullYear(), date.getMonth(), 1, 0, 0, 0, 0));
+						var _dateFrom = new Date(new Date(dateTimezoned.getFullYear(), dateTimezoned.getMonth(), 1, 0, 0, 0, 0));
 						var _dateTo = new Date(date);
-						// _dateFrom = new Date(new Date(_dateFrom).setHours(_dateFrom.getHours() + hourOffset));
+						_dateFrom = new Date(new Date(_dateFrom).setHours(_dateFrom.getHours() + hourOffset));
 						logEntries.values = logEntries.values.filter(x => new Date(x.t) >= _dateFrom && new Date(x.t) <= _dateTo);
 						break;
 					case 'lastMonth':
-						var _dateFrom = new Date(new Date(date.getFullYear(), date.getMonth(), 1, 0, 0, 0, 0).setMonth(date.getMonth() - 1));
+						var _dateFrom = new Date(new Date(dateTimezoned.getFullYear(), dateTimezoned.getMonth(), 1, 0, 0, 0, 0).setMonth(dateTimezoned.getMonth() - 1));
 						var _dateTo = new Date(new Date(_dateFrom).setMonth(_dateFrom.getMonth() + 1));
-						// _dateFrom = new Date(new Date(_dateFrom).setHours(_dateFrom.getHours() + hourOffset));
-						// _dateTo = new Date(new Date(_dateTo).setHours(_dateTo.getHours() + hourOffset));
+						_dateFrom = new Date(new Date(_dateFrom).setHours(_dateFrom.getHours() + hourOffset));
+						_dateTo = new Date(new Date(_dateTo).setHours(_dateTo.getHours() + hourOffset));
 						logEntries.values = logEntries.values.filter(x => new Date(x.t) >= _dateFrom && new Date(x.t) < _dateTo);
 						break;
 					case 'thisYear':
-						var _dateFrom = new Date(new Date(date.getFullYear(), 0, 1, 0, 0, 0, 0));
+						var _dateFrom = new Date(new Date(dateTimezoned.getFullYear(), 0, 1, 0, 0, 0, 0));
 						var _dateTo = new Date(date);
-						// _dateFrom = new Date(new Date(_dateFrom).setHours(_dateFrom.getHours() + hourOffset));
+						_dateFrom = new Date(new Date(_dateFrom).setHours(_dateFrom.getHours() + hourOffset));
 						logEntries.values = logEntries.values.filter(x => new Date(x.t) >= _dateFrom && new Date(x.t) <= _dateTo);
 						break;
 					case 'lastYear':
-						var _dateFrom = new Date(new Date(date.getFullYear(), 0, 1, 0, 0, 0, 0).setFullYear(date.getFullYear() - 1));
+						var _dateFrom = new Date(new Date(dateTimezoned.getFullYear(), 0, 1, 0, 0, 0, 0).setFullYear(dateTimezoned.getFullYear() - 1));
 						var _dateTo = new Date(new Date(_dateFrom).setFullYear(_dateFrom.getFullYear() + 1));
-						// _dateFrom = new Date(new Date(_dateFrom).setHours(_dateFrom.getHours() + hourOffset));
-						// _dateTo = new Date(new Date(_dateTo).setHours(_dateTo.getHours() + hourOffset));
+						_dateFrom = new Date(new Date(_dateFrom).setHours(_dateFrom.getHours() + hourOffset));
+						_dateTo = new Date(new Date(_dateTo).setHours(_dateTo.getHours() + hourOffset));
 						logEntries.values = logEntries.values.filter(x => new Date(x.t) >= _dateFrom && new Date(x.t) < _dateTo);
 						break;
 					case 'last2Years':
 						var _dateFrom = new Date(new Date(date).setFullYear(date.getFullYear() - 2));
 						var _dateTo = new Date(date);
-						// _dateFrom = new Date(new Date(_dateFrom).setHours(_dateFrom.getHours() + hourOffset));
 						logEntries.values = logEntries.values.filter(x => new Date(x.t) >= _dateFrom && new Date(x.t) <= _dateTo);
 						break;
 				}
