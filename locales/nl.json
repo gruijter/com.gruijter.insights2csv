@@ -63,7 +63,7 @@
 			"backupInitiated": "Export van Insights is begonnen.",
 			"waitBetweenEntities":"Wacht tussen exporterende entiteiten (seconden)",
 			"onlyZipWithLogs":"Maak alleen bestanden aan voor entiteiten met logs",
-			"includeLocalDateTime":"Inclusief locale datum en tijd"
+			"includeLocalDateTime":"Inclusief locale datum en tijd in csv"
 		},
 		"tab5": {
 			"title": "Logs",

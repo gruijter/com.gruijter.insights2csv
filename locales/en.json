@@ -63,7 +63,7 @@
 			"backupInitiated": "Insights export has started.",
 			"waitBetweenEntities":"Wait between exporting entities (Seconds)",
 			"onlyZipWithLogs":"Only create files for entities with logs",
-			"includeLocalDateTime":"Include Local date and time"
+			"includeLocalDateTime":"Include Local date and time in csv"
 		},
 		"tab5": {
 			"title": "Logs",

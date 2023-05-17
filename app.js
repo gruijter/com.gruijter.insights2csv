@@ -46,7 +46,7 @@ const JSDateToExcelDate = (inDate) => {
 
 class App extends Homey.App {
 
-	log2csv (logEntries, log) {
+	log2csv(logEntries, log) {
 		try {
 			const meta = {
 				entries: logEntries.values.length,
@@ -55,28 +55,26 @@ class App extends Homey.App {
 				if (key === 'values') return;
 				meta[key] = logEntries[key];
 			});
-	
+
 			const delimiter = ';';
 			let id = logEntries.id;
 			if (id.indexOf(':') > -1) { id = id.split(':'); id = id[id.length - 1]; }
 			if (log.ownerUri === 'homey:manager:logic') id = log.title;
-	
-			//const dateTimezoned = new Date(date.toLocaleString('en', { timeZone: this.homey.clock.getTimezone() }));
-	
-			const header = `Zulu dateTime${delimiter}${id}${this.IncludeLocalDateTime.includeLocalDateTime ?delimiter + 'Local datetime': ''}\r\n`;
+
+			const header = `Zulu dateTime${delimiter}${id}${this.IncludeLocalDateTime.includeLocalDateTime ? delimiter + 'Local datetime' : ''}\r\n`;
 			let csv = header;
 			logEntries.values.forEach((entry) => {
 				const time = JSDateToExcelDate(new Date(entry.t));
 				const value = JSON.stringify(entry.v).replace('.', ',');
-				if(this.IncludeLocalDateTime.includeLocalDateTime )entry.tLocal = new Date(entry.t).toLocaleString(this.locale , { timeZone: this.timeZone  });
-				csv += `${time}${delimiter}${value}${this.IncludeLocalDateTime.includeLocalDateTime ?delimiter + entry.tLocal: ''}\r\n`;
+				if (this.IncludeLocalDateTime.includeLocalDateTime) entry.tLocal = this.dateFormatter.format(new Date(entry.t));
+				csv += `${time}${delimiter}${value}${this.IncludeLocalDateTime.includeLocalDateTime ? delimiter + entry.tLocal : ''}\r\n`;
 			});
 			return { csv, meta };	// csv is string. meta is object.
 		} catch (error) {
 			return error;
 		}
 	};
-	
+
 	async onInit() {
 		try {
 			if (!this.logger) this.logger = new Logger({ name: 'log', length: 200, homey: this.homey });
@@ -189,7 +187,7 @@ class App extends Homey.App {
 			const archiveAppTypeFolderAction = this.homey.flow.getActionCard('archive_app_type_folder');
 			archiveAppTypeFolderAction
 				.registerRunListener(async (args) => {
-					
+
 					this.exportApp(args.selectedApp.id, args.resolution, null, true, args.type == 'all' ? undefined : args.type, args.subfolder && args.subfolder !== 'undefined' ? args.subfolder : undefined);
 					return Promise.resolve(true);
 
@@ -557,7 +555,7 @@ class App extends Homey.App {
 			const logEntries = await this.homeyAPI.insights.getLogEntries(opts);
 			if (log.type === 'boolean') {
 				//const date = new Date();
-				const dateTimezoned = new Date(date.toLocaleString('en', { timeZone: this.timeZone  }));
+				const dateTimezoned = new Date(this.enDateFormatter.format(date));
 				const hourOffset = date.getHours() - dateTimezoned.getHours();
 
 				switch (resolution) {
@@ -669,6 +667,28 @@ class App extends Homey.App {
 			this.CPUSettings = this.homey.settings.get('CPUSettings');
 			this.timeZone = this.homey.clock.getTimezone();
 			this.locale = await this.homey.i18n.getLanguage();
+			this.dateFormatter = new Intl.DateTimeFormat(this.locale, {
+				timeZone: this.timeZone,
+				// dateStyle: 'medium',
+				// timeStyle: 'medium',
+				year: 'numeric',
+				month: '2-digit',
+				day: '2-digit',
+				hour: '2-digit',
+				minute: '2-digit',
+				second: '2-digit',
+			});
+			this.enDateFormatter = new Intl.DateTimeFormat('en', {
+				timeZone: this.timeZone,
+				// dateStyle: 'medium',
+				// timeStyle: 'medium',
+				year: 'numeric',
+				month: '2-digit',
+				day: '2-digit',
+				hour: '2-digit',
+				minute: '2-digit',
+				second: '2-digit',
+			});
 			// this.WaitBetweenEntities = this.homey.settings.get('WaitBetweenEntities');
 			// if (!this.WaitBetweenEntities) {
 			// 	this.WaitBetweenEntities = { waitBetweenEntities: 0 };
@@ -676,13 +696,13 @@ class App extends Homey.App {
 			// }
 			// if (typeof (this.WaitBetweenEntities.waitBetweenEntities) == 'string') this.WaitBetweenEntities.waitBetweenEntities = Number.parseInt(this.WaitBetweenEntities.waitBetweenEntities);
 
-			
+
 			this.OnlyZipWithLogs = this.homey.settings.get('OnlyZipWithLogs');
 			if (!this.OnlyZipWithLogs) {
 				this.OnlyZipWithLogs = { onlyZipWithLogs: false };
 				this.homey.settings.set('OnlyZipWithLogs', this.OnlyZipWithLogs);
 			}
-			
+
 			this.IncludeLocalDateTime = this.homey.settings.get('IncludeLocalDateTime');
 			if (!this.IncludeLocalDateTime) {
 				this.IncludeLocalDateTime = { includeLocalDateTime: false };

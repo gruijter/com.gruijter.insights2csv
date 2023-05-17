@@ -209,7 +209,6 @@ function saveCPU() {
 // 	});
 // }
 
-includeLocalDateTime
 
 function saveIncludeLocalDateTime() {
 	const saveData = {
