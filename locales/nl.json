@@ -62,7 +62,8 @@
 			"exportStopped": "Lopende export is afgebroken",
 			"backupInitiated": "Export van Insights is begonnen.",
 			"waitBetweenEntities":"Wacht tussen exporterende entiteiten (seconden)",
-			"onlyZipWithLogs":"Maak alleen bestanden aan voor entiteiten met logs"
+			"onlyZipWithLogs":"Maak alleen bestanden aan voor entiteiten met logs",
+			"includeLocalDateTime":"Inclusief locale datum en tijd"
 		},
 		"tab5": {
 			"title": "Logs",

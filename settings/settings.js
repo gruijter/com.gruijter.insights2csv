@@ -209,6 +209,18 @@ function saveCPU() {
 // 	});
 // }
 
+includeLocalDateTime
+
+function saveIncludeLocalDateTime() {
+	const saveData = {
+		includeLocalDateTime: $('#includeLocalDateTime').prop('checked'),
+	};
+	Homey.set('IncludeLocalDateTime', saveData, (error) => {
+		if (error) {
+			Homey.alert(error, 'error');
+		}
+	});
+}
 function saveOnlyZipWithLogs() {
 	const saveData = {
 		onlyZipWithLogs: $('#onlyZipWithLogs').prop('checked'),
@@ -363,6 +375,16 @@ function loadSettings() {
 		$('#onlyZipWithLogs').prop('checked', false);
 		if (storedData) {
 			$('#onlyZipWithLogs').prop('checked', storedData.onlyZipWithLogs);
+		}
+	});
+	Homey.get('IncludeLocalDateTime', (err, storedData) => {
+		if (err) {
+			Homey.alert(err);
+			return;
+		}
+		$('#includeLocalDateTime').prop('checked', false);
+		if (storedData) {
+			$('#includeLocalDateTime').prop('checked', storedData.includeLocalDateTime);
 		}
 	});
 	// Homey.get('WaitBetweenEntities', (err, storedData) => {

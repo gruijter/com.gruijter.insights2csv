@@ -44,36 +44,39 @@ const JSDateToExcelDate = (inDate) => {
 	return dateTime;
 };
 
-const log2csv = (logEntries, log) => {
-	try {
-		const meta = {
-			entries: logEntries.values.length,
-		};
-		Object.keys(logEntries).forEach((key) => {
-			if (key === 'values') return;
-			meta[key] = logEntries[key];
-		});
-
-		const delimiter = ';';
-		let id = logEntries.id;
-		if (id.indexOf(':') > -1) { id = id.split(':'); id = id[id.length - 1]; }
-		if (log.ownerUri === 'homey:manager:logic') id = log.title;
-
-		const header = `Zulu dateTime${delimiter}${id}\r\n`;
-		let csv = header;
-		logEntries.values.forEach((entry) => {
-			const time = JSDateToExcelDate(new Date(entry.t));
-			const value = JSON.stringify(entry.v).replace('.', ',');
-			csv += `${time}${delimiter}${value}\r\n`;
-		});
-		return { csv, meta };	// csv is string. meta is object.
-	} catch (error) {
-		return error;
-	}
-};
-
 class App extends Homey.App {
 
+	log2csv (logEntries, log) {
+		try {
+			const meta = {
+				entries: logEntries.values.length,
+			};
+			Object.keys(logEntries).forEach((key) => {
+				if (key === 'values') return;
+				meta[key] = logEntries[key];
+			});
+	
+			const delimiter = ';';
+			let id = logEntries.id;
+			if (id.indexOf(':') > -1) { id = id.split(':'); id = id[id.length - 1]; }
+			if (log.ownerUri === 'homey:manager:logic') id = log.title;
+	
+			//const dateTimezoned = new Date(date.toLocaleString('en', { timeZone: this.homey.clock.getTimezone() }));
+	
+			const header = `Zulu dateTime${delimiter}${id}${this.IncludeLocalDateTime.includeLocalDateTime ?delimiter + 'Local datetime': ''}\r\n`;
+			let csv = header;
+			logEntries.values.forEach((entry) => {
+				const time = JSDateToExcelDate(new Date(entry.t));
+				const value = JSON.stringify(entry.v).replace('.', ',');
+				if(this.IncludeLocalDateTime.includeLocalDateTime )entry.tLocal = new Date(entry.t).toLocaleString(this.locale , { timeZone: this.timeZone  });
+				csv += `${time}${delimiter}${value}${this.IncludeLocalDateTime.includeLocalDateTime ?delimiter + entry.tLocal: ''}\r\n`;
+			});
+			return { csv, meta };	// csv is string. meta is object.
+		} catch (error) {
+			return error;
+		}
+	};
+	
 	async onInit() {
 		try {
 			if (!this.logger) this.logger = new Logger({ name: 'log', length: 200, homey: this.homey });
@@ -554,7 +557,7 @@ class App extends Homey.App {
 			const logEntries = await this.homeyAPI.insights.getLogEntries(opts);
 			if (log.type === 'boolean') {
 				//const date = new Date();
-				const dateTimezoned = new Date(date.toLocaleString('en', { timeZone: this.homey.clock.getTimezone() }));
+				const dateTimezoned = new Date(date.toLocaleString('en', { timeZone: this.timeZone  }));
 				const hourOffset = date.getHours() - dateTimezoned.getHours();
 
 				switch (resolution) {
@@ -664,6 +667,8 @@ class App extends Homey.App {
 			this.smbSettings = this.homey.settings.get('smbSettings');
 			this.FTPSettings = this.homey.settings.get('FTPSettings');
 			this.CPUSettings = this.homey.settings.get('CPUSettings');
+			this.timeZone = this.homey.clock.getTimezone();
+			this.locale = await this.homey.i18n.getLanguage();
 			// this.WaitBetweenEntities = this.homey.settings.get('WaitBetweenEntities');
 			// if (!this.WaitBetweenEntities) {
 			// 	this.WaitBetweenEntities = { waitBetweenEntities: 0 };
@@ -671,11 +676,17 @@ class App extends Homey.App {
 			// }
 			// if (typeof (this.WaitBetweenEntities.waitBetweenEntities) == 'string') this.WaitBetweenEntities.waitBetweenEntities = Number.parseInt(this.WaitBetweenEntities.waitBetweenEntities);
 
-
+			
 			this.OnlyZipWithLogs = this.homey.settings.get('OnlyZipWithLogs');
 			if (!this.OnlyZipWithLogs) {
-				this.OnlyZipWithLogs = { onlyZipWithLogs: 0 };
+				this.OnlyZipWithLogs = { onlyZipWithLogs: false };
 				this.homey.settings.set('OnlyZipWithLogs', this.OnlyZipWithLogs);
+			}
+			
+			this.IncludeLocalDateTime = this.homey.settings.get('IncludeLocalDateTime');
+			if (!this.IncludeLocalDateTime) {
+				this.IncludeLocalDateTime = { includeLocalDateTime: false };
+				this.homey.settings.set('IncludeLocalDateTime', this.IncludeLocalDateTime);
 			}
 
 			if (this.CPUSettings && this.CPUSettings.lowCPU) this.log('Low CPU load selected for export');
@@ -1015,7 +1026,7 @@ class App extends Homey.App {
 					const entries = await this.getLogEntries(log, resolution, date);
 					if (this.OnlyZipWithLogs.onlyZipWithLogs && !entries.values.length) continue;
 					//written = true;
-					const data = await log2csv(entries, log);
+					const data = await this.log2csv(entries, log);
 					const allMeta = Object.assign(data.meta, log);
 					let ids = (log.ownerUri || log.uri).split(':');
 					//if(ids.length)
