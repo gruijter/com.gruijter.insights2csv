@@ -179,7 +179,7 @@ class App extends Homey.App {
 			archiveAllTypeFolderAction
 				.registerRunListener(async (args) => {
 					this.log(`Exporting all insights ${args.resolution} of type ${args.type} into subfolder ${args.subfolder} `);
-					this.exportAll(args.resolution, args.type, args.subfolder);
+					this.exportAll(args.resolution, args.type=='all' ? undefined : args.type, args.subfolder && args.subfolder!=='undefined' ? args.subfolder : undefined);
 					return Promise.resolve(true);
 				});
 
@@ -252,7 +252,7 @@ class App extends Homey.App {
 				.catch(this.error);
 			// wait a bit to reduce cpu and mem load?
 			if (global.gc) global.gc();
-			await setTimeoutPromise(this.WaitBetweenEntities.waitBetweenEntities ? this.WaitBetweenEntities.waitBetweenEntities * 1_000 : 1, 'waiting is done');
+			await setTimeoutPromise(this.CPUSettings && this.CPUSettings.lowCPU ? 10  * 1_000 : 1, 'waiting is done');
 			this.runQueue();
 		} else {
 			this.queueRunning = false;
@@ -626,12 +626,12 @@ class App extends Homey.App {
 				//  ${logEntries.uri}`);
 				logEntries.values = logEntries.values.slice(0, 2925);
 				if (global.gc) global.gc();
-				await setTimeoutPromise(this.WaitBetweenEntities.waitBetweenEntities ? this.WaitBetweenEntities.waitBetweenEntities * 1_000 : 1, 'waiting is done');
+				await setTimeoutPromise(this.CPUSettings && this.CPUSettings.lowCPU ? 10 * 1_000 : 1, 'waiting is done');
 			}
 			return Promise.resolve(logEntries);
 		} catch (error) {
 			if (global.gc) global.gc();
-			await setTimeoutPromise(this.WaitBetweenEntities.waitBetweenEntities ? this.WaitBetweenEntities.waitBetweenEntities * 1_000 : 1, 'waiting is done');
+			await setTimeoutPromise(this.CPUSettings && this.CPUSettings.lowCPU ? 10  * 1_000 : 1, 'waiting is done');
 			//await setTimeoutPromise(10 * 1000, 'waiting is done');
 			return Promise.reject(error);
 		}
@@ -644,12 +644,12 @@ class App extends Homey.App {
 			this.smbSettings = this.homey.settings.get('smbSettings');
 			this.FTPSettings = this.homey.settings.get('FTPSettings');
 			this.CPUSettings = this.homey.settings.get('CPUSettings');
-			this.WaitBetweenEntities = this.homey.settings.get('WaitBetweenEntities');
-			if (!this.WaitBetweenEntities) {
-				this.WaitBetweenEntities = { waitBetweenEntities: 0 };
-				this.homey.settings.set('WaitBetweenEntities', this.WaitBetweenEntities);
-			}
-			if (typeof (this.WaitBetweenEntities.waitBetweenEntities) == 'string') this.WaitBetweenEntities.waitBetweenEntities = Number.parseInt(this.WaitBetweenEntities.waitBetweenEntities);
+			// this.WaitBetweenEntities = this.homey.settings.get('WaitBetweenEntities');
+			// if (!this.WaitBetweenEntities) {
+			// 	this.WaitBetweenEntities = { waitBetweenEntities: 0 };
+			// 	this.homey.settings.set('WaitBetweenEntities', this.WaitBetweenEntities);
+			// }
+			// if (typeof (this.WaitBetweenEntities.waitBetweenEntities) == 'string') this.WaitBetweenEntities.waitBetweenEntities = Number.parseInt(this.WaitBetweenEntities.waitBetweenEntities);
 
 
 			this.OnlyZipWithLogs = this.homey.settings.get('OnlyZipWithLogs');
@@ -1020,7 +1020,6 @@ class App extends Homey.App {
 				archive.abort();
 				output.close();
 				fs.unlink(`/userdata/${fileName}`, (error) => {
-					h
 					if (error) { this.log(error); } else { this.log(`deleted /userdata/${fileName}`); }
 				});
 				return null;

@@ -198,16 +198,16 @@ function saveCPU() {
 	});
 }
 
-function saveWaitBetweenEntities() {
-	const saveData = {
-		waitBetweenEntities: $('#waitBetweenEntities').prop('value'),
-	};
-	Homey.set('WaitBetweenEntities', saveData, (error) => {
-		if (error) {
-			Homey.alert(error, 'error');
-		}
-	});
-}
+// function saveWaitBetweenEntities() {
+// 	const saveData = {
+// 		waitBetweenEntities: $('#waitBetweenEntities').prop('value'),
+// 	};
+// 	Homey.set('WaitBetweenEntities', saveData, (error) => {
+// 		if (error) {
+// 			Homey.alert(error, 'error');
+// 		}
+// 	});
+// }
 
 function saveOnlyZipWithLogs() {
 	const saveData = {
@@ -365,16 +365,16 @@ function loadSettings() {
 			$('#onlyZipWithLogs').prop('checked', storedData.onlyZipWithLogs);
 		}
 	});
-	Homey.get('WaitBetweenEntities', (err, storedData) => {
-		if (err) {
-			Homey.alert(err);
-			return;
-		}
-		$('#waitBetweenEntities').prop('value', 10);
-		if (storedData) {
-			$('#waitBetweenEntities').prop('value', storedData.waitBetweenEntities);
-		}
-	});
+	// Homey.get('WaitBetweenEntities', (err, storedData) => {
+	// 	if (err) {
+	// 		Homey.alert(err);
+	// 		return;
+	// 	}
+	// 	$('#waitBetweenEntities').prop('value', 10);
+	// 	if (storedData) {
+	// 		$('#waitBetweenEntities').prop('value', storedData.waitBetweenEntities);
+	// 	}
+	// });
 	fillDropdown();
 }
 

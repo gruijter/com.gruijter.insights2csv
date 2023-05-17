@@ -55,5 +55,8 @@
   },
   "3.2.0": {
     "en": "Bugfixed: HP2023 supported."
+  },
+  "3.2.1": {
+    "en": "Bugfixed: HP2023 and HP2019 supported."
   }
 }
