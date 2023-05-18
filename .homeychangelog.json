@@ -53,7 +53,7 @@
   "3.1.3": {
     "en": "Roll back catch FTP connection errors."
   },
-  "3.2.0": {
-    "en": "Bugfixed: HP2023 supported."
+  "4.0.0": {
+    "en": "HP2023 compatibility added. Speed optimizations implemented. Functionality options extended. homey-api@1.10.21"
   }
 }

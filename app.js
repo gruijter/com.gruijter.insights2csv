@@ -1,7 +1,7 @@
 /* eslint-disable no-await-in-loop */
 
 /*
-Copyright 2017 - 2022 Robin de Gruijter
+Copyright 2017 - 2023 Robin de Gruijter
 
 This file is part of com.gruijter.insights2csv.
 
@@ -23,7 +23,7 @@ with com.gruijter.insights2csv. If not, see <http://www.gnu.org/licenses/>.
 
 const Homey = require('homey');
 const { HomeyAPIApp } = require('homey-api');
-//const { HomeyAPI } = require('homey-api');
+// const { HomeyAPI } = require('homey-api');
 const fs = require('fs');
 const util = require('util');
 const archiver = require('archiver');
@@ -34,7 +34,6 @@ const Logger = require('./captureLogs');
 
 const setTimeoutPromise = util.promisify(setTimeout);
 
-
 // ============================================================
 // Some helper functions here
 
@@ -44,44 +43,48 @@ const JSDateToExcelDate = (inDate) => {
 	return dateTime;
 };
 
-const log2csv = (logEntries, log) => {
-	try {
-		const meta = {
-			entries: logEntries.values.length,
-		};
-		Object.keys(logEntries).forEach((key) => {
-			if (key === 'values') return;
-			meta[key] = logEntries[key];
-		});
-
-		const delimiter = ';';
-		let id = logEntries.id;
-		if (id.indexOf(':') > -1) { id = id.split(':'); id = id[id.length - 1]; }
-		if (log.ownerUri === 'homey:manager:logic') id = log.title;
-
-		const header = `Zulu dateTime${delimiter}${id}\r\n`;
-		let csv = header;
-		logEntries.values.forEach((entry) => {
-			const time = JSDateToExcelDate(new Date(entry.t));
-			const value = JSON.stringify(entry.v).replace('.', ',');
-			csv += `${time}${delimiter}${value}\r\n`;
-		});
-		return { csv, meta };	// csv is string. meta is object.
-	} catch (error) {
-		return error;
-	}
-};
-
 class App extends Homey.App {
+
+	log2csv(logEntries, log) {
+		try {
+			const meta = {
+				entries: logEntries.values.length,
+			};
+			Object.keys(logEntries).forEach((key) => {
+				if (key === 'values') return;
+				meta[key] = logEntries[key];
+			});
+
+			const delimiter = ';';
+			const LocalDateTime = this.IncludeLocalDateTime.includeLocalDateTime ? `${delimiter}Local datetime` : '';
+			let { id } = logEntries;
+			if (id.indexOf(':') > -1) { id = id.split(':'); id = id[id.length - 1]; }
+			if (log.ownerUri === 'homey:manager:logic') id = log.title;
+
+			const header = `Zulu dateTime${delimiter}${id}${LocalDateTime}\r\n`;
+			let csv = header;
+			logEntries.values.forEach((e) => {
+				const entry = e;
+				const time = JSDateToExcelDate(new Date(entry.t));
+				const value = JSON.stringify(entry.v).replace('.', ',');
+				if (this.IncludeLocalDateTime.includeLocalDateTime) entry.tLocal = this.dateFormatter.format(new Date(entry.t));
+				csv += `${time}${delimiter}${value}${this.IncludeLocalDateTime.includeLocalDateTime ? delimiter + entry.tLocal : ''}\r\n`;
+			});
+			return { csv, meta };	// csv is string. meta is object.
+		} catch (error) {
+			return error;
+		}
+	}
 
 	async onInit() {
 		try {
 			if (!this.logger) this.logger = new Logger({ name: 'log', length: 200, homey: this.homey });
 			if (process.env.DEBUG === '1' || false) {
 				try {
+					// eslint-disable-next-line global-require
 					require('inspector').waitForDebugger();
-				}
-				catch (error) {
+				}	catch (error) {
+					// eslint-disable-next-line global-require
 					require('inspector').open(9325, '0.0.0.0', true);
 				}
 			}
@@ -179,11 +182,30 @@ class App extends Homey.App {
 			archiveAllTypeFolderAction
 				.registerRunListener(async (args) => {
 					this.log(`Exporting all insights ${args.resolution} of type ${args.type} into subfolder ${args.subfolder} `);
-					this.exportAll(args.resolution, args.type, args.subfolder);
+					this.exportAll(args.resolution, args.type === 'all' ? undefined : args.type, args.subfolder
+						&& args.subfolder !== 'undefined' ? args.subfolder : undefined);
 					return Promise.resolve(true);
 				});
 
+			const archiveAppTypeFolderAction = this.homey.flow.getActionCard('archive_app_type_folder');
+			archiveAppTypeFolderAction
+				.registerRunListener(async (args) => {
+					this.exportApp(args.selectedApp.id, args.resolution, null, true, args.type === 'all' ? undefined : args.type, args.subfolder
+						&& args.subfolder !== 'undefined' ? args.subfolder : undefined);
+					return Promise.resolve(true);
 
+				})
+				.registerArgumentAutocompleteListener(
+					'selectedApp',
+					async (query) => {
+						const results = this.allNames.filter((result) => {		// filter for query on appId and appName
+							const appIdFound = result.id.toLowerCase().indexOf(query.toLowerCase()) > -1;
+							const appNameFound = result.name.toLowerCase().indexOf(query.toLowerCase()) > -1;
+							return appIdFound || appNameFound;
+						});
+						return Promise.resolve(results);
+					},
+				);
 
 			this.deleteAllFiles();
 			await this.initExport(new Date());
@@ -217,7 +239,7 @@ class App extends Homey.App {
 		this.tail += 1;
 		if (!this.queueRunning) {
 			this.queueRunning = true;
-			//await this.initExport(item.date);
+			// await this.initExport(item.date);
 			this.runQueue();
 		}
 	}
@@ -252,7 +274,7 @@ class App extends Homey.App {
 				.catch(this.error);
 			// wait a bit to reduce cpu and mem load?
 			if (global.gc) global.gc();
-			await setTimeoutPromise(this.WaitBetweenEntities.waitBetweenEntities ? this.WaitBetweenEntities.waitBetweenEntities * 1_000 : 1, 'waiting is done');
+			await setTimeoutPromise(this.CPUSettings && this.CPUSettings.lowCPU ? 10 * 1000 : 1, 'waiting is done');
 			this.runQueue();
 		} else {
 			this.queueRunning = false;
@@ -354,7 +376,7 @@ class App extends Homey.App {
 	}
 
 	async exportAll(resolution, type, subfolder) {
-		let date = new Date();
+		const date = new Date();
 		await this.initExport(date);
 		this.allNames.forEach((name) => {
 			this.exportApp(name.id, resolution, date, false, type, subfolder);
@@ -362,11 +384,13 @@ class App extends Homey.App {
 		return true;
 	}
 
-	async exportApp(appId, resolution, date, reload, type, subfolder) {
-		//date = date || new Date();
-		date = new Date();
+	async exportApp(appId, resolution, _date, reload, type, subfolder) {
+		// date = date || new Date();
+		const date = new Date();
 		if (reload !== false) await this.initExport(date);
-		this.enQueue({ appId, resolution, date, type, subfolder });
+		this.enQueue({
+			appId, resolution, date, type, subfolder,
+		});
 		return true;
 	}
 
@@ -446,7 +470,7 @@ class App extends Homey.App {
 
 	// getUriObj(log) {
 	// 	if (log.uriObj) return log.uriObj;
-	// 	else 
+	// 	else
 	// 	{
 	// 		this.log(log);
 	// 		return {id:log.ownerId};
@@ -456,20 +480,21 @@ class App extends Homey.App {
 	// Get a list of all logged manager names
 	async getManagerNameList() {
 		try {
-			const logs = this.logs;// Object.values(await this.homeyAPI.insights.getLogs({ $timeout: 60000 }));
-			const list = logs.filter((log) => log.uriObj ? log.uriObj.type == 'manager' : log.ownerUri.startsWith('homey:manager:'))
+			// eslint-disable-next-line prefer-destructuring
+			const logs = this.logs; // Object.values(await this.homeyAPI.insights.getLogs({ $timeout: 60000 }));
+			const list = logs.filter((log) => (log.uriObj ? log.uriObj.type === 'manager' : log.ownerUri.startsWith('homey:manager:')))
 				.map((log) => {
-					//let uriObj = this.getUriObj(log);
-					let ids = log.ownerUri ?  log.ownerUri.split(':') : null;
-					let id = ids ?  ids[ids.length - 1] : null;
+					// let uriObj = this.getUriObj(log);
+					const ids = log.ownerUri ? log.ownerUri.split(':') : null;
+					const id = ids ? ids[ids.length - 1] : null;
 
-					const name = (log.uriObj ? log.uriObj.name : log.ownerName) || id;//: app ? app.name : null;
-					if (!name) return;
+					const name = (log.uriObj ? log.uriObj.name : log.ownerName) || id; // : app ? app.name : null;
+					if (!name) return null;
 					const _app = {
-						id: log.uriObj ? log.uriObj.id : (id), //+ log.ownerId
-						name: name,
+						id: log.uriObj ? log.uriObj.id : (id), // + log.ownerId
+						name,
 						icon: '',
-						type: log.uriObj ? log.uriObj.type : ids[1] //app ? app.type : null,
+						type: log.uriObj ? log.uriObj.type : ids[1], // app ? app.type : null,
 					};
 					return _app;
 				});
@@ -498,13 +523,16 @@ class App extends Homey.App {
 			const appUri = `homey:app:${appId}`;
 			const managerUri = `homey:manager:${appId}`;
 			// look for app logs
-			const appLogs = this.logs.filter((log) => ((log.ownerUri && (log.ownerUri === appUri || log.ownerUri === managerUri)) || (log.uri === appUri || log.uri === managerUri) ) && (!type || log.type == type));
+			const appLogs = this.logs.filter((log) => ((log.ownerUri && (log.ownerUri === appUri || log.ownerUri === managerUri))
+				|| (log.uri === appUri || log.uri === managerUri)) && (!type || log.type === type));
 			appRelatedLogs = appRelatedLogs.concat(appLogs);
 			// find app related devices and add their logs
 			Object.keys(this.devices).forEach((key) => {
-				if (this.devices[key].ownerUri == appUri || this.devices[key].driverUri == appUri || (this.devices[key].driverId && this.devices[key].driverId.startsWith(appUri))) {
+				if (this.devices[key].ownerUri === appUri || this.devices[key].driverUri === appUri
+						|| (this.devices[key].driverId && this.devices[key].driverId.startsWith(appUri))) {
 					const deviceUri = `homey:device:${this.devices[key].id}`;
-					const deviceLogs = this.logs.filter((log) => (log.ownerUri === deviceUri || log.uri==deviceUri) && (!type || log.type == type));
+					const deviceLogs = this.logs.filter((log) => (log.ownerUri === deviceUri
+						|| log.uri === deviceUri) && (!type || log.type === type));
 					appRelatedLogs = appRelatedLogs.concat(deviceLogs);
 				}
 			});
@@ -515,11 +543,11 @@ class App extends Homey.App {
 	}
 
 	/**
-	 * 
-	 * @param {*} log 
-	 * @param {*} resolution 
-	 * @param {Date} date 
-	 * @returns 
+	 *
+	 * @param {*} log
+	 * @param {*} resolution
+	 * @param {Date} date
+	 * @returns
 	 */
 	async getLogEntries(log, resolution, date) {
 		try {
@@ -533,90 +561,115 @@ class App extends Homey.App {
 			}
 			const logEntries = await this.homeyAPI.insights.getLogEntries(opts);
 			if (log.type === 'boolean') {
+				// const date = new Date();
+				const dateTimezoned = new Date(this.enDateFormatter.format(date));
+				const hourOffset = date.getHours() - dateTimezoned.getHours();
+
+				let _dateFrom;
+				let _dateTo;
 				switch (resolution) {
 					case 'lastHour':
-						var _dateFrom = new Date(new Date(date).setHours(date.getHours() - 1))
-						logEntries.values = logEntries.values.filter(x => new Date(x.t) >= _dateFrom);
+						_dateFrom = new Date(new Date(date).setHours(date.getHours() - 1));
+						logEntries.values = logEntries.values.filter((x) => new Date(x.t) >= _dateFrom);
 						break;
 					case 'last6Hours':
-						var _dateFrom = new Date(new Date(date).setHours(date.getHours() - 6))
-						logEntries.values = logEntries.values.filter(x => new Date(x.t) >= _dateFrom);
+						_dateFrom = new Date(new Date(date).setHours(date.getHours() - 6));
+						logEntries.values = logEntries.values.filter((x) => new Date(x.t) >= _dateFrom);
 						break;
 					case 'last24Hours':
-						var _dateFrom = new Date(new Date(date).setHours(date.getHours() - 24))
-						logEntries.values = logEntries.values.filter(x => new Date(x.t) >= _dateFrom);
+						_dateFrom = new Date(new Date(date).setHours(date.getHours() - 24));
+						logEntries.values = logEntries.values.filter((x) => new Date(x.t) >= _dateFrom);
 						break;
 					case 'last7Days':
-						var _dateFrom = new Date(new Date(date).setDate(date.getDate() - 7))
-						logEntries.values = logEntries.values.filter(x => new Date(x.t) >= _dateFrom);
+						_dateFrom = new Date(new Date(date).setDate(date.getDate() - 7));
+						logEntries.values = logEntries.values.filter((x) => new Date(x.t) >= _dateFrom);
 						break;
 					case 'last14Days':
-						var _dateFrom = new Date(new Date(date).setDate(date.getDate() - 14))
-						logEntries.values = logEntries.values.filter(x => new Date(x.t) >= _dateFrom);
+						_dateFrom = new Date(new Date(date).setDate(date.getDate() - 14));
+						logEntries.values = logEntries.values.filter((x) => new Date(x.t) >= _dateFrom);
 						break;
 					case 'last31Days':
-						var _dateFrom = new Date(new Date(date).setDate(date.getDate() - 31))
-						logEntries.values = logEntries.values.filter(x => new Date(x.t) >= _dateFrom);
+						_dateFrom = new Date(new Date(date).setDate(date.getDate() - 31));
+						logEntries.values = logEntries.values.filter((x) => new Date(x.t) >= _dateFrom);
 						break;
 					case 'today':
-						var _dateFrom = new Date(new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0));//.setDate(date.getDate() - 1))
-						var _dateTo = new Date(date);
-						logEntries.values = logEntries.values.filter(x => new Date(x.t) >= _dateFrom && new Date(x.t) <= _dateTo);
+						_dateFrom = new Date(new Date(dateTimezoned.getFullYear(), dateTimezoned.getMonth(), dateTimezoned.getDate(), 0, 0, 0, 0));
+						_dateTo = new Date(date);
+						_dateFrom = new Date(new Date(_dateFrom).setHours(_dateFrom.getHours() + hourOffset));
+						logEntries.values = logEntries.values.filter((x) => new Date(x.t) >= _dateFrom && new Date(x.t) <= _dateTo);
 						break;
 					case 'yesterday':
-						var _dateFrom = new Date(new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0).setDate(date.getDate() - 1))
-						var _dateTo = new Date(new Date(_dateFrom).setDate(_dateFrom.getDate() + 1));
-						logEntries.values = logEntries.values.filter(x => new Date(x.t) >= _dateFrom && new Date(x.t) < _dateTo);
+						_dateFrom = new Date(new Date(dateTimezoned.getFullYear(), dateTimezoned.getMonth(), dateTimezoned.getDate(), 0, 0, 0, 0)
+							.setDate(dateTimezoned.getDate() - 1));
+						_dateTo = new Date(new Date(_dateFrom).setDate(_dateFrom.getDate() + 1));
+						_dateFrom = new Date(new Date(_dateFrom).setHours(_dateFrom.getHours() + hourOffset));
+						_dateTo = new Date(new Date(_dateTo).setHours(_dateTo.getHours() + hourOffset));
+						logEntries.values = logEntries.values.filter((x) => new Date(x.t) >= _dateFrom && new Date(x.t) < _dateTo);
 						break;
 					case 'thisWeek':
-						var _dateFrom = new Date(new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0).setDate(date.getDate() - (date.getDay() - 1)))
-						var _dateTo = new Date(date);
-						logEntries.values = logEntries.values.filter(x => new Date(x.t) >= _dateFrom && new Date(x.t) <= _dateTo);
+						_dateFrom = new Date(new Date(dateTimezoned.getFullYear(), dateTimezoned.getMonth(), dateTimezoned.getDate(), 0, 0, 0, 0)
+							.setDate(dateTimezoned.getDate() - (dateTimezoned.getDay() - 1)));
+						_dateTo = new Date(date);
+						_dateFrom = new Date(new Date(_dateFrom).setHours(_dateFrom.getHours() + hourOffset));
+						logEntries.values = logEntries.values.filter((x) => new Date(x.t) >= _dateFrom && new Date(x.t) <= _dateTo);
 						break;
 					case 'lastWeek':
-						var _dateFrom = new Date(new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0).setDate(date.getDate() - (date.getDay() - 1) - 7))
-						var _dateTo = new Date(new Date(_dateFrom).setDate(_dateFrom.getDate() + 7));
-						logEntries.values = logEntries.values.filter(x => new Date(x.t) >= _dateFrom && new Date(x.t) < _dateTo);
+						_dateFrom = new Date(new Date(dateTimezoned.getFullYear(), dateTimezoned.getMonth(), dateTimezoned.getDate(), 0, 0, 0, 0)
+							.setDate(dateTimezoned.getDate() - (dateTimezoned.getDay() - 1) - 7));
+						_dateTo = new Date(new Date(_dateFrom).setDate(_dateFrom.getDate() + 7));
+						_dateFrom = new Date(new Date(_dateFrom).setHours(_dateFrom.getHours() + hourOffset));
+						_dateTo = new Date(new Date(_dateTo).setHours(_dateTo.getHours() + hourOffset));
+						logEntries.values = logEntries.values.filter((x) => new Date(x.t) >= _dateFrom && new Date(x.t) < _dateTo);
 						break;
 					case 'thisMonth':
-						var _dateFrom = new Date(new Date(date.getFullYear(), date.getMonth(), 1, 0, 0, 0, 0));
-						var _dateTo = new Date(date);
-						logEntries.values = logEntries.values.filter(x => new Date(x.t) >= _dateFrom && new Date(x.t) <= _dateTo);
+						_dateFrom = new Date(new Date(dateTimezoned.getFullYear(), dateTimezoned.getMonth(), 1, 0, 0, 0, 0));
+						_dateTo = new Date(date);
+						_dateFrom = new Date(new Date(_dateFrom).setHours(_dateFrom.getHours() + hourOffset));
+						logEntries.values = logEntries.values.filter((x) => new Date(x.t) >= _dateFrom && new Date(x.t) <= _dateTo);
 						break;
 					case 'lastMonth':
-						var _dateFrom = new Date(new Date(date.getFullYear(), date.getMonth(), 1, 0, 0, 0, 0).setMonth(date.getMonth() - 1));
-						var _dateTo = new Date(new Date(_dateFrom).setMonth(_dateFrom.getMonth() + 1));
-						logEntries.values = logEntries.values.filter(x => new Date(x.t) >= _dateFrom && new Date(x.t) < _dateTo);
+						_dateFrom = new Date(new Date(dateTimezoned.getFullYear(), dateTimezoned.getMonth(), 1, 0, 0, 0, 0)
+							.setMonth(dateTimezoned.getMonth() - 1));
+						_dateTo = new Date(new Date(_dateFrom).setMonth(_dateFrom.getMonth() + 1));
+						_dateFrom = new Date(new Date(_dateFrom).setHours(_dateFrom.getHours() + hourOffset));
+						_dateTo = new Date(new Date(_dateTo).setHours(_dateTo.getHours() + hourOffset));
+						logEntries.values = logEntries.values.filter((x) => new Date(x.t) >= _dateFrom && new Date(x.t) < _dateTo);
 						break;
 					case 'thisYear':
-						var _dateFrom = new Date(new Date(date.getFullYear(), 0, 1, 0, 0, 0, 0));
-						var _dateTo = new Date(date);
-						logEntries.values = logEntries.values.filter(x => new Date(x.t) >= _dateFrom && new Date(x.t) <= _dateTo);
+						_dateFrom = new Date(new Date(dateTimezoned.getFullYear(), 0, 1, 0, 0, 0, 0));
+						_dateTo = new Date(date);
+						_dateFrom = new Date(new Date(_dateFrom).setHours(_dateFrom.getHours() + hourOffset));
+						logEntries.values = logEntries.values.filter((x) => new Date(x.t) >= _dateFrom && new Date(x.t) <= _dateTo);
 						break;
 					case 'lastYear':
-						var _dateFrom = new Date(new Date(date.getFullYear(), 0, 1, 0, 0, 0, 0).setFullYear(date.getFullYear() - 1));
-						var _dateTo = new Date(new Date(_dateFrom).setFullYear(_dateFrom.getFullYear() + 1));
-						logEntries.values = logEntries.values.filter(x => new Date(x.t) >= _dateFrom && new Date(x.t) < _dateTo);
+						_dateFrom = new Date(new Date(dateTimezoned.getFullYear(), 0, 1, 0, 0, 0, 0).setFullYear(dateTimezoned.getFullYear() - 1));
+						_dateTo = new Date(new Date(_dateFrom).setFullYear(_dateFrom.getFullYear() + 1));
+						_dateFrom = new Date(new Date(_dateFrom).setHours(_dateFrom.getHours() + hourOffset));
+						_dateTo = new Date(new Date(_dateTo).setHours(_dateTo.getHours() + hourOffset));
+						logEntries.values = logEntries.values.filter((x) => new Date(x.t) >= _dateFrom && new Date(x.t) < _dateTo);
 						break;
 					case 'last2Years':
-						var _dateFrom = new Date(new Date(date).setFullYear(date.getFullYear() - 2));
-						var _dateTo = new Date(date);
-						logEntries.values = logEntries.values.filter(x => new Date(x.t) >= _dateFrom && new Date(x.t) <= _dateTo);
+						_dateFrom = new Date(new Date(date).setFullYear(date.getFullYear() - 2));
+						_dateTo = new Date(date);
+						logEntries.values = logEntries.values.filter((x) => new Date(x.t) >= _dateFrom && new Date(x.t) <= _dateTo);
 						break;
+					default:
+						throw Error('invalid resolution', resolution);
 				}
 			}
 			if (logEntries.values.length > 2925) {
-				this.error(`Insights data is corrupt and will be truncated to the first 2925 records for ${(log.uriObj ? log.uriObj.name : log.ownerName)} ${logEntries.id}.`);
+				this.error(`Insights data is corrupt and will be truncated to the first 2925 records for
+					${(log.uriObj ? log.uriObj.name : log.ownerName)} ${logEntries.id}.`);
 				//  ${logEntries.uri}`);
 				logEntries.values = logEntries.values.slice(0, 2925);
 				if (global.gc) global.gc();
-				await setTimeoutPromise(this.WaitBetweenEntities.waitBetweenEntities ? this.WaitBetweenEntities.waitBetweenEntities * 1_000 : 1, 'waiting is done');
+				await setTimeoutPromise(this.CPUSettings && this.CPUSettings.lowCPU ? 10 * 1000 : 1, 'waiting is done');
 			}
 			return Promise.resolve(logEntries);
 		} catch (error) {
 			if (global.gc) global.gc();
-			await setTimeoutPromise(this.WaitBetweenEntities.waitBetweenEntities ? this.WaitBetweenEntities.waitBetweenEntities * 1_000 : 1, 'waiting is done');
-			//await setTimeoutPromise(10 * 1000, 'waiting is done');
+			await setTimeoutPromise(this.CPUSettings && this.CPUSettings.lowCPU ? 10 * 1000 : 1, 'waiting is done');
+			// await setTimeoutPromise(10 * 1000, 'waiting is done');
 			return Promise.reject(error);
 		}
 	}
@@ -628,18 +681,47 @@ class App extends Homey.App {
 			this.smbSettings = this.homey.settings.get('smbSettings');
 			this.FTPSettings = this.homey.settings.get('FTPSettings');
 			this.CPUSettings = this.homey.settings.get('CPUSettings');
-			this.WaitBetweenEntities = this.homey.settings.get('WaitBetweenEntities');
-			if (!this.WaitBetweenEntities) {
-				this.WaitBetweenEntities = { waitBetweenEntities: 0 };
-				this.homey.settings.set('WaitBetweenEntities', this.WaitBetweenEntities);
-			}
-			if (typeof (this.WaitBetweenEntities.waitBetweenEntities) == 'string') this.WaitBetweenEntities.waitBetweenEntities = Number.parseInt(this.WaitBetweenEntities.waitBetweenEntities);
-
+			this.timeZone = this.homey.clock.getTimezone();
+			this.locale = await this.homey.i18n.getLanguage();
+			this.dateFormatter = new Intl.DateTimeFormat(this.locale, {
+				timeZone: this.timeZone,
+				// dateStyle: 'medium',
+				// timeStyle: 'medium',
+				year: 'numeric',
+				month: '2-digit',
+				day: '2-digit',
+				hour: '2-digit',
+				minute: '2-digit',
+				second: '2-digit',
+			});
+			this.enDateFormatter = new Intl.DateTimeFormat('en', {
+				timeZone: this.timeZone,
+				// dateStyle: 'medium',
+				// timeStyle: 'medium',
+				year: 'numeric',
+				month: '2-digit',
+				day: '2-digit',
+				hour: '2-digit',
+				minute: '2-digit',
+				second: '2-digit',
+			});
+			// this.WaitBetweenEntities = this.homey.settings.get('WaitBetweenEntities');
+			// if (!this.WaitBetweenEntities) {
+			// 	this.WaitBetweenEntities = { waitBetweenEntities: 0 };
+			// 	this.homey.settings.set('WaitBetweenEntities', this.WaitBetweenEntities);
+			// }
+			// if (typeof (this.WaitBetweenEntities.waitBetweenEntities) == 'string') this.WaitBetweenEntities.waitBetweenEntities = Number.parseInt(this.WaitBetweenEntities.waitBetweenEntities);
 
 			this.OnlyZipWithLogs = this.homey.settings.get('OnlyZipWithLogs');
 			if (!this.OnlyZipWithLogs) {
-				this.OnlyZipWithLogs = { onlyZipWithLogs: 0 };
+				this.OnlyZipWithLogs = { onlyZipWithLogs: false };
 				this.homey.settings.set('OnlyZipWithLogs', this.OnlyZipWithLogs);
+			}
+
+			this.IncludeLocalDateTime = this.homey.settings.get('IncludeLocalDateTime');
+			if (!this.IncludeLocalDateTime) {
+				this.IncludeLocalDateTime = { includeLocalDateTime: false };
+				this.homey.settings.set('IncludeLocalDateTime', this.IncludeLocalDateTime);
 			}
 
 			if (this.CPUSettings && this.CPUSettings.lowCPU) this.log('Low CPU load selected for export');
@@ -678,15 +760,16 @@ class App extends Homey.App {
 	async saveWebDav(fileName, subfolder) {	// filename is appId
 		try {
 			await this.getWebdavClient();
-			let webdavFileName = `${subfolder ? '/' + subfolder : ''}/${fileName}`;
+			const folder = subfolder ? `/${subfolder}` : '';
+			let webdavFileName = `${folder}/${fileName}`;
 			// save to seperate folder when selected by user
 			if (this.webdavSettings.webdavUseSeperateFolders) {
-				await this.webdavClient.createDirectory(`${subfolder ? '/' + subfolder : ''}/${this.timestamp}/`)
+				await this.webdavClient.createDirectory(`${folder}/${this.timestamp}/`)
 					.then(() => {
 						this.log(`${this.timestamp} folder created!`);
 					})
 					.catch(() => null);
-				webdavFileName = `${subfolder ? '/' + subfolder : ''}/${this.timestamp}/${fileName}`;
+				webdavFileName = `${folder}/${this.timestamp}/${fileName}`;
 			}
 			const options = {
 				format: 'binary',
@@ -744,9 +827,10 @@ class App extends Homey.App {
 	async saveSmb(fileName, subfolder) {
 		try {
 			await this.getSmb2Client();
-			let path = `${this.smbSettings.smbPath.replace(/\//gi, '\\')}\\${subfolder ? 'subfolder' + '\\' : ''}`;
+			const folder = subfolder ? `${subfolder}\\` : '';
+			let path = `${this.smbSettings.smbPath.replace(/\//gi, '\\')}\\${folder}`;
 			if (this.smbSettings.smbPath === '') {
-				path = `${subfolder ? 'subfolder' + '\\' : ''}`;
+				path = `${folder}`;
 			}
 			// save to seperate folder when selected by user
 			if (this.smbSettings.smbUseSeperateFolders) {
@@ -891,7 +975,8 @@ class App extends Homey.App {
 	// save a file to a network share via FTP as promise; resolves FTP filename
 	async saveFTP(fileName, subfolder) {
 		try {
-			const folder = '//' + this.FTPSettings.FTPFolder + (subfolder ? '/' + subfolder : '');
+			const sub = subfolder ? `/${subfolder}` : '';
+			const folder = `//${this.FTPSettings.FTPFolder}${sub}`;
 			await this.getFTPClient();
 			await this.FTPClient.ensureDir(`//${folder}`);
 			// save to seperate folder when selected by user
@@ -958,7 +1043,7 @@ class App extends Homey.App {
 		// this.log(`Zipping all logs for ${appId}`);
 		try {
 			const logs = await this.getAppRelatedLogs(appId, type);
-			if (this.OnlyZipWithLogs.onlyZipWithLogs && !logs.length) return;
+			if (this.OnlyZipWithLogs.onlyZipWithLogs && !logs.length) return null;
 
 			// create a file to stream archive data to.
 			const timeStamp = date.toISOString()
@@ -972,20 +1057,22 @@ class App extends Homey.App {
 				zlib: { level },	// Sets the compression level.
 			});
 			archive.pipe(output);	// pipe archive data to the file
-			//let written = false;
+			// let written = false;
 			for (let idx = 0; idx < logs.length; idx += 1) {
 				if (!this.abort) {
 					const log = logs[idx];
 					const entries = await this.getLogEntries(log, resolution, date);
+					// eslint-disable-next-line no-continue
 					if (this.OnlyZipWithLogs.onlyZipWithLogs && !entries.values.length) continue;
-					//written = true;
-					const data = await log2csv(entries, log);
+					// written = true;
+					const data = await this.log2csv(entries, log);
 					const allMeta = Object.assign(data.meta, log);
-					let ids = (log.ownerUri || log.uri).split(':');
-					//if(ids.length)
-					let id = ids[ids.length - 1];
+					const ids = (log.ownerUri || log.uri).split(':');
+					// if(ids.length)
+					const id = ids[ids.length - 1];
 					const dev = this.devices[id];
-					const app = dev ? null : this.allNames.find(x => x.id === id);
+					const app = dev ? null : this.allNames.find((x) => x.id === id);
+					// eslint-disable-next-line no-nested-ternary
 					const name = log.uriObj ? log.uriObj.name : dev ? dev.name : app ? app.name : null;
 					const fileNameCsv = `${name}/${(log.ownerId || log.id)}.csv`;
 					const fileNameMeta = `${name}/${(log.ownerId || log.id)}_meta.json`;
@@ -999,7 +1086,7 @@ class App extends Homey.App {
 				}
 			}
 			// this.log(`${logs.length} files zipped`);
-			//archive.
+			// archive.
 			if (this.OnlyZipWithLogs.onlyZipWithLogs && !archive.pointer()) {
 				archive.abort();
 				output.close();
@@ -1008,7 +1095,7 @@ class App extends Homey.App {
 				});
 				return null;
 			}
-			else await archive.finalize();
+			await archive.finalize();
 
 			return new Promise((resolve, reject) => {
 				output.on('close', () => {	// when zipping and storing is done...
@@ -1032,9 +1119,9 @@ class App extends Homey.App {
 		}
 	}
 
-	async _exportApp(appId, resolution, date, type, subfolder) {
+	async _exportApp(appId, resolution, _date, type, subfolder) {
 		try {
-			date = new Date();
+			const date = new Date();
 			const fileName = await this.zipAppLogs(appId, resolution, date, type);
 			if (!fileName) return false;
 			if (this.smbSettings && this.smbSettings.useSmb) {

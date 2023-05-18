@@ -50,7 +50,7 @@
 		"tab4": {
 			"title": "Export",
 			"instructionsTitle": "Instructions",
-			"instructions": "Stel eerst NAS en/of FTP en/of WebDAV in. TDe Lage CPU belasting kan worden geselecteerd om de belasting van Homey te reduceren tijdens een export. De export duurt dan wel langer en de bestanden zijn minder gecomprimeerd. Om nu handmatig een export te starten kies de app die je wilt exporteren en kies de resolutie.",
+			"instructions": "Stel eerst NAS en/of FTP en/of WebDAV in. De Lage CPU belasting kan worden geselecteerd om de belasting van Homey te reduceren tijdens een export. De export duurt dan wel langer en de bestanden zijn minder gecomprimeerd. Om nu handmatig een export te starten kies de app die je wilt exporteren en kies de resolutie.",
 			"allApps": "Alle apps",
 			"app": "App",
 			"resolution": "Resolutie",
@@ -62,7 +62,8 @@
 			"exportStopped": "Lopende export is afgebroken",
 			"backupInitiated": "Export van Insights is begonnen.",
 			"waitBetweenEntities":"Wacht tussen exporterende entiteiten (seconden)",
-			"onlyZipWithLogs":"Maak alleen bestanden aan voor entiteiten met logs"
+			"onlyZipWithLogs":"Maak alleen bestanden aan voor entiteiten met logs",
+			"includeLocalDateTime":"Inclusief locale datum en tijd in csv"
 		},
 		"tab5": {
 			"title": "Logs",

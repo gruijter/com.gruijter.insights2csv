@@ -1,6 +1,6 @@
 {
   "name": "com.gruijter.insights2csv",
-  "version": "3.2.0",
+  "version": "4.0.0",
   "description": "Make a backup of all your insights to your NAS or WebDAV compliant storage.\r The insights are zipped and stored in .csv format so you can open them in excel\r and create all kinds of statistics and charts.",
   "main": "api.js",
   "dependencies": {

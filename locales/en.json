@@ -62,7 +62,8 @@
 			"exportStopped": "Running export is canceled",
 			"backupInitiated": "Insights export has started.",
 			"waitBetweenEntities":"Wait between exporting entities (Seconds)",
-			"onlyZipWithLogs":"Only create files for entities with logs"
+			"onlyZipWithLogs":"Only create files for entities with logs",
+			"includeLocalDateTime":"Include Local date and time in csv"
 		},
 		"tab5": {
 			"title": "Logs",

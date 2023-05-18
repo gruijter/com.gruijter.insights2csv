@@ -1,6 +1,6 @@
 /* eslint-disable import/no-extraneous-dependencies */
 /*
-Copyright 2017 - 2022 Robin de Gruijter
+Copyright 2017 - 2023 Robin de Gruijter
 
 This file is part of com.gruijter.insights2csv.
 
