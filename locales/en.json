@@ -9,7 +9,7 @@
 			"smbUseSeperateFolders": "Seperate folder for each export",
 			"smbShare": "Network share",
 			"smbPath": "Subdirectory",
-			"smbDomain": "Domain",
+			"smbDomain": "Workgroup / Domain",
 			"smbPort": "Port (default 445)",
 			"smbUsername": "Username",
 			"smbPassword": "Password",

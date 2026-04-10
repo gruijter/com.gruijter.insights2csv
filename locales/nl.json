@@ -9,7 +9,7 @@
 			"smbUseSeperateFolders": "Iedere export in separate folder",
 			"smbShare": "Network share",
 			"smbPath": "Subdirectory",
-			"smbDomain": "Domein",
+			"smbDomain": "Workgroup / Domein",
 			"smbUsername": "Gebruikersnaam",
 			"smbPassword": "Wachtwoord",
 			"testSmb": "Test de SMB instellingen",

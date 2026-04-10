@@ -27,68 +27,11 @@ const { HomeyAPIApp } = require('homey-api');
 const fs = require('fs');
 const util = require('util');
 const archiver = require('archiver');
-const SMB2 = require('@marsaud/smb2');
+const SMB2 = require('@tryjsky/v9u-smb2');
 const { createClient } = require('webdav');
 const ftp = require('basic-ftp');
 
-const crypto = require('crypto');
-const forge = require('node-forge');
-
 const Logger = require('./captureLogs');
-
-// Polyfill Buffer.write to fix ntlm library bug in Node 14+
-const origBufferWrite = Buffer.prototype.write;
-Buffer.prototype.write = function write(...args) {
-  if (typeof args[0] === 'number' && typeof args[1] === 'number') {
-    // Intercept the ntlm byte-write bug
-    this[args[1]] = args[0];
-    return 1;
-  }
-  return origBufferWrite.apply(this, args);
-};
-
-// Polyfill MD4 and DES-ECB for OpenSSL 3.0 / Node 18+ compatibility
-const origCreateHash = crypto.createHash;
-crypto.createHash = (alg, opts) => {
-  if (alg && alg.toLowerCase() === 'md4') {
-    const md = forge.md.md4.create();
-    return {
-      update(data, enc) {
-        const input = Buffer.isBuffer(data) ? data.toString('binary') : Buffer.from(data, enc).toString('binary');
-        md.update(input);
-        return this;
-      },
-      digest(enc) {
-        const buf = Buffer.from(md.digest().getBytes(), 'binary');
-        return enc ? buf.toString(enc) : buf;
-      },
-    };
-  }
-  return origCreateHash(alg, opts);
-};
-
-const origCreateCipheriv = crypto.createCipheriv;
-crypto.createCipheriv = (alg, key, iv, opts) => {
-  if (alg && alg.toLowerCase() === 'des-ecb') {
-    const cipher = forge.cipher.createCipher('DES-ECB', forge.util.createBuffer(key.toString('binary')));
-    cipher.start({ padding: null });
-    return {
-      setAutoPadding() { },
-      update(data, enc) {
-        const input = Buffer.isBuffer(data) ? data.toString('binary') : Buffer.from(data, enc).toString('binary');
-        cipher.update(forge.util.createBuffer(input));
-        const outBytes = cipher.output.getBytes();
-        return Buffer.from(outBytes, 'binary');
-      },
-      final(enc) {
-        cipher.finish();
-        const buf = Buffer.from(cipher.output.getBytes(), 'binary');
-        return enc ? buf.toString(enc) : buf;
-      },
-    };
-  }
-  return origCreateCipheriv(alg, key, iv, opts);
-};
 
 const setTimeoutPromise = util.promisify(setTimeout);
 
@@ -139,15 +82,16 @@ class App extends Homey.App {
   async onInit() {
     try {
       if (!this.logger) this.logger = new Logger({ name: 'log', length: 200, homey: this.homey });
-      if (process.env.DEBUG === '1' || false) {
-        try {
-          // eslint-disable-next-line global-require, node/no-unsupported-features/node-builtins
-          require('inspector').waitForDebugger();
-        } catch (error) {
-          // eslint-disable-next-line global-require, node/no-unsupported-features/node-builtins
-          require('inspector').open(9325, '0.0.0.0', true);
-        }
-      }
+
+      //   if (process.env.DEBUG === '1' || false) {
+      //     try {
+      //       // eslint-disable-next-line global-require, node/no-unsupported-features/node-builtins
+      //       require('inspector').waitForDebugger();
+      //     } catch (error) {
+      //       // eslint-disable-next-line global-require, node/no-unsupported-features/node-builtins
+      //       require('inspector').open(9325, '0.0.0.0', true);
+      //     }
+      //   }
 
       // generic properties
       this.homeyAPI = undefined;
@@ -334,34 +278,65 @@ class App extends Homey.App {
     return this.logger.logArray;
   }
 
-  testSmb(smbSettings) {
+  _handleSmbError(error) {
+    let msg = 'Unknown SMB Error';
+    if (error && error.header && error.header.status !== undefined) {
+      const statusHex = (error.header.status >>> 0).toString(16).toUpperCase();
+      msg = `SMB Error 0x${statusHex}`;
+      if (statusHex === 'C000006D') msg += ' : STATUS_LOGON_FAILURE (Check Username/Password/Domain)';
+      else if (statusHex === 'C0000022') msg += ' : STATUS_ACCESS_DENIED';
+      else if (statusHex === 'C00000CC') msg += ' : STATUS_BAD_NETWORK_NAME (Check Share Name)';
+    } else if (error instanceof Error) {
+      msg = error.message;
+    } else {
+      msg = String(error);
+    }
+    this.error(msg);
+    throw new Error(msg); // Guarantee pure Error objects to prevent IPCSocket BigInt crashes
+  }
+
+  async testSmb(smbSettings) {
     this.log('testing SMB settings from frontend');
     return new Promise((resolve, reject) => {
       try {
-        const smb2Client = new SMB2({
+        const resolvedDomain = (smbSettings.smbDomain !== undefined && smbSettings.smbDomain.toUpperCase() !== 'DOMAIN') ? smbSettings.smbDomain.trim() : '';
+        const resolvedUsername = smbSettings.smbUsername ? smbSettings.smbUsername.trim() : '';
+
+        const smbOptions = {
           share: smbSettings.smbShare.replace(/\//gi, '\\'),
-          domain: smbSettings.smbDomain || 'WORKGROUP',
-          username: smbSettings.smbUsername,
-          password: smbSettings.smbPassword,
+          domain: resolvedDomain,
+          username: resolvedUsername,
+          password: smbSettings.smbPassword || '',
           port: smbSettings.smbPort || 445,
           autoCloseTimeout: 10000,
-        });
+        };
+
+        const smb2Client = new SMB2(smbOptions);
+
         let path = `${smbSettings.smbPath.replace(/\//gi, '\\')}\\`;
         if (smbSettings.smbPath === '') {
           path = '';
         }
+
         smb2Client.writeFile(`${path}insights2csv.txt`, 'Homey can write to this folder!', { flag: 'w' }, (error) => {
           if (error) {
-            this.log(error.message);
-            reject(error);
+            try {
+              this._handleSmbError(error);
+            } catch (e) {
+              reject(e);
+            }
           } else {
             this.log('Connection successfull!');
+            smb2Client.disconnect();
             resolve(true);
           }
         });
       } catch (error) {
-        this.error(error);
-        reject(error);
+        try {
+          this._handleSmbError(error);
+        } catch (e) {
+          reject(e);
+        }
       }
     });
   }
@@ -547,8 +522,8 @@ class App extends Homey.App {
     // look for app logs
     const appLogs = this.logs.filter((log) => (
       ((log.ownerUri && (log.ownerUri === appUri || log.ownerUri === managerUri))
-        || (log.uri === appUri || log.uri === managerUri))
-      && (!type || log.type === type)
+|| (log.uri === appUri || log.uri === managerUri))
+&& (!type || log.type === type)
     ));
     appRelatedLogs = appRelatedLogs.concat(appLogs);
     // find app related devices and add their logs
@@ -563,12 +538,12 @@ class App extends Homey.App {
   }
 
   /**
- *
- * @param {*} log
- * @param {*} resolution
- * @param {Date} date
- * @returns
- */
+   *
+   * @param {*} log
+   * @param {*} resolution
+   * @param {Date} date
+   * @returns
+   */
   async getLogEntries(log, resolution, date) {
     try {
       const opts = {
@@ -810,134 +785,127 @@ class App extends Homey.App {
   // create SMB client
   getSmb2Client() {
     try {
-      this.smb2Client = new SMB2({
+      const resolvedDomain = (this.smbSettings.smbDomain !== undefined && this.smbSettings.smbDomain.toUpperCase() !== 'DOMAIN') ? this.smbSettings.smbDomain.trim() : 'WORKGROUP';
+      const smbOptions = {
         share: this.smbSettings.smbShare.replace(/\//gi, '\\'),
-        domain: this.smbSettings.smbDomain || 'WORKGROUP',
-        username: this.smbSettings.smbUsername,
-        password: this.smbSettings.smbPassword,
+        domain: resolvedDomain,
+        username: this.smbSettings.smbUsername ? this.smbSettings.smbUsername.trim() : '',
+        password: this.smbSettings.smbPassword || '',
         port: this.smbSettings.smbPort || 445,
         autoCloseTimeout: 10000,
-      });
+      };
+      this.smb2Client = new SMB2(smbOptions);
       return Promise.resolve(this.smb2Client);
     } catch (error) {
-      return Promise.reject(error);
+      return this._handleSmbError(error);
     }
   }
 
   // save a file to a network share via SMB as promise; resolves smb2 filename
   async saveSmb(fileName, subfolder) {
-    try {
-      await this.getSmb2Client();
-      const folder = subfolder ? `${subfolder}\\` : '';
-      let path = `${this.smbSettings.smbPath.replace(/\//gi, '\\')}\\${folder}`;
+    await this.getSmb2Client();
+    const folder = subfolder ? `${subfolder}\\` : '';
+    let path = `${this.smbSettings.smbPath.replace(/\//gi, '\\')}\\${folder}`;
+    if (this.smbSettings.smbPath === '') {
+      path = `${folder}`;
+    }
+
+    if (this.smbSettings.smbUseSeperateFolders) {
+      path = `${path}${this.timestamp}\\`;
       if (this.smbSettings.smbPath === '') {
-        path = `${folder}`;
+        path = `${this.timestamp}\\`;
       }
-      // save to seperate folder when selected by user
-      if (this.smbSettings.smbUseSeperateFolders) {
-        path = `${path}${this.timestamp}\\`;
-        if (this.smbSettings.smbPath === '') {
-          path = `${this.timestamp}\\`;
-        }
-        const folderExists = await new Promise((resolve, reject) => {
-          this.smb2Client.exists(path, async (error, exists) => {
-            if (error) reject(error);
-            // console.log(exists ? "it's there" : "it's not there!");
-            resolve(exists);
-          });
-        });
-        if (!folderExists) {
-          await new Promise((res, rej) => {
-            this.smb2Client.mkdir(path, (err) => {
-              if (err) rej(err);
-              this.log(`${path} folder created!`);
-              res(true);
-            });
-          });
-        }
-      }
-      return new Promise((resolve, reject) => {
-        this.smb2Client.createWriteStream(`${path}${fileName}`, { flag: 'w' }, (error, smbWriteStream) => {
-          if (error) {
-            this.error(error);
-            reject(error);
-            return;
-          }
-          const fileStream = fs.createReadStream(`/userdata/${fileName}`);
-          fileStream.on('open', () => {
-            // this.log('piping to SMB2');
-            fileStream.pipe(smbWriteStream);
-          });
-          fileStream.on('close', () => {
-            // The file has been read completely
-            this.log(`${fileName} has been saved to SMB2`);
-            fileStream.unpipe();
-            resolve(fileName);
-          });
-          fileStream.on('error', (err) => {
-            this.log('filestream error: ', err);
-            // fileStream.unpipe();
-            // smbWriteStream.end();
-            reject(err);
-          });
+      const folderExists = await new Promise((resolve, reject) => {
+        this.smb2Client.exists(path, (error, exists) => {
+          if (error) reject(error);
+          resolve(exists);
         });
       });
-    } catch (error) {
-      // this.error('error:', error);
-      // this.smb2Client.close();
-      // this.getSmb2Client();
-      return Promise.reject(error);
+      if (!folderExists) {
+        await new Promise((res, rej) => {
+          this.smb2Client.mkdir(path, (err) => {
+            if (err) rej(err);
+            this.log(`${path} folder created!`);
+            res(true);
+          });
+        });
+      }
     }
+
+    return new Promise((resolve, reject) => {
+      this.smb2Client.createWriteStream(`${path}${fileName}`, { flag: 'w' }, (error, smbWriteStream) => {
+        if (error) {
+          this.error(error);
+          reject(error);
+          return;
+        }
+        const fileStream = fs.createReadStream(`/userdata/${fileName}`);
+        fileStream.on('open', () => {
+          fileStream.pipe(smbWriteStream);
+        });
+        fileStream.on('close', () => {
+          this.log(`${fileName} has been saved to SMB2`);
+          fileStream.unpipe();
+          resolve(fileName);
+        });
+        fileStream.on('error', (err) => {
+          this.log('filestream error: ', err);
+          reject(err);
+        });
+      });
+    });
   }
 
   // purge SMB folder
   async purgeSMB(daysOld, allTypes) {
-    try {
-      let selectList = [];
-      await this.getSmb2Client();
-      let path = `${this.smbSettings.smbPath.replace(/\//gi, '\\')}\\`;
-      if (this.smbSettings.smbPath === '') {
-        path = '';
-      }
-      return new Promise((resolve, reject) => {
-        this.smb2Client.readdir(path, (err, files) => {
-          if (err) return reject(err);
-          selectList = files;
-          // select only zip files
-          if (!allTypes) {
-            selectList = selectList.filter((item) => {
-              const isZip = item.toLowerCase().slice(-4) === '.zip';
-              return isZip;
-            });
-          }
-          // select older then daysOld
-          selectList = selectList.filter((item) => {
-            let dateString = item.match(/_(.*?)_/)[1];
-            if (dateString.length !== 16) return false;
-            const YYYY = dateString.substring(0, 4);
-            const MM = dateString.substring(4, 6);
-            const DD = dateString.substring(6, 8);
-            const hh = dateString.substring(9, 11);
-            const mm = dateString.substring(11, 13);
-            const ss = dateString.substring(13, 15);
-            dateString = `${YYYY}-${MM}-${DD}T${hh}:${mm}:${ss}Z`;
-            const days = (Date.now() - new Date(dateString)) / 1000 / 60 / 60 / 24;
-            return days > daysOld;
-          });
-          // delete the file or folder
-          for (let idx = 0; idx < selectList.length; idx += 1) {
-            const item = selectList[idx];
-            this.log(`removing SMB file ${item}`);
-            this.smb2Client.unlink(`${path}${item}`, (error) => {
-              if (error) this.error(error);
-            });
-          }
-          return resolve(selectList);
-        });
-      });
-    } catch (error) {
-      return Promise.reject(error);
+    let selectList = [];
+    await this.getSmb2Client();
+    let path = `${this.smbSettings.smbPath.replace(/\//gi, '\\')}\\`;
+    if (this.smbSettings.smbPath === '') {
+      path = '';
     }
+
+    return new Promise((resolve, reject) => {
+      this.smb2Client.readdir(path, (err, files) => {
+        if (err) {
+          this.log('[DEBUG-SMB] readDirectory error. Skipping purge.', err.message);
+          return resolve([]);
+        }
+        selectList = files || [];
+
+        // select only zip files
+        if (!allTypes) {
+          selectList = selectList.filter((item) => {
+            return item.toLowerCase().endsWith('.zip');
+          });
+        }
+        // select older then daysOld
+        selectList = selectList.filter((item) => {
+          const match = item.match(/_(.*?)_/);
+          if (!match) return false;
+          let dateString = match[1];
+          if (dateString.length !== 16) return false;
+          const YYYY = dateString.substring(0, 4);
+          const MM = dateString.substring(4, 6);
+          const DD = dateString.substring(6, 8);
+          const hh = dateString.substring(9, 11);
+          const mm = dateString.substring(11, 13);
+          const ss = dateString.substring(13, 15);
+          dateString = `${YYYY}-${MM}-${DD}T${hh}:${mm}:${ss}Z`;
+          const days = (Date.now() - new Date(dateString)) / 1000 / 60 / 60 / 24;
+          return days > daysOld;
+        });
+        // delete the file or folder
+        for (let idx = 0; idx < selectList.length; idx += 1) {
+          const item = selectList[idx];
+          this.log(`removing SMB file ${item}`);
+          this.smb2Client.unlink(`${path}${item}`, (error) => {
+            if (error) this.error(error);
+          });
+        }
+        return resolve(selectList);
+      });
+    });
   }
 
   // ============================================================

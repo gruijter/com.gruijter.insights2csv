@@ -7,12 +7,11 @@
     "node": ">=22"
   },
   "dependencies": {
-    "@marsaud/smb2": "^0.18.0",
+    "@tryjsky/v9u-smb2": "^1.1.0",
     "archiver": "^5.3.1",
     "basic-ftp": "^4.6.6",
     "fixture-stdout": "^0.2.1",
     "homey-api": "^1.10.21",
-    "node-forge": "^1.4.0",
     "webdav": "^4.10.0"
   },
   "devDependencies": {
