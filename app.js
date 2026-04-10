@@ -26,13 +26,10 @@ const { HomeyAPI } = require('homey-api');
 const fs = require('fs');
 const util = require('util');
 const archiver = require('archiver');
-const SMB2 = require('@tryjsky/v9u-smb2');
-// eslint-disable-next-line import/no-unresolved, node/no-missing-require
-const { createClient } = require('webdav');
-const ftp = require('basic-ftp');
-// eslint-disable-next-line import/no-extraneous-dependencies, import/no-unresolved, node/no-missing-require
-const SftpClient = require('ssh2-sftp-client');
 
+const SmbHelper = require('./lib/SmbHelper');
+const WebDavHelper = require('./lib/WebDavHelper');
+const FtpHelper = require('./lib/FtpHelper');
 const Logger = require('./captureLogs');
 
 const setTimeoutPromise = util.promisify(setTimeout);
@@ -101,9 +98,6 @@ class App extends Homey.App {
       this.devices = {};
       this.logs = [];
       this.allNames = [];
-      this.smb2Client = {};
-      this.webdavClient = {};
-      this.FTPClient = {};
       this.webdavSettings = {};
       this.smbSettings = {};
       this.FTPSettings = {};
@@ -112,6 +106,10 @@ class App extends Homey.App {
       this.OnlyZipWithLogs = {};
       this.resolutionSelection = ['lastHour', 'last6Hours', 'last24Hours', 'last7Days', 'last14Days', 'last31Days',
         'last2Years', 'today', 'thisWeek', 'thisMonth', 'thisYear', 'yesterday', 'lastWeek', 'lastMonth', 'lastYear'];
+
+      this.smbHelper = new SmbHelper(this);
+      this.webdavHelper = new WebDavHelper(this);
+      this.ftpHelper = new FtpHelper(this);
 
       // queue properties
       this.abort = false;
@@ -140,7 +138,6 @@ class App extends Homey.App {
         });
       this.homey.settings.on('set', (key) => {
         this.log(`${key} changed from frontend`);
-        // this.FTPsettingsHaveChanged = true;
       });
 
       // ==============FLOW CARD STUFF======================================
@@ -175,10 +172,10 @@ class App extends Homey.App {
         .registerRunListener((args) => {
           this.log(`Deleting old data on ${args.storage}`);
           if (args.storage === 'FTP') {
-            this.purgeFTP(args.daysOld, args.types === 'allTypes');
+            this.ftpHelper.purge(args.daysOld, args.types === 'allTypes', this.FTPSettings);
           }
           if (args.storage === 'SMB') {
-            this.purgeSMB(args.daysOld, args.types === 'allTypes');
+            this.smbHelper.purge(args.daysOld, args.types === 'allTypes', this.smbSettings);
           }
           return true;
         });
@@ -280,126 +277,16 @@ class App extends Homey.App {
     return this.logger.logArray;
   }
 
-  _handleSmbError(error) {
-    let msg = 'Unknown SMB Error';
-    if (error && error.header && error.header.status !== undefined) {
-      const statusHex = (error.header.status >>> 0).toString(16).toUpperCase();
-      msg = `SMB Error 0x${statusHex}`;
-      if (statusHex === 'C000006D') msg += ' : STATUS_LOGON_FAILURE (Check Username/Password/Domain)';
-      else if (statusHex === 'C0000022') msg += ' : STATUS_ACCESS_DENIED';
-      else if (statusHex === 'C00000CC') msg += ' : STATUS_BAD_NETWORK_NAME (Check Share Name)';
-    } else if (error instanceof Error) {
-      msg = error.message;
-    } else {
-      msg = String(error);
-    }
-    this.error(msg);
-    throw new Error(msg); // Guarantee pure Error objects to prevent IPCSocket BigInt crashes
-  }
-
   async testSmb(smbSettings) {
-    this.log('testing SMB settings from frontend');
-    return new Promise((resolve, reject) => {
-      try {
-        const resolvedDomain = (smbSettings.smbDomain !== undefined && smbSettings.smbDomain.toUpperCase() !== 'DOMAIN') ? smbSettings.smbDomain.trim() : '';
-        const resolvedUsername = smbSettings.smbUsername ? smbSettings.smbUsername.trim() : '';
-
-        const smbOptions = {
-          share: smbSettings.smbShare.replace(/\//gi, '\\'),
-          domain: resolvedDomain,
-          username: resolvedUsername,
-          password: smbSettings.smbPassword || '',
-          port: smbSettings.smbPort || 445,
-          autoCloseTimeout: 10000,
-        };
-
-        const smb2Client = new SMB2(smbOptions);
-
-        let path = `${smbSettings.smbPath.replace(/\//gi, '\\')}\\`;
-        if (smbSettings.smbPath === '') {
-          path = '';
-        }
-
-        smb2Client.writeFile(`${path}insights2csv.txt`, 'Homey can write to this folder!', { flag: 'w' }, (error) => {
-          if (error) {
-            try {
-              this._handleSmbError(error);
-            } catch (e) {
-              reject(e);
-            }
-          } else {
-            this.log('Connection successfull!');
-            smb2Client.disconnect();
-            resolve(true);
-          }
-        });
-      } catch (error) {
-        try {
-          this._handleSmbError(error);
-        } catch (e) {
-          reject(e);
-        }
-      }
-    });
+    return this.smbHelper.test(smbSettings);
   }
 
   async testWebdav(webdavSettings) {
-    this.log('testing WebDAV settings from frontend');
-    try {
-      const webdavClient = createClient(
-        webdavSettings.webdavUrl,
-        {
-          username: webdavSettings.webdavUsername,
-          password: webdavSettings.webdavPassword,
-        },
-      );
-      await webdavClient.putFileContents('insights2csv.txt', 'Homey can write to this folder!');
-      const quota = await webdavClient.getQuota();
-      this.log('Connection successfull!');
-      return Promise.resolve(quota);
-    } catch (error) {
-      this.error(error);
-      return Promise.reject(error);
-    }
+    return this.webdavHelper.test(webdavSettings);
   }
 
   async testFTP(FTPSettings) {
-    this.log('testing FTP settings from frontend');
-    try {
-      const protocol = FTPSettings.FTPProtocol || (FTPSettings.useSFTP ? 'ftps' : 'ftp');
-
-      if (protocol === 'sftp') {
-        const sftp = new SftpClient();
-        await sftp.connect({
-          host: FTPSettings.FTPHost,
-          port: FTPSettings.FTPPort || 22,
-          username: FTPSettings.FTPUsername,
-          password: FTPSettings.FTPPassword,
-        });
-        await sftp.mkdir(`/${FTPSettings.FTPFolder}`, true);
-        this.log('Connection successfull!');
-        await sftp.end();
-      } else {
-        const client = new ftp.Client();
-        client.ftp.verbose = true;
-        await client.access({
-          host: FTPSettings.FTPHost,
-          port: FTPSettings.FTPPort || 21,
-          user: FTPSettings.FTPUsername,
-          password: FTPSettings.FTPPassword,
-          secure: protocol === 'ftps',
-          secureOptions: { rejectUnauthorized: false },
-        });
-        await client.ensureDir(FTPSettings.FTPFolder);
-        // console.log(await client.list());
-        this.log('Connection successfull!');
-        client.close();
-      }
-      return Promise.resolve();
-    } catch (error) {
-      this.error(error);
-      return Promise.reject(error);
-    }
+    return this.ftpHelper.test(FTPSettings);
   }
 
   getResolutions() {
@@ -742,373 +629,6 @@ class App extends Homey.App {
   }
 
   // ============================================================
-  // WebDAV file handling here
-  getWebdavClient() {
-    try {
-      this.webdavClient = createClient(
-        this.webdavSettings.webdavUrl,
-        {
-          username: this.webdavSettings.webdavUsername,
-          password: this.webdavSettings.webdavPassword,
-        },
-      );
-      return Promise.resolve(this.webdavClient);
-    } catch (error) {
-      return Promise.reject(error);
-    }
-  }
-
-  // save a file to WebDAV as promise; resolves webdav filename
-  async saveWebDav(fileName, subfolder) { // filename is appId
-    try {
-      await this.getWebdavClient();
-      const folder = subfolder ? `/${subfolder}` : '';
-      let webdavFileName = `${folder}/${fileName}`;
-      // save to seperate folder when selected by user
-      if (this.webdavSettings.webdavUseSeperateFolders) {
-        await this.webdavClient.createDirectory(`${folder}/${this.timestamp}/`)
-          .then(() => {
-            this.log(`${this.timestamp} folder created!`);
-          })
-          .catch(() => null);
-        webdavFileName = `${folder}/${this.timestamp}/${fileName}`;
-      }
-      const options = {
-        format: 'binary',
-        overwrite: true,
-      };
-      const webDavWriteStream = this.webdavClient.createWriteStream(webdavFileName, options);
-      const fileStream = fs.createReadStream(`/userdata/${fileName}`);
-      return new Promise((resolve, reject) => {
-        let isDone = false;
-
-        webDavWriteStream.on('finish', () => {
-          this.log(`${fileName} has been saved to webDav`);
-          if (!isDone) {
-            isDone = true;
-            resolve(fileName);
-          }
-        });
-
-        webDavWriteStream.on('error', (err) => {
-          this.error('webdavwritestream error: ', err.message || err);
-          if (!isDone) {
-            isDone = true;
-            reject(err);
-          }
-        });
-
-        fileStream.on('error', (err) => {
-          this.log('filestream error: ', err);
-          if (!isDone) {
-            isDone = true;
-            reject(err);
-          }
-        });
-
-        // pipe handles auto-ending the webDavWriteStream
-        fileStream.pipe(webDavWriteStream);
-      });
-
-    } catch (error) {
-      // this.error('error:', error);
-      return Promise.reject(error);
-    }
-  }
-
-  // ============================================================
-  // SMB file handling here
-
-  // create SMB client
-  getSmb2Client() {
-    try {
-      const resolvedDomain = (this.smbSettings.smbDomain !== undefined && this.smbSettings.smbDomain.toUpperCase() !== 'DOMAIN') ? this.smbSettings.smbDomain.trim() : 'WORKGROUP';
-      const smbOptions = {
-        share: this.smbSettings.smbShare.replace(/\//gi, '\\'),
-        domain: resolvedDomain,
-        username: this.smbSettings.smbUsername ? this.smbSettings.smbUsername.trim() : '',
-        password: this.smbSettings.smbPassword || '',
-        port: this.smbSettings.smbPort || 445,
-        autoCloseTimeout: 10000,
-      };
-      this.smb2Client = new SMB2(smbOptions);
-      return Promise.resolve(this.smb2Client);
-    } catch (error) {
-      return this._handleSmbError(error);
-    }
-  }
-
-  // save a file to a network share via SMB as promise; resolves smb2 filename
-  async saveSmb(fileName, subfolder) {
-    await this.getSmb2Client();
-    const folder = subfolder ? `${subfolder}\\` : '';
-    let path = `${this.smbSettings.smbPath.replace(/\//gi, '\\')}\\${folder}`;
-    if (this.smbSettings.smbPath === '') {
-      path = `${folder}`;
-    }
-
-    if (this.smbSettings.smbUseSeperateFolders) {
-      path = `${path}${this.timestamp}\\`;
-      if (this.smbSettings.smbPath === '') {
-        path = `${this.timestamp}\\`;
-      }
-      const folderExists = await new Promise((resolve, reject) => {
-        this.smb2Client.exists(path, (error, exists) => {
-          if (error) reject(error);
-          resolve(exists);
-        });
-      });
-      if (!folderExists) {
-        await new Promise((res, rej) => {
-          this.smb2Client.mkdir(path, (err) => {
-            if (err) rej(err);
-            this.log(`${path} folder created!`);
-            res(true);
-          });
-        });
-      }
-    }
-
-    return new Promise((resolve, reject) => {
-      this.smb2Client.createWriteStream(`${path}${fileName}`, { flag: 'w' }, (error, smbWriteStream) => {
-        if (error) {
-          this.error(error);
-          reject(error);
-          return;
-        }
-        const fileStream = fs.createReadStream(`/userdata/${fileName}`);
-        let isDone = false;
-
-        smbWriteStream.on('finish', () => {
-          this.log(`${fileName} has been saved to SMB2`);
-          if (!isDone) {
-            isDone = true;
-            resolve(fileName);
-          }
-        });
-
-        smbWriteStream.on('error', (err) => {
-          if (err.code === 'STATUS_FILE_CLOSED') {
-            // Ignore v9u-smb2 bug trying to double-close the file during auto-destroy
-            return;
-          }
-          this.error('smbWriteStream error: ', err);
-          if (!isDone) {
-            isDone = true;
-            reject(err);
-          }
-        });
-
-        fileStream.on('error', (err) => {
-          this.log('filestream error: ', err);
-          if (!isDone) {
-            isDone = true;
-            reject(err);
-          }
-        });
-
-        // pipe handles auto-ending the smbWriteStream
-        fileStream.pipe(smbWriteStream);
-      });
-    });
-  }
-
-  // purge SMB folder
-  async purgeSMB(daysOld, allTypes) {
-    let selectList = [];
-    await this.getSmb2Client();
-    let path = `${this.smbSettings.smbPath.replace(/\//gi, '\\')}\\`;
-    if (this.smbSettings.smbPath === '') {
-      path = '';
-    }
-
-    return new Promise((resolve, reject) => {
-      this.smb2Client.readdir(path, (err, files) => {
-        if (err) {
-          this.log('[DEBUG-SMB] readDirectory error. Skipping purge.', err.message);
-          return resolve([]);
-        }
-        selectList = files || [];
-
-        // select only zip files
-        if (!allTypes) {
-          selectList = selectList.filter((item) => {
-            return item.toLowerCase().endsWith('.zip');
-          });
-        }
-        // select older then daysOld
-        selectList = selectList.filter((item) => {
-          const match = item.match(/_(.*?)_/);
-          if (!match) return false;
-          let dateString = match[1];
-          if (dateString.length !== 16) return false;
-          const YYYY = dateString.substring(0, 4);
-          const MM = dateString.substring(4, 6);
-          const DD = dateString.substring(6, 8);
-          const hh = dateString.substring(9, 11);
-          const mm = dateString.substring(11, 13);
-          const ss = dateString.substring(13, 15);
-          dateString = `${YYYY}-${MM}-${DD}T${hh}:${mm}:${ss}Z`;
-          const days = (Date.now() - new Date(dateString)) / 1000 / 60 / 60 / 24;
-          return days > daysOld;
-        });
-        // delete the file or folder
-        for (let idx = 0; idx < selectList.length; idx += 1) {
-          const item = selectList[idx];
-          this.log(`removing SMB file ${item}`);
-          this.smb2Client.unlink(`${path}${item}`, (error) => {
-            if (error) this.error(error);
-          });
-        }
-        return resolve(selectList);
-      });
-    });
-  }
-
-  // ============================================================
-  // FTP file handling here
-
-  // create FTP client
-  async getFTPClient() {
-    try {
-      if ((this.FTPClient.closed === false) && !this.FTPsettingsHaveChanged) {
-        return Promise.resolve(this.FTPClient);
-      }
-      if (this.FTPClient instanceof ftp.Client) {
-        this.log('closing FTP client');
-        this.FTPClient.close();
-      }
-      this.FTPClient = new ftp.Client();
-      // client.ftp.verbose = true;
-      this.FTPsettingsHaveChanged = false;
-      const protocol = this.FTPSettings.FTPProtocol || (this.FTPSettings.useSFTP ? 'ftps' : 'ftp');
-      await this.FTPClient.access({
-        host: this.FTPSettings.FTPHost,
-        port: this.FTPSettings.FTPPort,
-        user: this.FTPSettings.FTPUsername,
-        password: this.FTPSettings.FTPPassword,
-        secure: protocol === 'ftps',
-        secureOptions: {
-          host: this.FTPSettings.FTPHost,
-          rejectUnauthorized: false,
-        },
-      });
-      return Promise.resolve(this.FTPClient);
-    } catch (error) {
-      return Promise.reject(error);
-    }
-  }
-
-  // save a file to a network share via FTP as promise; resolves FTP filename
-  async saveFTP(fileName, subfolder) {
-    try {
-      const sub = subfolder ? `/${subfolder}` : '';
-      const folder = `//${this.FTPSettings.FTPFolder}${sub}`;
-      const fileStream = fs.createReadStream(`/userdata/${fileName}`);
-      const protocol = this.FTPSettings.FTPProtocol || (this.FTPSettings.useSFTP ? 'ftps' : 'ftp');
-
-      if (protocol === 'sftp') {
-        const sftp = new SftpClient();
-        await sftp.connect({
-          host: this.FTPSettings.FTPHost,
-          port: this.FTPSettings.FTPPort || 22,
-          username: this.FTPSettings.FTPUsername,
-          password: this.FTPSettings.FTPPassword,
-        });
-        const remoteDir = `/${this.FTPSettings.FTPFolder}${sub}${this.FTPSettings.FTPUseSeperateFolders ? `/${this.timestamp}` : ''}`;
-        await sftp.mkdir(remoteDir, true);
-        await sftp.put(fileStream, `${remoteDir}/${fileName}`);
-        this.log(`${fileName} has been saved to SFTP`);
-        await sftp.end();
-      } else {
-        await this.getFTPClient();
-        await this.FTPClient.ensureDir(`//${folder}`);
-        if (this.FTPSettings.FTPUseSeperateFolders) {
-          await this.FTPClient.ensureDir(`//${folder}/${this.timestamp}`);
-        }
-        await this.FTPClient.upload(fileStream, fileName);
-        this.log(`${fileName} has been saved to FTP(S)`);
-      }
-      return Promise.resolve(fileName);
-    } catch (error) {
-      this.error('error:', error);
-      return Promise.reject(error);
-    }
-  }
-
-  // purge FTP folder
-  async purgeFTP(daysOld, allTypes) {
-    try {
-      const protocol = this.FTPSettings.FTPProtocol || (this.FTPSettings.useSFTP ? 'ftps' : 'ftp');
-      let selectList = [];
-
-      if (protocol === 'sftp') {
-        const sftp = new SftpClient();
-        await sftp.connect({
-          host: this.FTPSettings.FTPHost,
-          port: this.FTPSettings.FTPPort || 22,
-          username: this.FTPSettings.FTPUsername,
-          password: this.FTPSettings.FTPPassword,
-        });
-        const remoteDir = `/${this.FTPSettings.FTPFolder}`;
-        await sftp.mkdir(remoteDir, true);
-        selectList = await sftp.list(remoteDir);
-
-        if (!allTypes) {
-          selectList = selectList.filter((item) => item.type === '-' && item.name.toLowerCase().endsWith('.zip'));
-        }
-        selectList = selectList.filter((item) => {
-          // ssh2-sftp-client provides modifying time directly in milliseconds
-          const days = (Date.now() - item.modifyTime) / 1000 / 60 / 60 / 24;
-          return days > daysOld;
-        });
-        for (let idx = 0; idx < selectList.length; idx += 1) {
-          const item = selectList[idx];
-          if (item.type === '-') {
-            this.log(`removing SFTP file ${item.name}`);
-            await sftp.delete(`${remoteDir}/${item.name}`);
-          } else if (item.type === 'd') {
-            this.log(`removing SFTP folder ${item.name}`);
-            await sftp.rmdir(`${remoteDir}/${item.name}`, true);
-          }
-        }
-        await sftp.end();
-      } else {
-        await this.getFTPClient();
-        await this.FTPClient.ensureDir(`//${this.FTPSettings.FTPFolder}`);
-        selectList = await this.FTPClient.list();
-
-        if (!allTypes) {
-          selectList = selectList.filter((item) => item.type === 1 && item.name.toLowerCase().endsWith('.zip'));
-        }
-        selectList = selectList.filter((item) => {
-          let dateString = item.date;
-          if (dateString.length < 18) {
-            const year = new Date().getFullYear();
-            dateString = `${year} ${dateString}`;
-          }
-          const days = (Date.now() - new Date(dateString)) / 1000 / 60 / 60 / 24;
-          return days > daysOld;
-        });
-        for (let idx = 0; idx < selectList.length; idx += 1) {
-          const item = selectList[idx];
-          if (item.type === 1) {
-            this.log(`removing FTP file ${item.name}`);
-            await this.FTPClient.remove(item.name);
-          }
-          if (item.type === 2) {
-            this.log(`removing FTP folder ${item.name}`);
-            await this.FTPClient.removeDir(item.name);
-          }
-        }
-      }
-      return Promise.resolve(selectList);
-    } catch (error) {
-      return Promise.reject(error);
-    }
-  }
-
-  // ============================================================
   // ZIP handling here
   // zip all log entries from one app as promise; resolves zipfilename
   async zipAppLogs(appId, resolution, date, type) {
@@ -1198,13 +718,13 @@ class App extends Homey.App {
       const fileName = await this.zipAppLogs(appId, resolution, date, type);
       if (!fileName) return false;
       if (this.smbSettings && this.smbSettings.useSmb) {
-        await this.saveSmb(fileName, subfolder);
+        await this.smbHelper.save(fileName, subfolder, this.smbSettings, this.timestamp);
       }
       if (this.webdavSettings && this.webdavSettings.useWebdav) {
-        await this.saveWebDav(fileName, subfolder);
+        await this.webdavHelper.save(fileName, subfolder, this.webdavSettings, this.timestamp);
       }
       if (this.FTPSettings && this.FTPSettings.useFTP) {
-        await this.saveFTP(fileName, subfolder);
+        await this.ftpHelper.save(fileName, subfolder, this.FTPSettings, this.timestamp);
       }
       this.deleteFile(fileName);
       // this.log(`Export of ${appId} finished`);
