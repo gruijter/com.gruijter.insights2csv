@@ -23,7 +23,7 @@ with com.gruijter.insights2csv. If not, see <http://www.gnu.org/licenses/>.
 const StdOutFixture = require('fixture-stdout');
 const fs = require('fs');
 
-class captureLogs {
+class CaptureLogs {
 	// Log object to keep logs in memory and in persistent storage
 	// captures and reroutes Homey's this.log (stdout) and this.err (stderr)
 
@@ -45,7 +45,7 @@ class captureLogs {
 			this.homey.log('logfile retrieved');
 			return this.logArray;
 		} catch (error) {
-			if (error.message.includes('ENOENT')) return [];
+			if (error.code === 'ENOENT') return [];
 			this.homey.error('error parsing logfile: ', error.message);
 			return [];
 		}
@@ -69,7 +69,7 @@ class captureLogs {
 			this.homey.log('logfile deleted');
 			return true;
 		} catch (error) {
-			if (error.message.includes('ENOENT')) return false;
+			if (error.code === 'ENOENT') return false;
 			this.homey.error('error deleting logfile: ', error.message);
 			return false;
 		}
@@ -113,4 +113,4 @@ class captureLogs {
 
 }
 
-module.exports = captureLogs;
+module.exports = CaptureLogs;

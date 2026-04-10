@@ -58,7 +58,9 @@ class App extends Homey.App {
 			const delimiter = ';';
 			const LocalDateTime = this.IncludeLocalDateTime.includeLocalDateTime ? `${delimiter}Local datetime` : '';
 			let { id } = logEntries;
-			if (id.indexOf(':') > -1) { id = id.split(':'); id = id[id.length - 1]; }
+			if (id.includes(':')) { 
+				id = id.split(':').pop(); 
+			}
 			if (log.ownerUri === 'homey:manager:logic') id = log.title;
 
 			const header = `Zulu dateTime${delimiter}${id}${LocalDateTime}\r\n`;
@@ -109,8 +111,6 @@ class App extends Homey.App {
 			// queue properties
 			this.abort = false;
 			this.queue = [];
-			this.head = 0;
-			this.tail = 0;
 			this.queueRunning = false;
 
 			// register some listeners
@@ -144,14 +144,14 @@ class App extends Homey.App {
 				.registerRunListener(async (args) => {
 					this.log(`Exporting all insights ${args.resolution}`);
 					this.exportAll(args.resolution);
-					return Promise.resolve(true);
+					return true;
 				});
 
 			const archiveAppAction = this.homey.flow.getActionCard('archive_app');
 			archiveAppAction
 				.registerRunListener(async (args) => {
 					this.exportApp(args.selectedApp.id, args.resolution);
-					return Promise.resolve(true);
+					return true;
 				})
 				.registerArgumentAutocompleteListener(
 					'selectedApp',
@@ -161,7 +161,7 @@ class App extends Homey.App {
 							const appNameFound = result.name.toLowerCase().indexOf(query.toLowerCase()) > -1;
 							return appIdFound || appNameFound;
 						});
-						return Promise.resolve(results);
+						return results;
 					},
 				);
 
@@ -175,7 +175,7 @@ class App extends Homey.App {
 					if (args.storage === 'SMB') {
 						this.purgeSMB(args.daysOld, args.types === 'allTypes');
 					}
-					return Promise.resolve(true);
+					return true;
 				});
 
 			const archiveAllTypeFolderAction = this.homey.flow.getActionCard('archive_all_type_folder');
@@ -184,7 +184,7 @@ class App extends Homey.App {
 					this.log(`Exporting all insights ${args.resolution} of type ${args.type} into subfolder ${args.subfolder} `);
 					this.exportAll(args.resolution, args.type === 'all' ? undefined : args.type, args.subfolder
 						&& args.subfolder !== 'undefined' ? args.subfolder : undefined);
-					return Promise.resolve(true);
+					return true;
 				});
 
 			const archiveAppTypeFolderAction = this.homey.flow.getActionCard('archive_app_type_folder');
@@ -192,8 +192,7 @@ class App extends Homey.App {
 				.registerRunListener(async (args) => {
 					this.exportApp(args.selectedApp.id, args.resolution, null, true, args.type === 'all' ? undefined : args.type, args.subfolder
 						&& args.subfolder !== 'undefined' ? args.subfolder : undefined);
-					return Promise.resolve(true);
-
+					return true;
 				})
 				.registerArgumentAutocompleteListener(
 					'selectedApp',
@@ -203,7 +202,7 @@ class App extends Homey.App {
 							const appNameFound = result.name.toLowerCase().indexOf(query.toLowerCase()) > -1;
 							return appIdFound || appNameFound;
 						});
-						return Promise.resolve(results);
+						return results;
 					},
 				);
 
@@ -235,33 +234,19 @@ class App extends Homey.App {
 	// ============================================================
 	// stuff for queue handling here
 	async enQueue(item) {
-		this.queue[this.tail] = item;
-		this.tail += 1;
+		this.queue.push(item);
 		if (!this.queueRunning) {
 			this.queueRunning = true;
-			// await this.initExport(item.date);
 			this.runQueue();
 		}
 	}
 
 	deQueue() {
-		const size = this.tail - this.head;
-		if (size <= 0) return undefined;
-		const item = this.queue[this.head];
-		delete this.queue[this.head];
-		this.head += 1;
-		// Reset the counter
-		if (this.head === this.tail) {
-			this.head = 0;
-			this.tail = 0;
-		}
-		return item;
+		return this.queue.shift();
 	}
 
 	flushQueue() {
 		this.queue = [];
-		this.head = 0;
-		this.tail = 0;
 		this.queueRunning = false;
 		this.log('Export queue is flushed');
 	}
@@ -429,24 +414,20 @@ class App extends Homey.App {
 	// ============================================================
 	// Homey API stuff here
 	async loginHomeyApi() {
-		if (this.homeyAPI) return Promise.resolve(this.homeyAPI);
+		if (this.homeyAPI) return this.homeyAPI;
 		// Authenticate against the current Homey.
 		this.homeyAPI = new HomeyAPIApp({ homey: this.homey, $timeout: 90000 });
-		// this.homeyAPI = await HomeyAPI.createAppAPI({
-		// 	homey: this.homey,
-		// 	$timeout: 90000
-		// });
-		return Promise.resolve(this.homeyAPI);
+		return this.homeyAPI;
 	}
 
 	async getAllLogs() {
 		this.logs = Object.values(await this.homeyAPI.insights.getLogs({ $timeout: 60000 }));
-		return Promise.resolve(this.logs);
+		return this.logs;
 	}
 
 	async getAllDevices() {
 		this.devices = await this.homeyAPI.devices.getDevices({ $timeout: 60000 });
-		return Promise.resolve(this.devices);
+		return this.devices;
 	}
 
 	// Get a list of all app names
@@ -462,20 +443,11 @@ class App extends Homey.App {
 				};
 				return map;
 			});
-			return Promise.all(mappedArray);
+			return mappedArray;
 		} catch (error) {
-			return Promise.reject(error);
+			throw error;
 		}
 	}
-
-	// getUriObj(log) {
-	// 	if (log.uriObj) return log.uriObj;
-	// 	else
-	// 	{
-	// 		this.log(log);
-	// 		return {id:log.ownerId};
-	// 	}
-	// }
 
 	// Get a list of all logged manager names
 	async getManagerNameList() {
@@ -484,9 +456,8 @@ class App extends Homey.App {
 			const logs = this.logs; // Object.values(await this.homeyAPI.insights.getLogs({ $timeout: 60000 }));
 			const list = logs.filter((log) => (log.uriObj ? log.uriObj.type === 'manager' : log.ownerUri.startsWith('homey:manager:')))
 				.map((log) => {
-					// let uriObj = this.getUriObj(log);
 					const ids = log.ownerUri ? log.ownerUri.split(':') : null;
-					const id = ids ? ids[ids.length - 1] : null;
+					const id = ids ? ids.pop() : null;
 
 					const name = (log.uriObj ? log.uriObj.name : log.ownerName) || id; // : app ? app.name : null;
 					if (!name) return null;
@@ -499,9 +470,9 @@ class App extends Homey.App {
 					return _app;
 				});
 			const uniqueList = list.filter((elem, index) => elem && index === list.findIndex((obj) => JSON.stringify(obj) === JSON.stringify(elem)));
-			return Promise.all(uniqueList);
+			return uniqueList;
 		} catch (error) {
-			return Promise.reject(error);
+			throw error;
 		}
 	}
 
@@ -510,9 +481,9 @@ class App extends Homey.App {
 			const managerNameList = await this.getManagerNameList();
 			const appNameList = await this.getAppNameList();
 			this.allNames = appNameList.concat(managerNameList);
-			return Promise.all(this.allNames);
+			return this.allNames;
 		} catch (error) {
-			return Promise.reject(error);
+			throw error;
 		}
 	}
 
@@ -536,9 +507,9 @@ class App extends Homey.App {
 					appRelatedLogs = appRelatedLogs.concat(deviceLogs);
 				}
 			});
-			return Promise.resolve(appRelatedLogs);
+			return appRelatedLogs;
 		} catch (error) {
-			return Promise.reject(error);
+			throw error;
 		}
 	}
 
@@ -565,97 +536,83 @@ class App extends Homey.App {
 				const dateTimezoned = new Date(this.enDateFormatter.format(date));
 				const hourOffset = date.getHours() - dateTimezoned.getHours();
 
-				let _dateFrom;
-				let _dateTo;
+				let _dateFrom = null;
+				let _dateTo = new Date(date);
+				let exclusiveEnd = false;
+
+				const applyOffset = (dt) => new Date(dt.getTime() + hourOffset * 60 * 60 * 1000);
+				const y = dateTimezoned.getFullYear();
+				const m = dateTimezoned.getMonth();
+				const d = dateTimezoned.getDate();
+				const day = dateTimezoned.getDay();
+
 				switch (resolution) {
 					case 'lastHour':
-						_dateFrom = new Date(new Date(date).setHours(date.getHours() - 1));
-						logEntries.values = logEntries.values.filter((x) => new Date(x.t) >= _dateFrom);
+						_dateFrom = new Date(date.getTime() - 60 * 60 * 1000);
 						break;
 					case 'last6Hours':
-						_dateFrom = new Date(new Date(date).setHours(date.getHours() - 6));
-						logEntries.values = logEntries.values.filter((x) => new Date(x.t) >= _dateFrom);
+						_dateFrom = new Date(date.getTime() - 6 * 60 * 60 * 1000);
 						break;
 					case 'last24Hours':
-						_dateFrom = new Date(new Date(date).setHours(date.getHours() - 24));
-						logEntries.values = logEntries.values.filter((x) => new Date(x.t) >= _dateFrom);
+						_dateFrom = new Date(date.getTime() - 24 * 60 * 60 * 1000);
 						break;
 					case 'last7Days':
-						_dateFrom = new Date(new Date(date).setDate(date.getDate() - 7));
-						logEntries.values = logEntries.values.filter((x) => new Date(x.t) >= _dateFrom);
+						_dateFrom = new Date(date.getTime() - 7 * 24 * 60 * 60 * 1000);
 						break;
 					case 'last14Days':
-						_dateFrom = new Date(new Date(date).setDate(date.getDate() - 14));
-						logEntries.values = logEntries.values.filter((x) => new Date(x.t) >= _dateFrom);
+						_dateFrom = new Date(date.getTime() - 14 * 24 * 60 * 60 * 1000);
 						break;
 					case 'last31Days':
-						_dateFrom = new Date(new Date(date).setDate(date.getDate() - 31));
-						logEntries.values = logEntries.values.filter((x) => new Date(x.t) >= _dateFrom);
+						_dateFrom = new Date(date.getTime() - 31 * 24 * 60 * 60 * 1000);
 						break;
 					case 'today':
-						_dateFrom = new Date(new Date(dateTimezoned.getFullYear(), dateTimezoned.getMonth(), dateTimezoned.getDate(), 0, 0, 0, 0));
-						_dateTo = new Date(date);
-						_dateFrom = new Date(new Date(_dateFrom).setHours(_dateFrom.getHours() + hourOffset));
-						logEntries.values = logEntries.values.filter((x) => new Date(x.t) >= _dateFrom && new Date(x.t) <= _dateTo);
+						_dateFrom = applyOffset(new Date(y, m, d));
 						break;
 					case 'yesterday':
-						_dateFrom = new Date(new Date(dateTimezoned.getFullYear(), dateTimezoned.getMonth(), dateTimezoned.getDate(), 0, 0, 0, 0)
-							.setDate(dateTimezoned.getDate() - 1));
-						_dateTo = new Date(new Date(_dateFrom).setDate(_dateFrom.getDate() + 1));
-						_dateFrom = new Date(new Date(_dateFrom).setHours(_dateFrom.getHours() + hourOffset));
-						_dateTo = new Date(new Date(_dateTo).setHours(_dateTo.getHours() + hourOffset));
-						logEntries.values = logEntries.values.filter((x) => new Date(x.t) >= _dateFrom && new Date(x.t) < _dateTo);
+						_dateFrom = applyOffset(new Date(y, m, d - 1));
+						_dateTo = applyOffset(new Date(y, m, d));
+						exclusiveEnd = true;
 						break;
 					case 'thisWeek':
-						_dateFrom = new Date(new Date(dateTimezoned.getFullYear(), dateTimezoned.getMonth(), dateTimezoned.getDate(), 0, 0, 0, 0)
-							.setDate(dateTimezoned.getDate() - (dateTimezoned.getDay() - 1)));
-						_dateTo = new Date(date);
-						_dateFrom = new Date(new Date(_dateFrom).setHours(_dateFrom.getHours() + hourOffset));
-						logEntries.values = logEntries.values.filter((x) => new Date(x.t) >= _dateFrom && new Date(x.t) <= _dateTo);
+						_dateFrom = applyOffset(new Date(y, m, d - (day - 1)));
 						break;
 					case 'lastWeek':
-						_dateFrom = new Date(new Date(dateTimezoned.getFullYear(), dateTimezoned.getMonth(), dateTimezoned.getDate(), 0, 0, 0, 0)
-							.setDate(dateTimezoned.getDate() - (dateTimezoned.getDay() - 1) - 7));
-						_dateTo = new Date(new Date(_dateFrom).setDate(_dateFrom.getDate() + 7));
-						_dateFrom = new Date(new Date(_dateFrom).setHours(_dateFrom.getHours() + hourOffset));
-						_dateTo = new Date(new Date(_dateTo).setHours(_dateTo.getHours() + hourOffset));
-						logEntries.values = logEntries.values.filter((x) => new Date(x.t) >= _dateFrom && new Date(x.t) < _dateTo);
+						_dateFrom = applyOffset(new Date(y, m, d - (day - 1) - 7));
+						_dateTo = applyOffset(new Date(y, m, d - (day - 1)));
+						exclusiveEnd = true;
 						break;
 					case 'thisMonth':
-						_dateFrom = new Date(new Date(dateTimezoned.getFullYear(), dateTimezoned.getMonth(), 1, 0, 0, 0, 0));
-						_dateTo = new Date(date);
-						_dateFrom = new Date(new Date(_dateFrom).setHours(_dateFrom.getHours() + hourOffset));
-						logEntries.values = logEntries.values.filter((x) => new Date(x.t) >= _dateFrom && new Date(x.t) <= _dateTo);
+						_dateFrom = applyOffset(new Date(y, m, 1));
 						break;
 					case 'lastMonth':
-						_dateFrom = new Date(new Date(dateTimezoned.getFullYear(), dateTimezoned.getMonth(), 1, 0, 0, 0, 0)
-							.setMonth(dateTimezoned.getMonth() - 1));
-						_dateTo = new Date(new Date(_dateFrom).setMonth(_dateFrom.getMonth() + 1));
-						_dateFrom = new Date(new Date(_dateFrom).setHours(_dateFrom.getHours() + hourOffset));
-						_dateTo = new Date(new Date(_dateTo).setHours(_dateTo.getHours() + hourOffset));
-						logEntries.values = logEntries.values.filter((x) => new Date(x.t) >= _dateFrom && new Date(x.t) < _dateTo);
+						_dateFrom = applyOffset(new Date(y, m - 1, 1));
+						_dateTo = applyOffset(new Date(y, m, 1));
+						exclusiveEnd = true;
 						break;
 					case 'thisYear':
-						_dateFrom = new Date(new Date(dateTimezoned.getFullYear(), 0, 1, 0, 0, 0, 0));
-						_dateTo = new Date(date);
-						_dateFrom = new Date(new Date(_dateFrom).setHours(_dateFrom.getHours() + hourOffset));
-						logEntries.values = logEntries.values.filter((x) => new Date(x.t) >= _dateFrom && new Date(x.t) <= _dateTo);
+						_dateFrom = applyOffset(new Date(y, 0, 1));
 						break;
 					case 'lastYear':
-						_dateFrom = new Date(new Date(dateTimezoned.getFullYear(), 0, 1, 0, 0, 0, 0).setFullYear(dateTimezoned.getFullYear() - 1));
-						_dateTo = new Date(new Date(_dateFrom).setFullYear(_dateFrom.getFullYear() + 1));
-						_dateFrom = new Date(new Date(_dateFrom).setHours(_dateFrom.getHours() + hourOffset));
-						_dateTo = new Date(new Date(_dateTo).setHours(_dateTo.getHours() + hourOffset));
-						logEntries.values = logEntries.values.filter((x) => new Date(x.t) >= _dateFrom && new Date(x.t) < _dateTo);
+						_dateFrom = applyOffset(new Date(y - 1, 0, 1));
+						_dateTo = applyOffset(new Date(y, 0, 1));
+						exclusiveEnd = true;
 						break;
 					case 'last2Years':
 						_dateFrom = new Date(new Date(date).setFullYear(date.getFullYear() - 2));
-						_dateTo = new Date(date);
-						logEntries.values = logEntries.values.filter((x) => new Date(x.t) >= _dateFrom && new Date(x.t) <= _dateTo);
 						break;
 					default:
-						throw Error('invalid resolution', resolution);
+						throw new Error(`invalid resolution: ${resolution}`);
 				}
+
+				logEntries.values = logEntries.values.filter((x) => {
+					const t = new Date(x.t).getTime();
+					if (_dateFrom && t < _dateFrom.getTime()) return false;
+					if (_dateTo) {
+						if (exclusiveEnd && t >= _dateTo.getTime()) return false;
+						if (!exclusiveEnd && t > _dateTo.getTime()) return false;
+					}
+					return true;
+				});
 			}
 			if (logEntries.values.length > 2925) {
 				this.error(`Insights data is corrupt and will be truncated to the first 2925 records for
@@ -665,12 +622,11 @@ class App extends Homey.App {
 				if (global.gc) global.gc();
 				await setTimeoutPromise(this.CPUSettings && this.CPUSettings.lowCPU ? 10 * 1000 : 1, 'waiting is done');
 			}
-			return Promise.resolve(logEntries);
+			return logEntries;
 		} catch (error) {
 			if (global.gc) global.gc();
 			await setTimeoutPromise(this.CPUSettings && this.CPUSettings.lowCPU ? 10 * 1000 : 1, 'waiting is done');
-			// await setTimeoutPromise(10 * 1000, 'waiting is done');
-			return Promise.reject(error);
+			throw error;
 		}
 	}
 
@@ -733,9 +689,9 @@ class App extends Homey.App {
 			await this.getAllLogs();
 			await this.getAllDevices();
 			await this.getAllNames();
-			return Promise.resolve(true);
+			return true;
 		} catch (error) {
-			return Promise.reject(error);
+			throw error;
 		}
 	}
 
@@ -1001,7 +957,7 @@ class App extends Homey.App {
 			let selectList = await this.FTPClient.list();
 			// select only zip files
 			if (!allTypes) {
-				selectList = await selectList.filter((item) => {
+				selectList = selectList.filter((item) => {
 					const isFile = item.type === 1;
 					// const isFolder = item.type === 2;
 					const isZip = item.name.toLowerCase().slice(-4) === '.zip';
@@ -1009,7 +965,7 @@ class App extends Homey.App {
 				});
 			}
 			// select older then daysOld
-			selectList = await selectList.filter((item) => {
+			selectList = selectList.filter((item) => {
 				let dateString = item.date;
 				if (dateString.length < 18) {
 					const year = new Date().getFullYear();
@@ -1068,12 +1024,10 @@ class App extends Homey.App {
 					const data = await this.log2csv(entries, log);
 					const allMeta = Object.assign(data.meta, log);
 					const ids = (log.ownerUri || log.uri).split(':');
-					// if(ids.length)
-					const id = ids[ids.length - 1];
+					const id = ids.pop();
 					const dev = this.devices[id];
 					const app = dev ? null : this.allNames.find((x) => x.id === id);
-					// eslint-disable-next-line no-nested-ternary
-					const name = log.uriObj ? log.uriObj.name : dev ? dev.name : app ? app.name : null;
+					const name = log.uriObj?.name || dev?.name || app?.name || null;
 					const fileNameCsv = `${name}/${(log.ownerId || log.id)}.csv`;
 					const fileNameMeta = `${name}/${(log.ownerId || log.id)}_meta.json`;
 					const fileNameJson = `${name}/${(log.ownerId || log.id)}.json`;
@@ -1144,72 +1098,3 @@ class App extends Homey.App {
 }
 
 module.exports = App;
-
-/*
-_downloadEntries = log => {
-	const {
-	  entries,
-	} = this.state;
-
-	const delimiter = '\t';
-	const { title: resolutionTitle } = this._getResolution();
-
-	const filename = `${log.uriObj.name} — ${log.title} (${resolutionTitle}).csv`;
-	const csv = entries[log.key].map(entry => {
-	  const date = moment(entry.date).format('YYYY-MM-DD HH:mm:ss');
-
-	  return `${date}${delimiter}${entry.value}`;
-	});
-
-	// add header
-	csv.unshift(`Date${delimiter}Value`);
-
-	fileDownload(csv.join('\n'), filename);
-	}
-
-const resolutionSelection = ['lastHour', 'last6Hours', 'last24Hours', 'last7Days', 'last14Days', 'last31Days',
-	'last2Years', 'today', 'thisWeek', 'thisMonth', 'thisYear', 'yesterday', 'lastWeek', 'lastMonth', 'lastYear'];
-
-const testLog = {
-	__athom_api_type: 'HomeyAPI.ManagerInsights.Log',
-	uri: 'homey:device:1861bcce-a761-4c48-a145-bc807f58551b',
-	uriObj:
-		{
-			type: 'device',
-			id: '1861bcce-a761-4c48-a145-bc807f58551b',
-			name: 'LS120P1_10.0.0.48',
-			color: '#a3df20',
-			meta: [Object],
-			iconObj: [Object],
-		},
-	id: 'measure_power',
-	title: 'Power',
-	type: 'number',
-	units: 'W',
-	decimals: 2,
-	lastValue: 190,
-};
-
-const testLog2 = {
-	__athom_api_type: 'HomeyAPI.ManagerInsights.Log',
-	uri: 'homey:device:1861bcce-a761-4c48-a145-bc807f58551b',
-	uriObj: {
-		type: 'device',
-		id: '1861bcce-a761-4c48-a145-bc807f58551b',
-		name: 'LS120P1_10.0.0.48',
-		color: '#a3df20',
-		meta: { zoneName: 'Thuis' },
-		iconObj: {
-			id: '4fa6d70ad49d38533f21701f1b993427',
-			url: '/icon/4fa6d70ad49d38533f21701f1b993427/icon.svg',
-		},
-	},
-	id: 'meter_offPeak',
-	title: 'Off-peak',
-	type: 'boolean',
-	units: null,
-	decimals: null,
-	lastValue: true,
-};
-
-  */
