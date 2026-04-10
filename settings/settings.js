@@ -15,6 +15,7 @@ function testSmb() {
 		smbDomain: $('#smbDomain').val(),
 		smbUsername: $('#smbUsername').val(),
 		smbPassword: $('#smbPassword').val(),
+		smbPort: Number($('#smbPort').val()) || 445,
 	};
 	Homey.api('POST', '/testSmb', testData, (err, result) => {
 		if (err) {
@@ -33,6 +34,7 @@ function saveSmb() {
 		smbDomain: $('#smbDomain').val(),
 		smbUsername: $('#smbUsername').val(),
 		smbPassword: $('#smbPassword').val(),
+		smbPort: Number($('#smbPort').val()) || 445,
 	};
 	Homey.set('smbSettings', saveData, (error) => {
 		if (error) {
@@ -312,12 +314,13 @@ function loadSettings() {
 		$('#useSmb').prop('checked', false);
 		if (storedData) {
 			$('#useSmb').prop('checked', storedData.useSmb);
-			$('#smbUseSeperateFolderse').prop('checked', storedData.smbUseSeperateFolders);
+			$('#smbUseSeperateFolders').prop('checked', storedData.smbUseSeperateFolders);
 			$('#smbShare').val(storedData.smbShare);
 			$('#smbPath').val(storedData.smbPath);
 			$('#smbDomain').val(storedData.smbDomain);
 			$('#smbUsername').val(storedData.smbUsername);
 			$('#smbPassword').val(storedData.smbPassword);
+			$('#smbPort').val(storedData.smbPort || 445);
 		}
 	});
 	Homey.get('webdavSettings', (err, storedData) => {

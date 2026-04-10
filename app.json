@@ -7,7 +7,7 @@
   "version": "4.0.0",
   "brandColor": "#2020df",
   "sdk": 3,
-  "compatibility": ">= 8",
+  "compatibility": ">=12.9.0",
   "author": {
     "name": "Robin de Gruijter",
     "email": "gruijter@hotmail.com"

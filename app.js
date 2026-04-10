@@ -283,10 +283,11 @@ class App extends Homey.App {
 			try {
 				const smb2Client = new SMB2({
 					share: smbSettings.smbShare.replace(/\//gi, '\\'),
-					domain: smbSettings.smbDomain,
+					domain: smbSettings.smbDomain || 'WORKGROUP',
 					username: smbSettings.smbUsername,
 					password: smbSettings.smbPassword,
-					autoCloseTimeout: 5000,
+					port: smbSettings.smbPort || 445,
+					autoCloseTimeout: 10000,
 				});
 				let path = `${smbSettings.smbPath.replace(/\//gi, '\\')}\\`;
 				if (smbSettings.smbPath === '') {
@@ -768,10 +769,11 @@ class App extends Homey.App {
 		try {
 			this.smb2Client = new SMB2({
 				share: this.smbSettings.smbShare.replace(/\//gi, '\\'),
-				domain: this.smbSettings.smbDomain,
+				domain: this.smbSettings.smbDomain || 'WORKGROUP',
 				username: this.smbSettings.smbUsername,
 				password: this.smbSettings.smbPassword,
-				autoCloseTimeout: 0,
+				port: this.smbSettings.smbPort || 445,
+				autoCloseTimeout: 10000,
 			});
 			return Promise.resolve(this.smb2Client);
 		} catch (error) {

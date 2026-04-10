@@ -10,6 +10,7 @@
 			"smbShare": "Network share",
 			"smbPath": "Subdirectory",
 			"smbDomain": "Domain",
+			"smbPort": "Port (default 445)",
 			"smbUsername": "Username",
 			"smbPassword": "Password",
 			"testSmb": "Test the SMB settings",
