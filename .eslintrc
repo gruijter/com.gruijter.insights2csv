@@ -3,7 +3,7 @@
         "es6": true,
         "node": true
     },
-    "extends": "airbnb",
+    "extends": "airbnb-base",
     "settings": {
         "import/core-modules": [ "homey" ]
     },
