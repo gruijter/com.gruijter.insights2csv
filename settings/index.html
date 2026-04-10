@@ -148,13 +148,14 @@
 					</div>
 					<div class="settings-itemgroup">
 						<div class="settings-item-text">
-								<span data-i18n="settings.tab3.SFTP">Use SFTP</span>
+								<span data-i18n="settings.tab3.protocol">Protocol</span>
 						</div>
 						<div class="settings-item-last">
-								<label class="form-switch">
-										<input type="checkbox" id="useSFTP" checked="false">
-										<i></i>
-								</label>
+								<select id="FTPProtocol" onchange="ftpProtocolChanged()">
+									<option value="ftp">FTP</option>
+									<option value="ftps">FTPS</option>
+									<option value="sftp">SFTP</option>
+								</select>
 						</div>
 					</div>
 					<div class="settings-itemgroup">

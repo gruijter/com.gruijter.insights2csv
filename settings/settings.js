@@ -90,7 +90,7 @@ async function testFTP() {
     FTPHost: document.getElementById('FTPHost').value,
     FTPPort: Number(document.getElementById('FTPPort').value),
     FTPFolder: document.getElementById('FTPFolder').value,
-    useSFTP: document.getElementById('useSFTP').checked,
+    FTPProtocol: document.getElementById('FTPProtocol').value,
     FTPUsername: document.getElementById('FTPUsername').value,
     FTPPassword: document.getElementById('FTPPassword').value,
   };
@@ -109,7 +109,7 @@ async function saveFTP() {
     FTPHost: document.getElementById('FTPHost').value,
     FTPPort: Number(document.getElementById('FTPPort').value),
     FTPFolder: document.getElementById('FTPFolder').value,
-    useSFTP: document.getElementById('useSFTP').checked,
+    FTPProtocol: document.getElementById('FTPProtocol').value,
     FTPUsername: document.getElementById('FTPUsername').value,
     FTPPassword: document.getElementById('FTPPassword').value,
   };
@@ -118,6 +118,16 @@ async function saveFTP() {
     Homey.alert(Homey.__('settings.tab3.settingsSaved'), 'info');
   } catch (err) {
     Homey.alert(err.message || err, 'error');
+  }
+}
+
+function ftpProtocolChanged() {
+  const protocol = document.getElementById('FTPProtocol').value;
+  const portInput = document.getElementById('FTPPort');
+  if (protocol === 'sftp') {
+    portInput.value = 22;
+  } else {
+    portInput.value = 21;
   }
 }
 
@@ -318,14 +328,18 @@ async function loadSettings() {
   try {
     const ftpData = await Homey.get('FTPSettings');
     document.getElementById('useFTP').checked = false;
-    document.getElementById('useSFTP').checked = false;
     if (ftpData) {
       document.getElementById('useFTP').checked = !!ftpData.useFTP;
       document.getElementById('FTPUseSeperateFolders').checked = !!ftpData.FTPUseSeperateFolders;
       document.getElementById('FTPHost').value = ftpData.FTPHost || '';
       document.getElementById('FTPPort').value = ftpData.FTPPort || '';
       document.getElementById('FTPFolder').value = ftpData.FTPFolder || '';
-      document.getElementById('useSFTP').checked = !!ftpData.useSFTP;
+      if (ftpData.FTPProtocol) {
+        document.getElementById('FTPProtocol').value = ftpData.FTPProtocol;
+      } else {
+        // Backwards compatibility for older configurations
+        document.getElementById('FTPProtocol').value = ftpData.useSFTP ? 'ftps' : 'ftp';
+      }
       document.getElementById('FTPUsername').value = ftpData.FTPUsername || '';
       document.getElementById('FTPPassword').value = ftpData.FTPPassword || '';
     }

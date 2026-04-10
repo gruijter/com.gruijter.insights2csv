@@ -41,6 +41,7 @@
 			"FTPHost": "FTP Host",
 			"FTPFolder": "FTP Folder",
 			"SFTP": "Use secure FTPS",
+			"protocol": "Protocol",
 			"FTPUsername": "Username",
 			"FTPPassword": "Password",
 			"testFTP": "Test the FTP settings",

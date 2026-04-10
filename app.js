@@ -27,8 +27,11 @@ const fs = require('fs');
 const util = require('util');
 const archiver = require('archiver');
 const SMB2 = require('@tryjsky/v9u-smb2');
+// eslint-disable-next-line import/no-unresolved, node/no-missing-require
 const { createClient } = require('webdav');
 const ftp = require('basic-ftp');
+// eslint-disable-next-line import/no-extraneous-dependencies, import/no-unresolved, node/no-missing-require
+const SftpClient = require('ssh2-sftp-client');
 
 const Logger = require('./captureLogs');
 
@@ -363,20 +366,35 @@ class App extends Homey.App {
   async testFTP(FTPSettings) {
     this.log('testing FTP settings from frontend');
     try {
-      const client = new ftp.Client();
-      client.ftp.verbose = true;
-      await client.access({
-        host: FTPSettings.FTPHost,
-        port: FTPSettings.FTPPort,
-        user: FTPSettings.FTPUsername,
-        password: FTPSettings.FTPPassword,
-        secure: FTPSettings.useSFTP,
-        secureOptions: { rejectUnauthorized: false },
-      });
-      await client.ensureDir(FTPSettings.FTPFolder);
-      // console.log(await client.list());
-      this.log('Connection successfull!');
-      client.close();
+      const protocol = FTPSettings.FTPProtocol || (FTPSettings.useSFTP ? 'ftps' : 'ftp');
+
+      if (protocol === 'sftp') {
+        const sftp = new SftpClient();
+        await sftp.connect({
+          host: FTPSettings.FTPHost,
+          port: FTPSettings.FTPPort || 22,
+          username: FTPSettings.FTPUsername,
+          password: FTPSettings.FTPPassword,
+        });
+        await sftp.mkdir(`/${FTPSettings.FTPFolder}`, true);
+        this.log('Connection successfull!');
+        await sftp.end();
+      } else {
+        const client = new ftp.Client();
+        client.ftp.verbose = true;
+        await client.access({
+          host: FTPSettings.FTPHost,
+          port: FTPSettings.FTPPort || 21,
+          user: FTPSettings.FTPUsername,
+          password: FTPSettings.FTPPassword,
+          secure: protocol === 'ftps',
+          secureOptions: { rejectUnauthorized: false },
+        });
+        await client.ensureDir(FTPSettings.FTPFolder);
+        // console.log(await client.list());
+        this.log('Connection successfull!');
+        client.close();
+      }
       return Promise.resolve();
     } catch (error) {
       this.error(error);
@@ -963,12 +981,13 @@ class App extends Homey.App {
       this.FTPClient = new ftp.Client();
       // client.ftp.verbose = true;
       this.FTPsettingsHaveChanged = false;
+      const protocol = this.FTPSettings.FTPProtocol || (this.FTPSettings.useSFTP ? 'ftps' : 'ftp');
       await this.FTPClient.access({
         host: this.FTPSettings.FTPHost,
         port: this.FTPSettings.FTPPort,
         user: this.FTPSettings.FTPUsername,
         password: this.FTPSettings.FTPPassword,
-        secure: this.FTPSettings.useSFTP,
+        secure: protocol === 'ftps',
         secureOptions: {
           host: this.FTPSettings.FTPHost,
           rejectUnauthorized: false,
@@ -985,15 +1004,31 @@ class App extends Homey.App {
     try {
       const sub = subfolder ? `/${subfolder}` : '';
       const folder = `//${this.FTPSettings.FTPFolder}${sub}`;
-      await this.getFTPClient();
-      await this.FTPClient.ensureDir(`//${folder}`);
-      // save to seperate folder when selected by user
-      if (this.FTPSettings.FTPUseSeperateFolders) {
-        await this.FTPClient.ensureDir(`//${folder}/${this.timestamp}`);
-      }
       const fileStream = fs.createReadStream(`/userdata/${fileName}`);
-      await this.FTPClient.upload(fileStream, fileName);
-      this.log(`${fileName} has been saved to FTP(S)`);
+      const protocol = this.FTPSettings.FTPProtocol || (this.FTPSettings.useSFTP ? 'ftps' : 'ftp');
+
+      if (protocol === 'sftp') {
+        const sftp = new SftpClient();
+        await sftp.connect({
+          host: this.FTPSettings.FTPHost,
+          port: this.FTPSettings.FTPPort || 22,
+          username: this.FTPSettings.FTPUsername,
+          password: this.FTPSettings.FTPPassword,
+        });
+        const remoteDir = `/${this.FTPSettings.FTPFolder}${sub}${this.FTPSettings.FTPUseSeperateFolders ? `/${this.timestamp}` : ''}`;
+        await sftp.mkdir(remoteDir, true);
+        await sftp.put(fileStream, `${remoteDir}/${fileName}`);
+        this.log(`${fileName} has been saved to SFTP`);
+        await sftp.end();
+      } else {
+        await this.getFTPClient();
+        await this.FTPClient.ensureDir(`//${folder}`);
+        if (this.FTPSettings.FTPUseSeperateFolders) {
+          await this.FTPClient.ensureDir(`//${folder}/${this.timestamp}`);
+        }
+        await this.FTPClient.upload(fileStream, fileName);
+        this.log(`${fileName} has been saved to FTP(S)`);
+      }
       return Promise.resolve(fileName);
     } catch (error) {
       this.error('error:', error);
@@ -1004,38 +1039,67 @@ class App extends Homey.App {
   // purge FTP folder
   async purgeFTP(daysOld, allTypes) {
     try {
-      await this.getFTPClient();
-      await this.FTPClient.ensureDir(`//${this.FTPSettings.FTPFolder}`);
-      let selectList = await this.FTPClient.list();
-      // select only zip files
-      if (!allTypes) {
-        selectList = selectList.filter((item) => {
-          const isFile = item.type === 1;
-          // const isFolder = item.type === 2;
-          const isZip = item.name.toLowerCase().slice(-4) === '.zip';
-          return isZip && isFile;
+      const protocol = this.FTPSettings.FTPProtocol || (this.FTPSettings.useSFTP ? 'ftps' : 'ftp');
+      let selectList = [];
+
+      if (protocol === 'sftp') {
+        const sftp = new SftpClient();
+        await sftp.connect({
+          host: this.FTPSettings.FTPHost,
+          port: this.FTPSettings.FTPPort || 22,
+          username: this.FTPSettings.FTPUsername,
+          password: this.FTPSettings.FTPPassword,
         });
-      }
-      // select older then daysOld
-      selectList = selectList.filter((item) => {
-        let dateString = item.date;
-        if (dateString.length < 18) {
-          const year = new Date().getFullYear();
-          dateString = `${year} ${dateString}`;
+        const remoteDir = `/${this.FTPSettings.FTPFolder}`;
+        await sftp.mkdir(remoteDir, true);
+        selectList = await sftp.list(remoteDir);
+
+        if (!allTypes) {
+          selectList = selectList.filter((item) => item.type === '-' && item.name.toLowerCase().endsWith('.zip'));
         }
-        const days = (Date.now() - new Date(dateString)) / 1000 / 60 / 60 / 24;
-        return days > daysOld;
-      });
-      // delete the file or folder
-      for (let idx = 0; idx < selectList.length; idx += 1) {
-        const item = selectList[idx];
-        if (item.type === 1) {
-          this.log(`removing FTP file ${item.name}`);
-          await this.FTPClient.remove(item.name);
+        selectList = selectList.filter((item) => {
+          // ssh2-sftp-client provides modifying time directly in milliseconds
+          const days = (Date.now() - item.modifyTime) / 1000 / 60 / 60 / 24;
+          return days > daysOld;
+        });
+        for (let idx = 0; idx < selectList.length; idx += 1) {
+          const item = selectList[idx];
+          if (item.type === '-') {
+            this.log(`removing SFTP file ${item.name}`);
+            await sftp.delete(`${remoteDir}/${item.name}`);
+          } else if (item.type === 'd') {
+            this.log(`removing SFTP folder ${item.name}`);
+            await sftp.rmdir(`${remoteDir}/${item.name}`, true);
+          }
         }
-        if (item.type === 2) {
-          this.log(`removing FTP folder ${item.name}`);
-          await this.FTPClient.removeDir(item.name);
+        await sftp.end();
+      } else {
+        await this.getFTPClient();
+        await this.FTPClient.ensureDir(`//${this.FTPSettings.FTPFolder}`);
+        selectList = await this.FTPClient.list();
+
+        if (!allTypes) {
+          selectList = selectList.filter((item) => item.type === 1 && item.name.toLowerCase().endsWith('.zip'));
+        }
+        selectList = selectList.filter((item) => {
+          let dateString = item.date;
+          if (dateString.length < 18) {
+            const year = new Date().getFullYear();
+            dateString = `${year} ${dateString}`;
+          }
+          const days = (Date.now() - new Date(dateString)) / 1000 / 60 / 60 / 24;
+          return days > daysOld;
+        });
+        for (let idx = 0; idx < selectList.length; idx += 1) {
+          const item = selectList[idx];
+          if (item.type === 1) {
+            this.log(`removing FTP file ${item.name}`);
+            await this.FTPClient.remove(item.name);
+          }
+          if (item.type === 2) {
+            this.log(`removing FTP folder ${item.name}`);
+            await this.FTPClient.removeDir(item.name);
+          }
         }
       }
       return Promise.resolve(selectList);

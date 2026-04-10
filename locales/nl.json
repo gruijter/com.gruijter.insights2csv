@@ -40,6 +40,7 @@
 			"FTPHost": "FTP Host",
 			"FTPFolder": "FTP Folder",
 			"SFTP": "Gebruik secure SFTP",
+			"protocol": "Protocol",
 			"FTPUsername": "Gebruikersnaam",
 			"FTPPassword": "Wachtwoord",
 			"testFTP": "Test de FTP instellingen",
