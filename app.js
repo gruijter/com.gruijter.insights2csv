@@ -1,7 +1,7 @@
 /* eslint-disable no-await-in-loop */
 
 /*
-Copyright 2017 - 2023 Robin de Gruijter
+Copyright 2017 - 2026 Robin de Gruijter
 
 This file is part of com.gruijter.insights2csv.
 
@@ -31,6 +31,51 @@ const SMB2 = require('@marsaud/smb2');
 const { createClient } = require('webdav');
 const ftp = require('basic-ftp');
 const Logger = require('./captureLogs');
+
+const crypto = require('crypto');
+const forge = require('node-forge');
+
+// Polyfill MD4 and DES-ECB for OpenSSL 3.0 / Node 18+ compatibility
+const origCreateHash = crypto.createHash;
+crypto.createHash = (alg, opts) => {
+	if (alg && alg.toLowerCase() === 'md4') {
+		const md = forge.md.md4.create();
+		return {
+			update: function (data, enc) {
+				const input = Buffer.isBuffer(data) ? data.toString('binary') : Buffer.from(data, enc).toString('binary');
+				md.update(input);
+				return this;
+			},
+			digest: function (enc) {
+				const buf = Buffer.from(md.digest().getBytes(), 'binary');
+				return enc ? buf.toString(enc) : buf;
+			},
+		};
+	}
+	return origCreateHash(alg, opts);
+};
+
+const origCreateCipheriv = crypto.createCipheriv;
+crypto.createCipheriv = (alg, key, iv, opts) => {
+	if (alg && alg.toLowerCase() === 'des-ecb') {
+		const cipher = forge.cipher.createCipher('DES-ECB', forge.util.createBuffer(key.toString('binary')));
+		cipher.start({ padding: null });
+		return {
+			setAutoPadding: function () {},
+			update: function (data, enc) {
+				const input = Buffer.isBuffer(data) ? data.toString('binary') : Buffer.from(data, enc).toString('binary');
+				cipher.update(forge.util.createBuffer(input));
+				return Buffer.alloc(0);
+			},
+			final: function (enc) {
+				cipher.finish();
+				const buf = Buffer.from(cipher.output.getBytes(), 'binary');
+				return enc ? buf.toString(enc) : buf;
+			},
+		};
+	}
+	return origCreateCipheriv(alg, key, iv, opts);
+};
 
 const setTimeoutPromise = util.promisify(setTimeout);
 
@@ -207,7 +252,8 @@ class App extends Homey.App {
 				);
 
 			this.deleteAllFiles();
-			await this.initExport(new Date());
+			// Do not await this, otherwise it blocks app initialization and API requests!
+			this.initExport(new Date()).catch((err) => this.error(err));
 
 			// initiate test stuff from here
 			this.test();

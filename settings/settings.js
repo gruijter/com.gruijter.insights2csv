@@ -6,179 +6,177 @@ let appId = '';
 
 // tab 1
 
-function testSmb() {
+async function testSmb() {
 	const testData = {
-		useSmb: $('#useSmb').prop('checked'),
-		smbUseSeperateFolders: $('#smbUseSeperateFolders').prop('checked'),
-		smbShare: $('#smbShare').val(),
-		smbPath: $('#smbPath').val() || '',
-		smbDomain: $('#smbDomain').val(),
-		smbUsername: $('#smbUsername').val(),
-		smbPassword: $('#smbPassword').val(),
-		smbPort: Number($('#smbPort').val()) || 445,
+		useSmb: document.getElementById('useSmb').checked,
+		smbUseSeperateFolders: document.getElementById('smbUseSeperateFolders').checked,
+		smbShare: document.getElementById('smbShare').value,
+		smbPath: document.getElementById('smbPath').value || '',
+		smbDomain: document.getElementById('smbDomain').value,
+		smbUsername: document.getElementById('smbUsername').value,
+		smbPassword: document.getElementById('smbPassword').value,
+		smbPort: Number(document.getElementById('smbPort').value) || 445,
 	};
-	Homey.api('POST', '/testSmb', testData, (err, result) => {
-		if (err) {
-			return Homey.alert(err, 'error');
-		}
-		return Homey.alert(`${Homey.__('settings.tab1.testOk')}`, 'info');
-	});
+	try {
+		await Homey.api('POST', '/testSmb', testData);
+		Homey.alert(Homey.__('settings.tab1.testOk'), 'info');
+	} catch (err) {
+		Homey.alert(err.message || err, 'error');
+	}
 }
 
-function saveSmb() {
+async function saveSmb() {
 	const saveData = {
-		useSmb: $('#useSmb').prop('checked'),
-		smbUseSeperateFolders: $('#smbUseSeperateFolders').prop('checked'),
-		smbShare: $('#smbShare').val(),
-		smbPath: $('#smbPath').val() || '',
-		smbDomain: $('#smbDomain').val(),
-		smbUsername: $('#smbUsername').val(),
-		smbPassword: $('#smbPassword').val(),
-		smbPort: Number($('#smbPort').val()) || 445,
+		useSmb: document.getElementById('useSmb').checked,
+		smbUseSeperateFolders: document.getElementById('smbUseSeperateFolders').checked,
+		smbShare: document.getElementById('smbShare').value,
+		smbPath: document.getElementById('smbPath').value || '',
+		smbDomain: document.getElementById('smbDomain').value,
+		smbUsername: document.getElementById('smbUsername').value,
+		smbPassword: document.getElementById('smbPassword').value,
+		smbPort: Number(document.getElementById('smbPort').value) || 445,
 	};
-	Homey.set('smbSettings', saveData, (error) => {
-		if (error) {
-			Homey.alert(error, 'error');
-		}
-	});
-	Homey.alert(`${Homey.__('settings.tab1.settingsSaved')}`, 'info');
+	try {
+		await Homey.set('smbSettings', saveData);
+		Homey.alert(Homey.__('settings.tab1.settingsSaved'), 'info');
+	} catch (err) {
+		Homey.alert(err.message || err, 'error');
+	}
 }
 
 // tab 2
 
-function testWebdav() {
+async function testWebdav() {
 	const testData = {
-		useWebdav: $('#useWebdav').prop('checked'),
-		webdavUseSeperateFolders: $('#webdavUseSeperateFolders').prop('checked'),
-		webdavUrl: $('#webdavUrl').val(),
-		webdavUsername: $('#webdavUsername').val(),
-		webdavPassword: $('#webdavPassword').val(),
+		useWebdav: document.getElementById('useWebdav').checked,
+		webdavUseSeperateFolders: document.getElementById('webdavUseSeperateFolders').checked,
+		webdavUrl: document.getElementById('webdavUrl').value,
+		webdavUsername: document.getElementById('webdavUsername').value,
+		webdavPassword: document.getElementById('webdavPassword').value,
 	};
-	Homey.api('POST', '/testWebdav', testData, (err, result) => {
-		if (err) {
-			return Homey.alert(err, 'error');
-		}
-		return Homey.alert(`${Homey.__('settings.tab2.testOk')}`, 'info');
-	});
+	try {
+		await Homey.api('POST', '/testWebdav', testData);
+		Homey.alert(Homey.__('settings.tab2.testOk'), 'info');
+	} catch (err) {
+		Homey.alert(err.message || err, 'error');
+	}
 }
 
-function saveWebdav() {
+async function saveWebdav() {
 	const saveData = {
-		useWebdav: $('#useWebdav').prop('checked'),
-		webdavUseSeperateFolders: $('#webdavUseSeperateFolders').prop('checked'),
-		webdavUrl: $('#webdavUrl').val(),
-		webdavUsername: $('#webdavUsername').val(),
-		webdavPassword: $('#webdavPassword').val(),
+		useWebdav: document.getElementById('useWebdav').checked,
+		webdavUseSeperateFolders: document.getElementById('webdavUseSeperateFolders').checked,
+		webdavUrl: document.getElementById('webdavUrl').value,
+		webdavUsername: document.getElementById('webdavUsername').value,
+		webdavPassword: document.getElementById('webdavPassword').value,
 	};
-	Homey.set('webdavSettings', saveData, (error) => {
-		if (error) {
-			Homey.alert(error, 'error');
-		}
-	});
-	Homey.alert(`${Homey.__('settings.tab2.settingsSaved')}`, 'info');
+	try {
+		await Homey.set('webdavSettings', saveData);
+		Homey.alert(Homey.__('settings.tab2.settingsSaved'), 'info');
+	} catch (err) {
+		Homey.alert(err.message || err, 'error');
+	}
 }
 
 // tab 3
 
-function testFTP() {
+async function testFTP() {
 	const testData = {
-		useFTP: $('#useFTP').prop('checked'),
-		FTPUseSeperateFolders: $('#FTPUseSeperateFolders').prop('checked'),
-		FTPHost: $('#FTPHost').val(),
-		FTPPort: Number($('#FTPPort').val()),
-		FTPFolder: $('#FTPFolder').val(),
-		useSFTP: $('#useSFTP').prop('checked'),
-		FTPUsername: $('#FTPUsername').val(),
-		FTPPassword: $('#FTPPassword').val(),
+		useFTP: document.getElementById('useFTP').checked,
+		FTPUseSeperateFolders: document.getElementById('FTPUseSeperateFolders').checked,
+		FTPHost: document.getElementById('FTPHost').value,
+		FTPPort: Number(document.getElementById('FTPPort').value),
+		FTPFolder: document.getElementById('FTPFolder').value,
+		useSFTP: document.getElementById('useSFTP').checked,
+		FTPUsername: document.getElementById('FTPUsername').value,
+		FTPPassword: document.getElementById('FTPPassword').value,
 	};
-	Homey.api('POST', '/testFTP', testData, (err, result) => {
-		if (err) {
-			return Homey.alert(err, 'error');
-		}
-		return Homey.alert(`${Homey.__('settings.tab3.testOk')}`, 'info');
-	});
+	try {
+		await Homey.api('POST', '/testFTP', testData);
+		Homey.alert(Homey.__('settings.tab3.testOk'), 'info');
+	} catch (err) {
+		Homey.alert(err.message || err, 'error');
+	}
 }
 
-function saveFTP() {
+async function saveFTP() {
 	const saveData = {
-		useFTP: $('#useFTP').prop('checked'),
-		FTPUseSeperateFolders: $('#FTPUseSeperateFolders').prop('checked'),
-		FTPHost: $('#FTPHost').val(),
-		FTPPort: Number($('#FTPPort').val()),
-		FTPFolder: $('#FTPFolder').val(),
-		useSFTP: $('#useSFTP').prop('checked'),
-		FTPUsername: $('#FTPUsername').val(),
-		FTPPassword: $('#FTPPassword').val(),
+		useFTP: document.getElementById('useFTP').checked,
+		FTPUseSeperateFolders: document.getElementById('FTPUseSeperateFolders').checked,
+		FTPHost: document.getElementById('FTPHost').value,
+		FTPPort: Number(document.getElementById('FTPPort').value),
+		FTPFolder: document.getElementById('FTPFolder').value,
+		useSFTP: document.getElementById('useSFTP').checked,
+		FTPUsername: document.getElementById('FTPUsername').value,
+		FTPPassword: document.getElementById('FTPPassword').value,
 	};
-	Homey.set('FTPSettings', saveData, (error) => {
-		if (error) {
-			Homey.alert(error, 'error');
-		}
-	});
-	Homey.alert(`${Homey.__('settings.tab3.settingsSaved')}`, 'info');
+	try {
+		await Homey.set('FTPSettings', saveData);
+		Homey.alert(Homey.__('settings.tab3.settingsSaved'), 'info');
+	} catch (err) {
+		Homey.alert(err.message || err, 'error');
+	}
 }
 
 // tab 4
 
 function resolutionSelected() {
-	resolution = $('#resolutionList').val();
+	resolution = document.getElementById('resolutionList').value;
 }
 
 function appSelected() {
-	appId = $('#appList').val();
+	appId = document.getElementById('appList').value;
 }
 
 // function to populate the dropdown list
-function fillDropdown() {
-	// first empty the dropdownlist
+async function fillDropdown() {
 	const dropDown = document.getElementById('resolutionList');
 	while (dropDown.length > 0) {
 		dropDown.remove(dropDown.length - 1);
 	}
-	Homey.api('get', '/getResolutions', (error, res) => {
-		if (error) {
-			Homey.alert(error, 'error');
-		} else {
-			res.forEach((resol) => {
-				const resOption = document.createElement('option');
-				resOption.text = resol;
-				resOption.value = resol;
-				dropDown.add(resOption);
-			});
-		}
-	});
-	// first empty the dropdownlist
+
+	try {
+		const res = await Homey.api('GET', '/getResolutions');
+		res.forEach((resol) => {
+			const resOption = document.createElement('option');
+			resOption.text = resol;
+			resOption.value = resol;
+			dropDown.add(resOption);
+		});
+	} catch (error) {
+		console.error('Error fetching resolutions:', error);
+	}
+
 	const dropDown2 = document.getElementById('appList');
 	while (dropDown2.length > 0) {
 		dropDown2.remove(dropDown2.length - 1);
 	}
-	// add the 'all apps' option
+
 	const resOpt = document.createElement('option');
 	resOpt.text = Homey.__('settings.tab4.allApps');
 	resOpt.value = '';
 	dropDown2.add(resOpt);
 	appId = '';
-	// add the app list
-	Homey.api('get', '/getAppList', (error, res) => {
-		if (error) {
-			Homey.alert(error, 'error');
-		} else {
-			res.forEach((app) => {
-				const resOption2 = document.createElement('option');
-				resOption2.text = app.name;
-				resOption2.value = app.id;
-				dropDown2.add(resOption2);
-			});
-		}
-	});
+
+	try {
+		const res = await Homey.api('GET', '/getAppList');
+		res.forEach((app) => {
+			const resOption2 = document.createElement('option');
+			resOption2.text = app.name;
+			resOption2.value = app.id;
+			dropDown2.add(resOption2);
+		});
+	} catch (error) {
+		console.error('Error fetching app list:', error);
+	}
 }
 
-function stopExportNoConfirm() {
-	Homey.api('GET', '/stopExport', (error, res) => {
-		if (error) {
-			Homey.alert(error, 'error');
-		}
-	});
+async function stopExportNoConfirm() {
+	try {
+		await Homey.api('GET', '/stopExport');
+	} catch (error) {
+		Homey.alert(error.message || error, 'error');
+	}
 }
 
 function stopExport() {
@@ -189,72 +187,52 @@ function stopExport() {
 	});
 }
 
-function saveCPU() {
+async function saveCPU() {
 	const saveData = {
-		lowCPU: $('#lowCPU').prop('checked'),
+		lowCPU: document.getElementById('lowCPU').checked,
 	};
-	Homey.set('CPUSettings', saveData, (error) => {
-		if (error) {
-			Homey.alert(error, 'error');
-		}
-	});
+	try {
+		await Homey.set('CPUSettings', saveData);
+	} catch (error) {
+		Homey.alert(error.message || error, 'error');
+	}
 }
 
-// function saveWaitBetweenEntities() {
-// 	const saveData = {
-// 		waitBetweenEntities: $('#waitBetweenEntities').prop('value'),
-// 	};
-// 	Homey.set('WaitBetweenEntities', saveData, (error) => {
-// 		if (error) {
-// 			Homey.alert(error, 'error');
-// 		}
-// 	});
-// }
-
-function saveIncludeLocalDateTime() {
+async function saveIncludeLocalDateTime() {
 	const saveData = {
-		includeLocalDateTime: $('#includeLocalDateTime').prop('checked'),
+		includeLocalDateTime: document.getElementById('includeLocalDateTime').checked,
 	};
-	Homey.set('IncludeLocalDateTime', saveData, (error) => {
-		if (error) {
-			Homey.alert(error, 'error');
-		}
-	});
+	try {
+		await Homey.set('IncludeLocalDateTime', saveData);
+	} catch (error) {
+		Homey.alert(error.message || error, 'error');
+	}
 }
-function saveOnlyZipWithLogs() {
+
+async function saveOnlyZipWithLogs() {
 	const saveData = {
-		onlyZipWithLogs: $('#onlyZipWithLogs').prop('checked'),
+		onlyZipWithLogs: document.getElementById('onlyZipWithLogs').checked,
 	};
-	Homey.set('OnlyZipWithLogs', saveData, (error) => {
-		if (error) {
-			Homey.alert(error, 'error');
-		}
-	});
+	try {
+		await Homey.set('OnlyZipWithLogs', saveData);
+	} catch (error) {
+		Homey.alert(error.message || error, 'error');
+	}
 }
 
 function exportNow() {
-	Homey.confirm(Homey.__('settings.tab4.confirmExport'), 'warning', (e, r) => {
+	Homey.confirm(Homey.__('settings.tab4.confirmExport'), 'warning', async (e, r) => {
 		if (!r) { return; }
 		stopExportNoConfirm();
-		if (appId === '') {
-			Homey.api('POST', '/exportAll', { resolution }, (error, res) => {
-				if (error) {
-					Homey.alert(error, 'error');
-				} else {
-					Homey.alert(Homey.__('settings.tab4.backupInitiated'), 'info');
-				}
-			});
-		} else {
-			Homey.confirm(Homey.__('settings.tab4.confirmExport'), 'warning', (err, result) => {
-				if (!result) { return; }
-				Homey.api('POST', '/exportApp', { appId, resolution }, (error, res) => {
-					if (error) {
-						Homey.alert(error, 'error');
-					} else {
-						Homey.alert(Homey.__('settings.tab4.backupInitiated'), 'info');
-					}
-				});
-			});
+		try {
+			if (appId === '') {
+				await Homey.api('POST', '/exportAll', { resolution });
+			} else {
+				await Homey.api('POST', '/exportApp', { appId, resolution });
+			}
+			Homey.alert(Homey.__('settings.tab4.backupInitiated'), 'info');
+		} catch (error) {
+			Homey.alert(error.message || error, 'error');
 		}
 	});
 }
@@ -262,155 +240,136 @@ function exportNow() {
 // tab 5
 
 function displayLogs(lines) {
-	$('#loglines').html(lines);
+	document.getElementById('loglines').innerHTML = lines;
 }
 
-function updateLogs() {
+async function updateLogs() {
 	try {
 		displayLogs('');
-		Homey.api('GET', 'getlogs/', null, (err, result) => {
-			if (!err) {
-				let lines = '';
-				result
-					.reverse()
-					.forEach((line) => {
-						const logLine = line
-							.replace(' [App]', '');
-						lines += `${logLine}<br />`;
-					});
-				displayLogs(lines);
-			} else {
-				displayLogs(err);
-			}
+		const result = await Homey.api('GET', '/getlogs');
+		let lines = '';
+		result.reverse().forEach((line) => {
+			const logLine = line.replace(' [App]', '');
+			lines += `${logLine}<br />`;
 		});
-	} catch (e) {
-		displayLogs(e);
+		displayLogs(lines);
+	} catch (err) {
+		displayLogs(err.message || err);
 	}
 }
 
 function deleteLogs() {
-	Homey.confirm(Homey.__('settings.tab5.deleteWarning'), 'warning', (error, result) => {
+	Homey.confirm(Homey.__('settings.tab5.deleteWarning'), 'warning', async (error, result) => {
 		if (result) {
-			Homey.api('GET', 'deletelogs/', null, (err) => {
-				if (err) {
-					Homey.alert(err.message, 'error'); // [, String icon], Function callback )
-				} else {
-					Homey.alert(Homey.__('settings.tab5.deleted'), 'info');
-					updateLogs();
-				}
-			});
+			try {
+				await Homey.api('GET', '/deletelogs');
+				Homey.alert(Homey.__('settings.tab5.deleted'), 'info');
+				updateLogs();
+			} catch (err) {
+				Homey.alert(err.message || err, 'error');
+			}
 		}
 	});
 }
 
 // generic
 
-function loadSettings() {
-	Homey.get('smbSettings', (err, storedData) => {
-		if (err) {
-			Homey.alert(err);
-			return;
+async function loadSettings() {
+	try {
+		const smbData = await Homey.get('smbSettings');
+		document.getElementById('useSmb').checked = false;
+		if (smbData) {
+			document.getElementById('useSmb').checked = !!smbData.useSmb;
+			document.getElementById('smbUseSeperateFolders').checked = !!smbData.smbUseSeperateFolders;
+			document.getElementById('smbShare').value = smbData.smbShare || '';
+			document.getElementById('smbPath').value = smbData.smbPath || '';
+			document.getElementById('smbDomain').value = smbData.smbDomain || '';
+			document.getElementById('smbUsername').value = smbData.smbUsername || '';
+			document.getElementById('smbPassword').value = smbData.smbPassword || '';
+			document.getElementById('smbPort').value = smbData.smbPort || 445;
 		}
-		$('#useSmb').prop('checked', false);
-		if (storedData) {
-			$('#useSmb').prop('checked', storedData.useSmb);
-			$('#smbUseSeperateFolders').prop('checked', storedData.smbUseSeperateFolders);
-			$('#smbShare').val(storedData.smbShare);
-			$('#smbPath').val(storedData.smbPath);
-			$('#smbDomain').val(storedData.smbDomain);
-			$('#smbUsername').val(storedData.smbUsername);
-			$('#smbPassword').val(storedData.smbPassword);
-			$('#smbPort').val(storedData.smbPort || 445);
+	} catch (err) { console.error(err); }
+
+	try {
+		const webdavData = await Homey.get('webdavSettings');
+		document.getElementById('useWebdav').checked = false;
+		if (webdavData) {
+			document.getElementById('useWebdav').checked = !!webdavData.useWebdav;
+			document.getElementById('webdavUseSeperateFolders').checked = !!webdavData.webdavUseSeperateFolders;
+			document.getElementById('webdavUrl').value = webdavData.webdavUrl || '';
+			document.getElementById('webdavUsername').value = webdavData.webdavUsername || '';
+			document.getElementById('webdavPassword').value = webdavData.webdavPassword || '';
 		}
-	});
-	Homey.get('webdavSettings', (err, storedData) => {
-		if (err) {
-			Homey.alert(err);
-			return;
+	} catch (err) { console.error(err); }
+
+	try {
+		const ftpData = await Homey.get('FTPSettings');
+		document.getElementById('useFTP').checked = false;
+		document.getElementById('useSFTP').checked = false;
+		if (ftpData) {
+			document.getElementById('useFTP').checked = !!ftpData.useFTP;
+			document.getElementById('FTPUseSeperateFolders').checked = !!ftpData.FTPUseSeperateFolders;
+			document.getElementById('FTPHost').value = ftpData.FTPHost || '';
+			document.getElementById('FTPPort').value = ftpData.FTPPort || '';
+			document.getElementById('FTPFolder').value = ftpData.FTPFolder || '';
+			document.getElementById('useSFTP').checked = !!ftpData.useSFTP;
+			document.getElementById('FTPUsername').value = ftpData.FTPUsername || '';
+			document.getElementById('FTPPassword').value = ftpData.FTPPassword || '';
 		}
-		$('#useWebdav').prop('checked', false);
-		if (storedData) {
-			$('#useWebdav').prop('checked', storedData.useWebdav);
-			$('#webdavUseSeperateFolders').prop('checked', storedData.webdavUseSeperateFolders);
-			$('#webdavUrl').val(storedData.webdavUrl);
-			$('#webdavUsername').val(storedData.webdavUsername);
-			$('#webdavPassword').val(storedData.webdavPassword);
+	} catch (err) { console.error(err); }
+
+	try {
+		const cpuData = await Homey.get('CPUSettings');
+		document.getElementById('lowCPU').checked = false;
+		if (cpuData) {
+			document.getElementById('lowCPU').checked = !!cpuData.lowCPU;
 		}
-	});
-	Homey.get('FTPSettings', (err, storedData) => {
-		if (err) {
-			Homey.alert(err);
-			return;
+	} catch (err) { console.error(err); }
+
+	try {
+		const zipData = await Homey.get('OnlyZipWithLogs');
+		document.getElementById('onlyZipWithLogs').checked = false;
+		if (zipData) {
+			document.getElementById('onlyZipWithLogs').checked = !!zipData.onlyZipWithLogs;
 		}
-		$('#useFTP').prop('checked', false);
-		$('#useSFTP').prop('checked', false);
-		if (storedData) {
-			$('#useFTP').prop('checked', storedData.useFTP);
-			$('#FTPUseSeperateFolders').prop('checked', storedData.FTPUseSeperateFolders);
-			$('#FTPHost').val(storedData.FTPHost);
-			$('#FTPPort').val(storedData.FTPPort);
-			$('#FTPFolder').val(storedData.FTPFolder);
-			$('#useSFTP').prop('checked', storedData.useSFTP);
-			$('#FTPUsername').val(storedData.FTPUsername);
-			$('#FTPPassword').val(storedData.FTPPassword);
+	} catch (err) { console.error(err); }
+
+	try {
+		const dtData = await Homey.get('IncludeLocalDateTime');
+		document.getElementById('includeLocalDateTime').checked = false;
+		if (dtData) {
+			document.getElementById('includeLocalDateTime').checked = !!dtData.includeLocalDateTime;
 		}
-	});
-	Homey.get('CPUSettings', (err, storedData) => {
-		if (err) {
-			Homey.alert(err);
-			return;
-		}
-		$('#lowCPU').prop('checked', false);
-		if (storedData) {
-			$('#lowCPU').prop('checked', storedData.lowCPU);
-		}
-	});
-	Homey.get('OnlyZipWithLogs', (err, storedData) => {
-		if (err) {
-			Homey.alert(err);
-			return;
-		}
-		$('#onlyZipWithLogs').prop('checked', false);
-		if (storedData) {
-			$('#onlyZipWithLogs').prop('checked', storedData.onlyZipWithLogs);
-		}
-	});
-	Homey.get('IncludeLocalDateTime', (err, storedData) => {
-		if (err) {
-			Homey.alert(err);
-			return;
-		}
-		$('#includeLocalDateTime').prop('checked', false);
-		if (storedData) {
-			$('#includeLocalDateTime').prop('checked', storedData.includeLocalDateTime);
-		}
-	});
-	// Homey.get('WaitBetweenEntities', (err, storedData) => {
-	// 	if (err) {
-	// 		Homey.alert(err);
-	// 		return;
-	// 	}
-	// 	$('#waitBetweenEntities').prop('value', 10);
-	// 	if (storedData) {
-	// 		$('#waitBetweenEntities').prop('value', storedData.waitBetweenEntities);
-	// 	}
-	// });
+	} catch (err) { console.error(err); }
+
 	fillDropdown();
 }
 
 function showTab(tab) {
-	$('.tab').removeClass('tab-active');
-	$('.tab').addClass('tab-inactive');
-	$(`#tabb${tab}`).removeClass('tab-inactive');
-	$(`#tabb${tab}`).addClass('active');
-	$('.panel').hide();
-	$(`#tab${tab}`).show();
+	document.querySelectorAll('.tab').forEach((el) => {
+		el.classList.remove('tab-active');
+		el.classList.add('tab-inactive');
+	});
+	const activeTab = document.getElementById(`tabb${tab}`);
+	if (activeTab) {
+		activeTab.classList.remove('tab-inactive');
+		activeTab.classList.add('tab-active');
+	}
+	document.querySelectorAll('.panel').forEach((el) => el.style.display = 'none');
+	const activePanel = document.getElementById(`tab${tab}`);
+	if (activePanel) {
+		activePanel.style.display = 'block';
+	}
 	if (tab === 5) updateLogs();
 	if (tab !== 5) loadSettings();
 }
 
-function onHomeyReady(homeyReady) {
-	Homey = homeyReady;
-	showTab(1);
-	Homey.ready();
+function onHomeyReady(homey) {
+	// The 'homey' object is passed by /homey.js and is ready to use.
+	// We assign it to the global Homey variable so all other functions can access it.
+	Homey = homey;
+	Homey.ready(); // Signal that the settings page is ready.
+	setTimeout(() => {
+		showTab(1);
+	}, 50);
 }
