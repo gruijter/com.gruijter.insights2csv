@@ -46,7 +46,7 @@ const JSDateToExcelDate = (inDate) => {
 
 class App extends Homey.App {
 
-  log2csv(logEntries, log) {
+  async log2csv(logEntries, log) {
     try {
       const meta = {
         entries: logEntries.values.length,
@@ -66,13 +66,14 @@ class App extends Homey.App {
 
       const header = `Zulu dateTime${delimiter}${id}${LocalDateTime}\r\n`;
       let csv = header;
-      logEntries.values.forEach((e) => {
-        const entry = e;
+      for (let i = 0; i < logEntries.values.length; i += 1) {
+        if (i > 0 && i % 250 === 0) await new Promise((resolve) => setImmediate(resolve));
+        const entry = logEntries.values[i];
         const time = JSDateToExcelDate(new Date(entry.t));
         const value = JSON.stringify(entry.v).replace('.', ',');
         if (this.IncludeLocalDateTime.includeLocalDateTime) entry.tLocal = this.dateFormatter.format(new Date(entry.t));
         csv += `${time}${delimiter}${value}${this.IncludeLocalDateTime.includeLocalDateTime ? delimiter + entry.tLocal : ''}\r\n`;
-      });
+      }
       return { csv, meta }; // csv is string. meta is object.
     } catch (error) {
       return error;
@@ -83,15 +84,15 @@ class App extends Homey.App {
     try {
       if (!this.logger) this.logger = new Logger({ name: 'log', length: 200, homey: this.homey });
 
-      //   if (process.env.DEBUG === '1' || false) {
-      //     try {
-      //       // eslint-disable-next-line global-require, node/no-unsupported-features/node-builtins
-      //       require('inspector').waitForDebugger();
-      //     } catch (error) {
-      //       // eslint-disable-next-line global-require, node/no-unsupported-features/node-builtins
-      //       require('inspector').open(9325, '0.0.0.0', true);
-      //     }
-      //   }
+      if (process.env.DEBUG === '1' || false) {
+        try {
+          // eslint-disable-next-line global-require, node/no-unsupported-features/node-builtins
+          require('inspector').waitForDebugger();
+        } catch (error) {
+          // eslint-disable-next-line global-require, node/no-unsupported-features/node-builtins
+          require('inspector').open(9325, '0.0.0.0', true);
+        }
+      }
 
       // generic properties
       this.homeyAPI = undefined;
@@ -259,7 +260,6 @@ class App extends Homey.App {
       await this._exportApp(item.appId, item.resolution, item.date, item.type, item.subfolder)
         .catch(this.error);
       // wait a bit to reduce cpu and mem load?
-      if (global.gc) global.gc();
       await setTimeoutPromise(this.CPUSettings && this.CPUSettings.lowCPU ? 10 * 1000 : 1, 'waiting is done');
       this.runQueue();
     } else {
@@ -642,12 +642,10 @@ class App extends Homey.App {
         this.error(`Insights data is corrupt and will be truncated to the first 2925 records for ${(log.uriObj ? log.uriObj.name : log.ownerName)} ${logEntries.id}.`);
         //  ${logEntries.uri}`);
         logEntries.values = logEntries.values.slice(0, 2925);
-        if (global.gc) global.gc();
         await setTimeoutPromise(this.CPUSettings && this.CPUSettings.lowCPU ? 10 * 1000 : 1, 'waiting is done');
       }
       return logEntries;
     } catch (error) {
-      if (global.gc) global.gc();
       await setTimeoutPromise(this.CPUSettings && this.CPUSettings.lowCPU ? 10 * 1000 : 1, 'waiting is done');
       throw error;
     }
@@ -753,24 +751,34 @@ class App extends Homey.App {
       const webDavWriteStream = this.webdavClient.createWriteStream(webdavFileName, options);
       const fileStream = fs.createReadStream(`/userdata/${fileName}`);
       return new Promise((resolve, reject) => {
-        fileStream.on('open', () => {
-          // this.log('piping to webdav');
-          fileStream.pipe(webDavWriteStream);
-        });
-        fileStream.on('close', () => {
-          // The file has been read completely
+        let isDone = false;
+
+        webDavWriteStream.on('finish', () => {
           this.log(`${fileName} has been saved to webDav`);
-          webDavWriteStream.end();
-          resolve(fileName);
+          if (!isDone) {
+            isDone = true;
+            resolve(fileName);
+          }
         });
+
+        webDavWriteStream.on('error', (err) => {
+          this.error('webdavwritestream error: ', err.message || err);
+          if (!isDone) {
+            isDone = true;
+            reject(err);
+          }
+        });
+
         fileStream.on('error', (err) => {
           this.log('filestream error: ', err);
+          if (!isDone) {
+            isDone = true;
+            reject(err);
+          }
         });
-        webDavWriteStream.on('error', (err) => {
-          this.error(err.message);
-          this.log('webdavwritestream error');
-          return reject(err);
-        });
+
+        // pipe handles auto-ending the webDavWriteStream
+        fileStream.pipe(webDavWriteStream);
       });
 
     } catch (error) {
@@ -840,18 +848,38 @@ class App extends Homey.App {
           return;
         }
         const fileStream = fs.createReadStream(`/userdata/${fileName}`);
-        fileStream.on('open', () => {
-          fileStream.pipe(smbWriteStream);
-        });
-        fileStream.on('close', () => {
+        let isDone = false;
+
+        smbWriteStream.on('finish', () => {
           this.log(`${fileName} has been saved to SMB2`);
-          fileStream.unpipe();
-          resolve(fileName);
+          if (!isDone) {
+            isDone = true;
+            resolve(fileName);
+          }
         });
+
+        smbWriteStream.on('error', (err) => {
+          if (err.code === 'STATUS_FILE_CLOSED') {
+            // Ignore v9u-smb2 bug trying to double-close the file during auto-destroy
+            return;
+          }
+          this.error('smbWriteStream error: ', err);
+          if (!isDone) {
+            isDone = true;
+            reject(err);
+          }
+        });
+
         fileStream.on('error', (err) => {
           this.log('filestream error: ', err);
-          reject(err);
+          if (!isDone) {
+            isDone = true;
+            reject(err);
+          }
         });
+
+        // pipe handles auto-ending the smbWriteStream
+        fileStream.pipe(smbWriteStream);
       });
     });
   }
@@ -1021,7 +1049,7 @@ class App extends Homey.App {
         .replace(/\..+/, ''); // delete the dot and everything after
       const fileName = `${appId}_${timeStamp}Z_${resolution}.zip`;
       const output = fs.createWriteStream(`/userdata/${fileName}`);
-      const level = this.CPUSettings && this.CPUSettings.lowCPU ? 3 : 9;
+      const level = this.CPUSettings && this.CPUSettings.lowCPU ? 1 : 6;
       const archive = archiver('zip', {
         zlib: { level }, // Sets the compression level.
       });
