@@ -597,12 +597,6 @@ class App extends Homey.App {
       minute: '2-digit',
       second: '2-digit',
     });
-    // this.WaitBetweenEntities = this.homey.settings.get('WaitBetweenEntities');
-    // if (!this.WaitBetweenEntities) {
-    // this.WaitBetweenEntities = { waitBetweenEntities: 0 };
-    // this.homey.settings.set('WaitBetweenEntities', this.WaitBetweenEntities);
-    // }
-    // if (typeof (this.WaitBetweenEntities.waitBetweenEntities) == 'string') this.WaitBetweenEntities.waitBetweenEntities = Number.parseInt(this.WaitBetweenEntities.waitBetweenEntities);
 
     this.OnlyZipWithLogs = this.homey.settings.get('OnlyZipWithLogs');
     if (!this.OnlyZipWithLogs) {
@@ -622,9 +616,10 @@ class App extends Homey.App {
       .replace(/-/g, '') // delete -
       .replace(/\..+/, 'Z'); // delete the dot and everything after
     await this.loginHomeyApi();
-    await this.getAllLogs();
-    await this.getAllDevices();
-    await this.getAllNames();
+    await Promise.all([
+      this.getAllLogs().then(() => this.getAllNames()),
+      this.getAllDevices()
+    ]);
     return true;
   }
 
