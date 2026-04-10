@@ -11,7 +11,7 @@
     "archiver": "^7.0.1",
     "basic-ftp": "^4.6.6",
     "fixture-stdout": "^0.2.1",
-    "homey-api": "^1.10.21",
+    "homey-api": "^3.18.1",
     "webdav": "^4.10.0"
   },
   "devDependencies": {

@@ -22,8 +22,7 @@ with com.gruijter.insights2csv. If not, see <http://www.gnu.org/licenses/>.
 'use strict';
 
 const Homey = require('homey');
-const { HomeyAPIApp } = require('homey-api');
-// const { HomeyAPI } = require('homey-api');
+const { HomeyAPI } = require('homey-api');
 const fs = require('fs');
 const util = require('util');
 const archiver = require('archiver');
@@ -455,7 +454,7 @@ class App extends Homey.App {
   async loginHomeyApi() {
     if (this.homeyAPI) return this.homeyAPI;
     // Authenticate against the current Homey.
-    this.homeyAPI = new HomeyAPIApp({ homey: this.homey, $timeout: 90000 });
+    this.homeyAPI = await HomeyAPI.createAppAPI({ homey: this.homey });
     return this.homeyAPI;
   }
 
@@ -488,18 +487,22 @@ class App extends Homey.App {
   async getManagerNameList() {
     // eslint-disable-next-line prefer-destructuring
     const logs = this.logs; // Object.values(await this.homeyAPI.insights.getLogs({ $timeout: 60000 }));
-    const list = logs.filter((log) => (log.uriObj ? log.uriObj.type === 'manager' : log.ownerUri.startsWith('homey:manager:')))
+    const list = logs.filter((log) => {
+      const uri = log.uri || log.ownerUri || '';
+      return uri.startsWith('homey:manager:');
+    })
       .map((log) => {
-        const ids = log.ownerUri ? log.ownerUri.split(':') : null;
-        const id = ids ? ids.pop() : null;
+        const uri = log.uri || log.ownerUri || '';
+        const ids = uri.split(':');
+        const id = ids.pop();
 
-        const name = (log.uriObj ? log.uriObj.name : log.ownerName) || id; // : app ? app.name : null;
+        const name = id ? id.charAt(0).toUpperCase() + id.slice(1) : 'Unknown';
         if (!name) return null;
         const _app = {
-          id: log.uriObj ? log.uriObj.id : (id), // + log.ownerId
+          id,
           name,
           icon: '',
-          type: log.uriObj ? log.uriObj.type : ids[1], // app ? app.type : null,
+          type: ids[1] || 'manager',
         };
         return _app;
       });
@@ -516,24 +519,32 @@ class App extends Homey.App {
 
   async getAppRelatedLogs(appId, type) {
     this.log(`getting logs related to ${appId}`);
-    let appRelatedLogs = [];
     const appUri = `homey:app:${appId}`;
     const managerUri = `homey:manager:${appId}`;
-    // look for app logs
-    const appLogs = this.logs.filter((log) => (
-      ((log.ownerUri && (log.ownerUri === appUri || log.ownerUri === managerUri))
-|| (log.uri === appUri || log.uri === managerUri))
-&& (!type || log.type === type)
-    ));
-    appRelatedLogs = appRelatedLogs.concat(appLogs);
-    // find app related devices and add their logs
+
+    const relatedDeviceUris = new Set();
     Object.keys(this.devices).forEach((key) => {
-      if (this.devices[key].ownerUri === appUri || this.devices[key].driverUri === appUri || (this.devices[key].driverId && this.devices[key].driverId.startsWith(appUri))) {
-        const deviceUri = `homey:device:${this.devices[key].id}`;
-        const deviceLogs = this.logs.filter((log) => (log.ownerUri === deviceUri || log.uri === deviceUri) && (!type || log.type === type));
-        appRelatedLogs = appRelatedLogs.concat(deviceLogs);
+      const device = this.devices[key];
+      // Use driverId instead of the deprecated driverUri
+      if (device.ownerUri === appUri || (device.driverId && device.driverId.startsWith(appUri))) {
+        relatedDeviceUris.add(`homey:device:${device.id}`);
       }
     });
+
+    const appRelatedLogs = [];
+    for (let i = 0; i < this.logs.length; i += 1) {
+      if (i > 0 && i % 1000 === 0) await new Promise((resolve) => setImmediate(resolve));
+      const log = this.logs[i];
+      if (type && log.type !== type) continue;
+
+      const uri = log.uri || log.ownerUri;
+      if (uri === appUri || uri === managerUri || relatedDeviceUris.has(uri)) {
+        appRelatedLogs.push(log);
+      } else if (log.ownerUri && (log.ownerUri === appUri || log.ownerUri === managerUri || relatedDeviceUris.has(log.ownerUri))) {
+        appRelatedLogs.push(log);
+      }
+    }
+
     return appRelatedLogs;
   }
 
@@ -639,7 +650,7 @@ class App extends Homey.App {
         });
       }
       if (logEntries.values.length > 2925) {
-        this.error(`Insights data is corrupt and will be truncated to the first 2925 records for ${(log.uriObj ? log.uriObj.name : log.ownerName)} ${logEntries.id}.`);
+        this.error(`Insights data is corrupt and will be truncated to the first 2925 records for ${log.uri || log.ownerUri} ${logEntries.id}.`);
         //  ${logEntries.uri}`);
         logEntries.values = logEntries.values.slice(0, 2925);
         await setTimeoutPromise(this.CPUSettings && this.CPUSettings.lowCPU ? 10 * 1000 : 1, 'waiting is done');
@@ -1068,7 +1079,7 @@ class App extends Homey.App {
           const id = ids.pop();
           const dev = this.devices[id];
           const app = dev ? null : this.allNames.find((x) => x.id === id);
-          const name = (log.uriObj && log.uriObj.name) || (dev && dev.name) || (app && app.name) || null;
+          const name = (dev && dev.name) || (app && app.name) || id || 'Unknown';
           const fileNameCsv = `${name}/${(log.ownerId || log.id)}.csv`;
           const fileNameMeta = `${name}/${(log.ownerId || log.id)}_meta.json`;
           const fileNameJson = `${name}/${(log.ownerId || log.id)}.json`;
@@ -1077,7 +1088,7 @@ class App extends Homey.App {
           archive.append(JSON.stringify(allMeta), { name: fileNameMeta });
           archive.append(JSON.stringify(entries), { name: fileNameJson });
           if (this.CPUSettings && this.CPUSettings.lowCPU) await setTimeoutPromise(2 * 1000, 'waiting is done'); // relax Homey a bit...
-          else await setTimeoutPromise(1, 'mini-waiting is done'); // relax Homey a bit...
+          else await setTimeoutPromise(20, 'mini-waiting is done'); // relax Homey a bit...
         }
       }
       // this.log(`${logs.length} files zipped`);
