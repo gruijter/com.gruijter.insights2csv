@@ -30,7 +30,7 @@ const archiver = require('archiver');
 const SmbHelper = require('./lib/SmbHelper');
 const WebDavHelper = require('./lib/WebDavHelper');
 const FtpHelper = require('./lib/FtpHelper');
-const Logger = require('./captureLogs');
+const Logger = require('./lib/captureLogs');
 
 const setTimeoutPromise = util.promisify(setTimeout);
 
@@ -618,7 +618,7 @@ class App extends Homey.App {
     await this.loginHomeyApi();
     await Promise.all([
       this.getAllLogs().then(() => this.getAllNames()),
-      this.getAllDevices()
+      this.getAllDevices(),
     ]);
     return true;
   }
