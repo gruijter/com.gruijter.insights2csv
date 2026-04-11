@@ -117,12 +117,6 @@ class App extends Homey.App {
       this.queueRunning = false;
 
       // register some listeners
-      process.on('unhandledRejection', (error) => {
-        this.error('unhandledRejection! ', error);
-      });
-      process.on('uncaughtException', (error) => {
-        this.error('uncaughtException! ', error);
-      });
       this.homey
         .on('unload', () => {
           this.log('app unload called');
