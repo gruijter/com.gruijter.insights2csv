@@ -1,0 +1,77 @@
+{
+	"settings": {
+		"benefit": "Låt Homey exportera alla Insights från ett flow",
+		"tab1": {
+			"title": "NAS",
+			"instructionsTitle": "Instruktioner",
+			"instructions": "Export till NAS, eller någon annan Windows-nätverksdelning, är möjlig via SAMBA-protokollet. Aktivera 'Använd SMB', och fyll i parametrarna. SE EXEMPEL PÅ HUR MAN ANVÄNDER SNEDSTRECK (/)! Testa inställningarna och spara dem.",
+			"useSmb": "Använd SMB vid export",
+			"smbUseSeperateFolders": "Separat mapp för varje export",
+			"smbShare": "Nätverksdelning",
+			"smbPath": "Underkatalog",
+			"smbDomain": "Arbetsgrupp / Domän",
+			"smbPort": "Port (standard 445)",
+			"smbUsername": "Användarnamn",
+			"smbPassword": "Lösenord",
+			"testSmb": "Testa SMB-inställningarna",
+			"testOk": "OK! Spara nu inställningarna.",
+			"saveSmb": "Spara",
+			"settingsSaved": "SMB-inställningarna har sparats"
+		},
+		"tab2": {
+			"title": "WebDAV",
+			"instructionsTitle": "Instruktioner",
+			"instructions": "Export till en webbmapp är möjlig via WebDAV-protokollet. Aktivera 'Använd WebDAV' och fyll i parametrarna. Testa och spara. Nu kan du exportera Insights till en WebDAV-mapp från ett flow.",
+			"useWebdav": "Använd WebDAV vid export",
+			"webdavUseSeperateFolders": "Separat mapp för varje export",
+			"webdavUrl": "WebDAV-URL",
+			"webdavUsername": "Användarnamn",
+			"webdavPassword": "Lösenord",
+			"testWebdav": "Testa WebDAV-inställningarna",
+			"testOk": "OK! Spara nu inställningarna.",
+			"saveWebdav": "Spara",
+			"settingsSaved": "WebDAV-inställningarna har sparats"
+		},
+		"tab3": {
+			"title": "FTP",
+			"instructionsTitle": "Instruktioner",
+			"instructions": "Export till en FTP-mapp är möjlig via FTP-protokollet. Aktivera 'Använd FTP' och fyll i parametrarna. Testa och spara. Nu kan du exportera Insights till en FTP-mapp från ett flow.",
+			"useFTP": "Använd FTP vid export",
+			"FTPUseSeperateFolders": "Separat mapp för varje export",
+			"FTPHost": "FTP-värd",
+			"FTPFolder": "FTP-mapp",
+			"SFTP": "Använd säker FTPS",
+			"protocol": "Protokoll",
+			"FTPUsername": "Användarnamn",
+			"FTPPassword": "Lösenord",
+			"testFTP": "Testa FTP-inställningarna",
+			"testOk": "OK! Spara nu inställningarna.",
+			"saveFTP": "Spara",
+			"settingsSaved": "FTP-inställningarna har sparats"
+		},
+		"tab4": {
+			"title": "Exportera",
+			"instructionsTitle": "Instruktioner",
+			"instructions": "Ställ först in NAS, FTP eller WebDAV. Alternativet 'Låg CPU-belastning' kan väljas för att minska belastningen på Homey. Exporten tar dock längre tid. För att starta en export manuellt nu, välj vilken app som ska exporteras och välj upplösning.",
+			"allApps": "Alla appar",
+			"app": "App",
+			"resolution": "Upplösning",
+			"lowCPU": "Låg CPU-belastning",
+			"export": "Exportera nu",
+			"confirmExport": "Är du säker? Att exportera Insights kan ta mer än 10 minuter!",
+			"stopExport": "Avbryt export",
+			"confirmStopExport": "Avbryt pågående export?",
+			"exportStopped": "Pågående export har avbrutits",
+			"backupInitiated": "Export av Insights har startat.",
+			"waitBetweenEntities": "Vänta mellan export av enheter (Sekunder)",
+			"onlyZipWithLogs": "Skapa endast filer för enheter med loggar",
+			"includeLocalDateTime": "Inkludera lokal tid och datum i CSV"
+		},
+		"tab5": {
+			"title": "Loggar",
+			"deleteLogs": "Ta bort loggar",
+			"deleteWarning": "Ta bort alla loggar?",
+			"deleted": "Alla loggar har tagits bort"
+		}
+	}
+}

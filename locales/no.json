@@ -1,0 +1,77 @@
+{
+	"settings": {
+		"benefit": "La Homey eksportere alle Insights fra en flow",
+		"tab1": {
+			"title": "NAS",
+			"instructionsTitle": "Instruksjoner",
+			"instructions": "Eksport til NAS, eller en annen Windows-nettverksdeling, er mulig via SAMBA-protokollen. Aktiver 'Bruk SMB', og fyll inn parametrene. SE EKSEMPLENE PÅ HVORDAN DU BRUKER SKRÅSTREK (/)! Test og lagre.",
+			"useSmb": "Bruk SMB ved eksport",
+			"smbUseSeperateFolders": "Separat mappe for hver eksport",
+			"smbShare": "Nettverksdeling",
+			"smbPath": "Underkatalog",
+			"smbDomain": "Arbeidsgruppe / Domene",
+			"smbPort": "Port (standard 445)",
+			"smbUsername": "Brukernavn",
+			"smbPassword": "Passord",
+			"testSmb": "Test SMB-innstillingene",
+			"testOk": "OK! Lagre nå innstillingene.",
+			"saveSmb": "Lagre",
+			"settingsSaved": "SMB-innstillinger er lagret"
+		},
+		"tab2": {
+			"title": "WebDAV",
+			"instructionsTitle": "Instruksjoner",
+			"instructions": "Eksport til en nettmappe er mulig via WebDAV-protokollen. Aktiver 'Bruk WebDAV', og fyll inn parametrene. Test og lagre.",
+			"useWebdav": "Bruk WebDAV ved eksport",
+			"webdavUseSeperateFolders": "Separat mappe for hver eksport",
+			"webdavUrl": "WebDAV-URL",
+			"webdavUsername": "Brukernavn",
+			"webdavPassword": "Passord",
+			"testWebdav": "Test WebDAV-innstillingene",
+			"testOk": "OK! Lagre nå innstillingene.",
+			"saveWebdav": "Lagre",
+			"settingsSaved": "WebDAV-innstillinger er lagret"
+		},
+		"tab3": {
+			"title": "FTP",
+			"instructionsTitle": "Instruksjoner",
+			"instructions": "Eksport til en FTP-mappe er mulig via FTP-protokollen. Aktiver 'Bruk FTP' og fyll inn parametrene. Test og lagre.",
+			"useFTP": "Bruk FTP ved eksport",
+			"FTPUseSeperateFolders": "Separat mappe for hver eksport",
+			"FTPHost": "FTP-vert",
+			"FTPFolder": "FTP-mappe",
+			"SFTP": "Bruk sikker FTPS",
+			"protocol": "Protokoll",
+			"FTPUsername": "Brukernavn",
+			"FTPPassword": "Passord",
+			"testFTP": "Test FTP-innstillingene",
+			"testOk": "OK! Lagre nå innstillingene.",
+			"saveFTP": "Lagre",
+			"settingsSaved": "FTP-innstillinger er lagret"
+		},
+		"tab4": {
+			"title": "Eksporter",
+			"instructionsTitle": "Instruksjoner",
+			"instructions": "Sett først opp NAS, FTP eller WebDAV. Alternativet 'Lav CPU-belastning' kan velges for å redusere belastningen på Homey. Eksporten vil imidlertid ta lengre tid. For å starte en eksport manuelt nå, velg hvilken app som skal eksporteres og velg oppløsningen.",
+			"allApps": "Alle apper",
+			"app": "App",
+			"resolution": "Oppløsning",
+			"lowCPU": "Lav CPU-belastning",
+			"export": "Eksporter nå",
+			"confirmExport": "Er du sikker? Eksport av Insights kan ta mer enn 10 minutter!",
+			"stopExport": "Avbryt eksport",
+			"confirmStopExport": "Avbryt pågående eksport?",
+			"exportStopped": "Pågående eksport er avbrutt",
+			"backupInitiated": "Eksport av Insights har startet.",
+			"waitBetweenEntities": "Vent mellom eksport av enheter (Sekunder)",
+			"onlyZipWithLogs": "Opprett bare filer for enheter med logger",
+			"includeLocalDateTime": "Inkluder lokal dato og tid i CSV"
+		},
+		"tab5": {
+			"title": "Logger",
+			"deleteLogs": "Slett logger",
+			"deleteWarning": "Slett alle logger?",
+			"deleted": "Alle logger er slettet"
+		}
+	}
+}

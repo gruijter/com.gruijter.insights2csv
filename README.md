@@ -35,4 +35,3 @@ Version changelog: [changelog.txt]
 [pp-donate-link]: https://www.paypal.me/gruijter
 [pp-donate-link-old]: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=TDC4FASRLXCUY
 [pp-donate-image]: https://www.paypalobjects.com/en_US/i/btn/btn_donate_SM.gif
-[changelog.txt]: https://github.com/gruijter/com.gruijter.insights2csv/blob/master/changelog.txt

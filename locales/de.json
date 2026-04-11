@@ -1,0 +1,77 @@
+{
+	"settings": {
+		"benefit": "Lassen Sie Homey alle Insights aus einem Flow exportieren",
+		"tab1": {
+			"title": "NAS",
+			"instructionsTitle": "Anleitung",
+			"instructions": "Der Export auf ein NAS oder eine andere Windows-Netzwerkfreigabe ist über das SAMBA-Protokoll möglich. Aktivieren Sie 'SMB verwenden' und füllen Sie die erforderlichen Parameter aus. BEACHTEN SIE DIE BEISPIELE ZUR VERWENDUNG DES SCHRÄGSTRICHS (/)! Testen Sie die Einstellungen und speichern Sie sie. Nun können Sie Insights aus einem Flow auf eine Netzwerkfreigabe exportieren.",
+			"useSmb": "SMB beim Exportieren verwenden",
+			"smbUseSeperateFolders": "Separater Ordner für jeden Export",
+			"smbShare": "Netzwerkfreigabe",
+			"smbPath": "Unterverzeichnis",
+			"smbDomain": "Arbeitsgruppe / Domäne",
+			"smbPort": "Port (Standard 445)",
+			"smbUsername": "Benutzername",
+			"smbPassword": "Passwort",
+			"testSmb": "SMB-Einstellungen testen",
+			"testOk": "OK! Speichern Sie nun die Einstellungen.",
+			"saveSmb": "Speichern",
+			"settingsSaved": "SMB-Einstellungen wurden gespeichert"
+		},
+		"tab2": {
+			"title": "WebDAV",
+			"instructionsTitle": "Anleitung",
+			"instructions": "Der Export in einen Web-Ordner ist über das WebDAV-Protokoll möglich. Aktivieren Sie 'WebDAV verwenden' und füllen Sie die erforderlichen Parameter aus. Testen Sie die Einstellungen und speichern Sie sie. Nun können Sie Insights aus einem Flow in einen WebDAV-Ordner exportieren.",
+			"useWebdav": "WebDAV beim Exportieren verwenden",
+			"webdavUseSeperateFolders": "Separater Ordner für jeden Export",
+			"webdavUrl": "WebDAV URL",
+			"webdavUsername": "Benutzername",
+			"webdavPassword": "Passwort",
+			"testWebdav": "WebDAV-Einstellungen testen",
+			"testOk": "OK! Speichern Sie nun die Einstellungen.",
+			"saveWebdav": "Speichern",
+			"settingsSaved": "WebDAV-Einstellungen wurden gespeichert"
+		},
+		"tab3": {
+			"title": "FTP",
+			"instructionsTitle": "Anleitung",
+			"instructions": "Der Export in einen FTP-Ordner ist über das FTP-Protokoll möglich. Aktivieren Sie 'FTP verwenden' und füllen Sie die erforderlichen Parameter aus. Testen Sie die Einstellungen und speichern Sie sie. Nun können Sie Insights aus einem Flow in einen FTP-Ordner exportieren.",
+			"useFTP": "FTP beim Exportieren verwenden",
+			"FTPUseSeperateFolders": "Separater Ordner für jeden Export",
+			"FTPHost": "FTP-Host",
+			"FTPFolder": "FTP-Ordner",
+			"SFTP": "Sicheres FTPS verwenden",
+			"protocol": "Protokoll",
+			"FTPUsername": "Benutzername",
+			"FTPPassword": "Passwort",
+			"testFTP": "FTP-Einstellungen testen",
+			"testOk": "OK! Speichern Sie nun die Einstellungen.",
+			"saveFTP": "Speichern",
+			"settingsSaved": "FTP-Einstellungen wurden gespeichert"
+		},
+		"tab4": {
+			"title": "Export",
+			"instructionsTitle": "Anleitung",
+			"instructions": "Richten Sie zuerst NAS und/oder FTP und/oder WebDAV ein. Die Option 'Geringe CPU-Auslastung' kann ausgewählt werden, um die Belastung von Homey zu verringern. Der Export dauert dann jedoch länger. Um einen Export manuell zu starten, wählen Sie die zu exportierende App und die Auflösung aus.",
+			"allApps": "Alle Apps",
+			"app": "App",
+			"resolution": "Auflösung",
+			"lowCPU": "Geringe CPU-Auslastung",
+			"export": "Jetzt exportieren",
+			"confirmExport": "Sind Sie sicher? Der Export von Insights kann mehr als 10 Minuten dauern!",
+			"stopExport": "Export abbrechen",
+			"confirmStopExport": "Laufenden Export abbrechen?",
+			"exportStopped": "Laufender Export wurde abgebrochen",
+			"backupInitiated": "Der Insights-Export hat begonnen.",
+			"waitBetweenEntities": "Wartezeit zwischen den zu exportierenden Entitäten (Sekunden)",
+			"onlyZipWithLogs": "Nur Dateien für Entitäten mit Logs erstellen",
+			"includeLocalDateTime": "Lokales Datum und Uhrzeit in CSV einschließen"
+		},
+		"tab5": {
+			"title": "Protokolle",
+			"deleteLogs": "Protokolle löschen",
+			"deleteWarning": "Alle Protokolle löschen?",
+			"deleted": "Alle Protokolle wurden gelöscht"
+		}
+	}
+}

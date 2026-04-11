@@ -1,0 +1,77 @@
+{
+	"settings": {
+		"benefit": "Lascia che Homey esporti tutti gli Insights da un flow",
+		"tab1": {
+			"title": "NAS",
+			"instructionsTitle": "Istruzioni",
+			"instructions": "L'esportazione su NAS o su qualsiasi altra condivisione di rete Windows è possibile tramite il protocollo SAMBA. Abilita 'Usa SMB' e inserisci i parametri richiesti. VEDI GLI ESEMPI SU COME USARE LA BARRA (/)! Testa le impostazioni e salvale. Ora puoi esportare gli Insights su una condivisione di rete da un flow.",
+			"useSmb": "Usa SMB durante l'esportazione",
+			"smbUseSeperateFolders": "Cartella separata per ogni esportazione",
+			"smbShare": "Condivisione di rete",
+			"smbPath": "Sottodirectory",
+			"smbDomain": "Gruppo di lavoro / Dominio",
+			"smbPort": "Porta (predefinito 445)",
+			"smbUsername": "Nome utente",
+			"smbPassword": "Password",
+			"testSmb": "Testa le impostazioni SMB",
+			"testOk": "OK! Ora salva le impostazioni.",
+			"saveSmb": "Salva",
+			"settingsSaved": "Le impostazioni SMB sono state salvate"
+		},
+		"tab2": {
+			"title": "WebDAV",
+			"instructionsTitle": "Istruzioni",
+			"instructions": "L'esportazione verso una cartella web è possibile tramite il protocollo WebDAV. Abilita 'Usa WebDAV' e inserisci i parametri richiesti. Testa le impostazioni e salvale. Ora puoi esportare gli Insights su una cartella WebDAV da un flow.",
+			"useWebdav": "Usa WebDAV durante l'esportazione",
+			"webdavUseSeperateFolders": "Cartella separata per ogni esportazione",
+			"webdavUrl": "URL WebDAV",
+			"webdavUsername": "Nome utente",
+			"webdavPassword": "Password",
+			"testWebdav": "Testa le impostazioni WebDAV",
+			"testOk": "OK! Ora salva le impostazioni.",
+			"saveWebdav": "Salva",
+			"settingsSaved": "Le impostazioni WebDAV sono state salvate"
+		},
+		"tab3": {
+			"title": "FTP",
+			"instructionsTitle": "Istruzioni",
+			"instructions": "L'esportazione verso una cartella FTP è possibile tramite il protocollo FTP. Abilita 'Usa FTP' e inserisci i parametri richiesti. Testa le impostazioni e salvale. Ora puoi esportare gli Insights su una cartella FTP da un flow.",
+			"useFTP": "Usa FTP durante l'esportazione",
+			"FTPUseSeperateFolders": "Cartella separata per ogni esportazione",
+			"FTPHost": "Host FTP",
+			"FTPFolder": "Cartella FTP",
+			"SFTP": "Usa FTPS sicuro",
+			"protocol": "Protocollo",
+			"FTPUsername": "Nome utente",
+			"FTPPassword": "Password",
+			"testFTP": "Testa le impostazioni FTP",
+			"testOk": "OK! Ora salva le impostazioni.",
+			"saveFTP": "Salva",
+			"settingsSaved": "Le impostazioni FTP sono state salvate"
+		},
+		"tab4": {
+			"title": "Esporta",
+			"instructionsTitle": "Istruzioni",
+			"instructions": "Configura prima NAS, FTP o WebDAV. L'opzione 'Basso carico CPU' può essere selezionata per ridurre il carico su Homey. Tuttavia, l'esportazione richiederà più tempo. Per avviare manualmente un'esportazione ora, seleziona l'app da esportare e la risoluzione.",
+			"allApps": "Toutes les applications",
+			"app": "App",
+			"resolution": "Risoluzione",
+			"lowCPU": "Basso carico CPU",
+			"export": "Esporta ora",
+			"confirmExport": "Sei sicuro? L'esportazione degli Insights può richiedere più di 10 minuti!",
+			"stopExport": "Annulla esportazione",
+			"confirmStopExport": "Annullare l'esportazione in corso?",
+			"exportStopped": "L'esportazione in corso è stata annullata",
+			"backupInitiated": "L'esportazione degli Insights è iniziata.",
+			"waitBetweenEntities": "Attesa tra l'esportazione delle entità (Secondi)",
+			"onlyZipWithLogs": "Crea file solo per entità con registri",
+			"includeLocalDateTime": "Includi data e ora locale nel CSV"
+		},
+		"tab5": {
+			"title": "Registri",
+			"deleteLogs": "Elimina registri",
+			"deleteWarning": "Eliminare tutti i registri?",
+			"deleted": "Tutti i registri sono stati eliminati"
+		}
+	}
+}

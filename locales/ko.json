@@ -1,0 +1,77 @@
+{
+	"settings": {
+		"benefit": "Homey가 flow에서 모든 Insights를 내보내도록 허용",
+		"tab1": {
+			"title": "NAS",
+			"instructionsTitle": "지침",
+			"instructions": "SAMBA 프로토콜을 통해 NAS 또는 Windows 네트워크 공유로 내보낼 수 있습니다. 'SMB 사용'을 활성화하고 필요한 매개변수를 입력하십시오. 슬래시(/) 사용 방법에 대한 예를 참조하십시오! 설정을 테스트하고 저장하십시오.",
+			"useSmb": "내보낼 때 SMB 사용",
+			"smbUseSeperateFolders": "각 내보내기마다 별도의 폴더 사용",
+			"smbShare": "네트워크 공유",
+			"smbPath": "하위 디렉토리",
+			"smbDomain": "작업 그룹 / 도메인",
+			"smbPort": "포트 (기본 445)",
+			"smbUsername": "사용자 이름",
+			"smbPassword": "비밀번호",
+			"testSmb": "SMB 설정 테스트",
+			"testOk": "OK! 이제 설정을 저장하십시오.",
+			"saveSmb": "저장",
+			"settingsSaved": "SMB 설정이 저장되었습니다"
+		},
+		"tab2": {
+			"title": "WebDAV",
+			"instructionsTitle": "지침",
+			"instructions": "WebDAV 프로토콜을 통해 웹 폴더로 내보낼 수 있습니다. 'WebDAV 사용'을 활성화하고 필요한 매개변수를 입력하십시오. 테스트하고 저장하십시오.",
+			"useWebdav": "내보낼 때 WebDAV 사용",
+			"webdavUseSeperateFolders": "각 내보내기마다 별도의 폴더 사용",
+			"webdavUrl": "WebDAV URL",
+			"webdavUsername": "사용자 이름",
+			"webdavPassword": "비밀번호",
+			"testWebdav": "WebDAV 설정 테스트",
+			"testOk": "OK! 이제 설정을 저장하십시오.",
+			"saveWebdav": "저장",
+			"settingsSaved": "WebDAV 설정이 저장되었습니다"
+		},
+		"tab3": {
+			"title": "FTP",
+			"instructionsTitle": "지침",
+			"instructions": "FTP 프로토콜을 통해 FTP 폴더로 내보낼 수 있습니다. 'FTP 사용'을 활성화하고 매개변수를 입력하십시오. 테스트하고 저장하십시오.",
+			"useFTP": "내보낼 때 FTP 사용",
+			"FTPUseSeperateFolders": "각 내보내기마다 별도의 폴더 사용",
+			"FTPHost": "FTP 호스트",
+			"FTPFolder": "FTP 폴더",
+			"SFTP": "보안 FTPS 사용",
+			"protocol": "프로토콜",
+			"FTPUsername": "사용자 이름",
+			"FTPPassword": "비밀번호",
+			"testFTP": "FTP 설정 테스트",
+			"testOk": "OK! 이제 설정을 저장하십시오.",
+			"saveFTP": "저장",
+			"settingsSaved": "FTP 설정이 저장되었습니다"
+		},
+		"tab4": {
+			"title": "내보내기",
+			"instructionsTitle": "지침",
+			"instructions": "먼저 NAS, FTP 또는 WebDAV를 설정하십시오. Homey의 부하를 줄이기 위해 '낮은 CPU 부하' 옵션을 선택할 수 있지만, 내보내는 데 시간이 더 오래 걸립니다. 수동으로 내보내기를 시작하려면 내보낼 앱과 해상도를 선택하십시오.",
+			"allApps": "모든 앱",
+			"app": "앱",
+			"resolution": "해상도",
+			"lowCPU": "낮은 CPU 부하",
+			"export": "지금 내보내기",
+			"confirmExport": "확실합니까? Insights를 내보내는 데 10분 이상 걸릴 수 있습니다!",
+			"stopExport": "내보내기 취소",
+			"confirmStopExport": "진행 중인 내보내기를 취소하시겠습니까?",
+			"exportStopped": "진행 중인 내보내기가 취소되었습니다",
+			"backupInitiated": "Insights 내보내기가 시작되었습니다.",
+			"waitBetweenEntities": "엔터티 내보내기 사이의 대기 시간(초)",
+			"onlyZipWithLogs": "로그가 있는 항목의 파일만 생성",
+			"includeLocalDateTime": "CSV에 로컬 날짜 및 시간 포함"
+		},
+		"tab5": {
+			"title": "로그",
+			"deleteLogs": "로그 삭제",
+			"deleteWarning": "모든 로그를 삭제하시겠습니까?",
+			"deleted": "모든 로그가 삭제되었습니다"
+		}
+	}
+}

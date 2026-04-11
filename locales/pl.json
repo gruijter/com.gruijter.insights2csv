@@ -1,0 +1,77 @@
+{
+	"settings": {
+		"benefit": "Pozwól Homey wyeksportować wszystkie Insights z flow",
+		"tab1": {
+			"title": "NAS",
+			"instructionsTitle": "Instrukcje",
+			"instructions": "Eksport na serwer NAS lub dowolny inny udział sieciowy Windows jest możliwy przez protokół SAMBA. Włącz 'Użyj SMB' i wypełnij parametry. ZOBACZ PRZYKŁADY JAK UŻYWAĆ UKOŚNIKA (/)! Przetestuj ustawienia i zapisz.",
+			"useSmb": "Użyj SMB podczas eksportu",
+			"smbUseSeperateFolders": "Oddzielny folder dla każdego eksportu",
+			"smbShare": "Udział sieciowy",
+			"smbPath": "Podkatalog",
+			"smbDomain": "Grupa robocza / Domena",
+			"smbPort": "Port (domyślnie 445)",
+			"smbUsername": "Nazwa użytkownika",
+			"smbPassword": "Hasło",
+			"testSmb": "Testuj ustawienia SMB",
+			"testOk": "OK! Teraz zapisz ustawienia.",
+			"saveSmb": "Zapisz",
+			"settingsSaved": "Ustawienia SMB zostały zapisane"
+		},
+		"tab2": {
+			"title": "WebDAV",
+			"instructionsTitle": "Instrukcje",
+			"instructions": "Eksport do folderu sieciowego jest możliwy przez protokół WebDAV. Włącz 'Użyj WebDAV' i wypełnij wymagane parametry. Przetestuj i zapisz.",
+			"useWebdav": "Użyj WebDAV podczas eksportu",
+			"webdavUseSeperateFolders": "Oddzielny folder dla każdego eksportu",
+			"webdavUrl": "URL WebDAV",
+			"webdavUsername": "Nazwa użytkownika",
+			"webdavPassword": "Hasło",
+			"testWebdav": "Testuj ustawienia WebDAV",
+			"testOk": "OK! Teraz zapisz ustawienia.",
+			"saveWebdav": "Zapisz",
+			"settingsSaved": "Ustawienia WebDAV zostały zapisane"
+		},
+		"tab3": {
+			"title": "FTP",
+			"instructionsTitle": "Instrukcje",
+			"instructions": "Eksport do folderu FTP jest możliwy przez protokół FTP. Włącz 'Użyj FTP' i wypełnij parametry. Przetestuj i zapisz.",
+			"useFTP": "Użyj FTP podczas eksportu",
+			"FTPUseSeperateFolders": "Oddzielny folder dla każdego eksportu",
+			"FTPHost": "Host FTP",
+			"FTPFolder": "Folder FTP",
+			"SFTP": "Użyj bezpiecznego FTPS",
+			"protocol": "Protokół",
+			"FTPUsername": "Nazwa użytkownika",
+			"FTPPassword": "Hasło",
+			"testFTP": "Testuj ustawienia FTP",
+			"testOk": "OK! Teraz zapisz ustawienia.",
+			"saveFTP": "Zapisz",
+			"settingsSaved": "Ustawienia FTP zostały zapisane"
+		},
+		"tab4": {
+			"title": "Eksport",
+			"instructionsTitle": "Instrukcje",
+			"instructions": "Najpierw skonfiguruj NAS, FTP lub WebDAV. Można wybrać opcję 'Niskie obciążenie CPU', aby zmniejszyć obciążenie Homey, jednak eksport potrwa dłużej. Aby ręcznie uruchomić eksport, wybierz aplikację i rozdzielczość.",
+			"allApps": "Wszystkie aplikacje",
+			"app": "Aplikacja",
+			"resolution": "Rozdzielczość",
+			"lowCPU": "Niskie obciążenie CPU",
+			"export": "Eksportuj teraz",
+			"confirmExport": "Czy na pewno? Eksport Insights może zająć ponad 10 minut!",
+			"stopExport": "Anuluj eksport",
+			"confirmStopExport": "Anulować trwający eksport?",
+			"exportStopped": "Trwający eksport został anulowany",
+			"backupInitiated": "Eksport Insights został rozpoczęty.",
+			"waitBetweenEntities": "Odstęp między eksportem encji (Sekundy)",
+			"onlyZipWithLogs": "Twórz pliki tylko dla encji z logami",
+			"includeLocalDateTime": "Uwzględnij lokalną datę i godzinę w CSV"
+		},
+		"tab5": {
+			"title": "Logi",
+			"deleteLogs": "Usuń logi",
+			"deleteWarning": "Usunąć wszystkie logi?",
+			"deleted": "Wszystkie logi zostały usunięte"
+		}
+	}
+}
