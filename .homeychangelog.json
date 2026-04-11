@@ -1,59 +1,95 @@
 {
-  "2.5.1": {
-    "en": "Packages update. athom-api@2.1.220. webdav@2.10.2. basic-ftp@4.5.3 FTP fixes. Added Export and Cancel Export via app settings."
+  "5.0.0": {
+    "en": "Add SMB NTLMv2 support. Add SFTP support. Fix FTPS support and allow implicit FTPS on port 990. Many stability and resource usage improvements. Code refactoring. Updated dependencies. Homey api@3.18.1"
   },
-  "2.5.2": {
-    "en": "Packages update. athom-api@2.1.220. webdav@2.10.2. basic-ftp@4.5.3 FTP fixes. Added Export and Cancel Export via app settings."
-  },
-  "2.6.0": {
-    "en": "Packages update. athom-api@3.2.3. webdav@3.3.0. basic-ftp@4.5.4. @marsaud/smb2@0.16.0 archiver@4.0.1. Fix crash on corrupt Insights data."
-  },
-  "2.6.1": {
-    "en": "Packages update. athom-api@3.2.13. basic-ftp@4.6.2 archiver@4.0.2"
-  },
-  "2.7.0": {
-    "en": "Packages update. athom-api@3.2.14 webdav@3.6.1 basic-ftp@4.6.3 @marsaud/smb2@0.17.2 archiver@5.1.0"
-  },
-  "2.7.1": {
-    "en": "Packages update. athom-api@3.2.18 webdav@3.6.2 archiver@5.2.0"
-  },
-  "2.8.0": {
-    "en": "Packages update. athom-api@3.3.0 webdav@4.2.1"
-  },
-  "2.9.0": {
-    "en": "Packages update. athom-api@3.6.3 webdav@4.6.0 basic-ftp@4.6.6 @marsaud/smb2@0.18.0 archiver@5.3.0. Allow unauthorized FTPS certificates."
-  },
-  "2.9.1": {
-    "en": "Packages update. athom-api@3.6.7 webdav@4.7.0"
-  },
-  "2.9.2": {
-    "en": "Packages update. athom-api@3.7.1 webdav@4.8.0. Extended error logging."
-  },
-  "3.0.0": {
-    "en": "Migrated to SDK3. replaced athom-api with homey-api@1.5.22"
-  },
-  "3.0.1": {
-    "en": "Migrated to SDK3. replaced athom-api with homey-api@1.5.23. Fixed resolution selection."
-  },
-  "3.0.2": {
-    "en": "Migrated to SDK3. replaced athom-api with homey-api@1.5.23. Fixed resolution selection."
-  },
-  "3.0.3": {
-    "en": "Packages update. homey-api@1.5.26 archiver@5.3.1"
-  },
-  "3.1.0": {
-    "en": "Increase homey-api timeout to 60s. Reduced CPU load. Packages update: homey-api@1.5.30 archiver@5.3.1 webdav@4.10.0."
-  },
-  "3.1.1": {
-    "en": "Increase homey-api timeout to 120s. Added low CPU load option during export"
-  },
-  "3.1.2": {
-    "en": "Decrease homey-api timeout to 90s. Fixed lowCPU crash. Catch FTP connection errors."
+  "4.0.0": {
+    "en": "HP2023 compatibility added. Speed optimizations implemented. Functionality options extended. homey-api@1.10.21"
   },
   "3.1.3": {
     "en": "Roll back catch FTP connection errors."
   },
-  "4.0.0": {
-    "en": "HP2023 compatibility added. Speed optimizations implemented. Functionality options extended. homey-api@1.10.21"
+  "3.1.2": {
+    "en": "Decrease homey-api timeout to 90s. Fixed lowCPU crash. Catch FTP connection errors."
+  },
+  "3.1.1": {
+    "en": "Increase homey-api timeout to 120s. Added low CPU load option during export"
+  },
+  "3.1.0": {
+    "en": "Increase homey-api timeout to 60s. Reduced CPU load. Packages update: homey-api@1.5.30 archiver@5.3.1 webdav@4.10.0."
+  },
+  "3.0.3": {
+    "en": "Packages update. homey-api@1.5.26 archiver@5.3.1"
+  },
+  "3.0.2": {
+    "en": "Migrated to SDK3. replaced athom-api with homey-api@1.5.23. Fixed resolution selection."
+  },
+  "3.0.1": {
+    "en": "Migrated to SDK3. replaced athom-api with homey-api@1.5.23. Fixed resolution selection."
+  },
+  "3.0.0": {
+    "en": "Migrated to SDK3. replaced athom-api with homey-api@1.5.22"
+  },
+  "2.9.2": {
+    "en": "Packages update. athom-api@3.7.1 webdav@4.8.0. Extended error logging."
+  },
+  "2.9.1": {
+    "en": "Packages update. athom-api@3.6.7 webdav@4.7.0"
+  },
+  "2.9.0": {
+    "en": "Packages update. athom-api@3.6.3 webdav@4.6.0 basic-ftp@4.6.6 @marsaud/smb2@0.18.0 archiver@5.3.0. Allow unauthorized FTPS certificates."
+  },
+  "2.8.0": {
+    "en": "Packages update. athom-api@3.3.0 webdav@4.2.1"
+  },
+  "2.7.1": {
+    "en": "Packages update. athom-api@3.2.18 webdav@3.6.2 archiver@5.2.0"
+  },
+  "2.7.0": {
+    "en": "Packages update. athom-api@3.2.14 webdav@3.6.1 basic-ftp@4.6.3 @marsaud/smb2@0.17.2 archiver@5.1.0"
+  },
+  "2.6.1": {
+    "en": "Packages update. athom-api@3.2.13. basic-ftp@4.6.2 archiver@4.0.2"
+  },
+  "2.6.0": {
+    "en": "Packages update. athom-api@3.2.3. webdav@3.3.0. basic-ftp@4.5.4. @marsaud/smb2@0.16.0 archiver@4.0.1. Fix crash on corrupt Insights data."
+  },
+  "2.5.2": {
+    "en": "Packages update. athom-api@2.1.220. webdav@2.10.2. basic-ftp@4.5.3 FTP fixes. Added Export and Cancel Export via app settings."
+  },
+  "2.5.1": {
+    "en": "Packages update. athom-api@2.1.220. webdav@2.10.2. basic-ftp@4.5.3 FTP fixes. Added Export and Cancel Export via app settings."
+  },
+  "2.5.0": {
+    "en": "Packages update. athom-api@2.1.215. basic-ftp@3.8.7. Add export to seperate folders. Bugfixes. Code refactored."
+  },
+  "2.4.2": {
+    "en": "Packages update. athom-api@2.1.200. basic-ftp@3.8.1. archiver@3.1.1. Added save to for SMB subdir."
+  },
+  "2.4.1": {
+    "en": "Packages update. athom-api@2.1.194. basic-ftp@3.8.0. Fix for save SMB settings."
+  },
+  "2.4.0": {
+    "en": "Packages update. athom-api@2.1.193. webdav@2.9.1. Added ftp support. Added FTP and SMB auto-delete support."
+  },
+  "2.3.1": {
+    "en": "Packages update. athom-api@2.1.192. webdav@2.8.0."
+  },
+  "2.3.0": {
+    "en": "Job queueing added. Reduced memory and cpu load. Athom-api@v2.1.179"
+  },
+  "2.2.0": {
+    "en": "complete rewrite for Homey V2 Insights."
+  },
+  "2.1.0": {
+    "en": "Added backup to local network share (smb)."
+  },
+  "2.0.0": {
+    "en": "Complete rewrite to SDK2. Flows need to be repaired!"
+  },
+  "0.0.2": {
+    "en": "Added per-app backup"
+  },
+  "0.0.1": {
+    "en": "Initial release"
   }
 }
