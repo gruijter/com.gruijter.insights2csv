@@ -1,276 +1,335 @@
 <!doctype html>
 <html>
   <head>
-		<!-- The '/homey.js' script must be included in your settings view to work -->
-		<link rel="stylesheet" type="text/css" href="styles.css" />
 		<script type="text/javascript" src="/homey.js" data-origin="settings"></script>
 		<script type="text/javascript" src="settings.js" data-origin="settings"></script>
+		<style>
+			body {
+				font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+				color: #333;
+				margin: 0;
+				padding: 15px;
+			}
+			h2 {
+				font-weight: 600;
+				margin-top: 0;
+			}
+			.tabs {
+				display: flex;
+				border-bottom: 2px solid #eaeaea;
+				margin-bottom: 20px;
+				gap: 5px;
+			}
+			.tab {
+				padding: 10px 15px;
+				cursor: pointer;
+				border-bottom: 2px solid transparent;
+				margin-bottom: -1px;
+				font-weight: 500;
+				color: #888;
+				transition: all 0.2s ease;
+			}
+			.tab:hover {
+				color: #333;
+			}
+			.tab-active {
+				color: #000;
+				border-bottom-color: #007aff;
+			}
+			.instructions {
+				font-size: 13px;
+				color: #555;
+				background: #f4f6f8;
+				padding: 15px;
+				border-radius: 8px;
+				margin-bottom: 20px;
+				line-height: 1.5;
+				border: 1px solid #e1e4e8;
+			}
+			fieldset {
+				border: 1px solid #e1e4e8;
+				border-radius: 8px;
+				padding: 0 20px;
+				margin-bottom: 20px;
+				background: #fff;
+			}
+			legend {
+				font-weight: 700;
+				color: #888;
+				font-size: 11px;
+				text-transform: uppercase;
+				letter-spacing: 1px;
+				padding: 0 10px;
+			}
+			.field.row {
+				display: flex;
+				align-items: center;
+				padding: 15px 0;
+				border-bottom: 1px solid #f0f0f0;
+				margin: 0;
+			}
+			.field.row:last-child {
+				border-bottom: none;
+			}
+			.field.row label {
+				flex: 0 0 40%;
+				font-weight: 600;
+				color: #666;
+				font-size: 12px;
+				text-transform: uppercase;
+				letter-spacing: 0.5px;
+			}
+			.field.row input[type="text"],
+			.field.row input[type="password"],
+			.field.row input[type="number"],
+			.field.row select {
+				flex: 1;
+				padding: 10px;
+				border: 1px solid #ccc;
+				border-radius: 6px;
+				font-size: 14px;
+				box-sizing: border-box;
+				width: 100%;
+				transition: border-color 0.2s;
+			}
+			.field.row input:focus,
+			.field.row select:focus {
+				outline: none;
+				border-color: #007aff;
+			}
+			.field.row input[type="checkbox"] {
+				width: 18px;
+				height: 18px;
+				cursor: pointer;
+				accent-color: #007aff;
+			}
+			.panel-buttons {
+				display: flex;
+				gap: 15px;
+				margin-top: 10px;
+				margin-bottom: 30px;
+			}
+			.panel-buttons button {
+				flex: 1;
+				padding: 12px;
+				border: none;
+				border-radius: 8px;
+				font-size: 14px;
+				font-weight: 600;
+				cursor: pointer;
+				transition: opacity 0.2s ease, transform 0.1s ease;
+			}
+			.panel-buttons button:active {
+				transform: scale(0.98);
+			}
+			button.primary {
+				background: #007aff;
+				color: #fff;
+			}
+			button.secondary {
+				background: #e5e5ea;
+				color: #333;
+			}
+			button.danger {
+				background: #ff3b30;
+				color: #fff;
+			}
+			button:hover {
+				opacity: 0.9;
+			}
+			#loglines {
+				font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+				font-size: 12px;
+				background: #282c34;
+				color: #abb2bf;
+				padding: 15px;
+				border-radius: 8px;
+				max-height: 400px;
+				overflow-y: auto;
+				white-space: pre-wrap;
+				word-break: break-all;
+			}
+		</style>
   </head>
 
   <body>
 		<div id="app">
-				<p data-i18n="settings.benefit" class="benefit">Export all your Homey Insights</p>
-				<div class="rTable tabs">
-					<div class="rTableRow">
-						<div id="tabb1" class="tab tab-inactive" onclick="showTab(1)" data-i18n="settings.tab1.title">SMB Settings</div>
-						<div id="tabb2" class="tab tab-inactive" onclick="showTab(2)" data-i18n="settings.tab2.title">webDAV Settings</div>
-						<div id="tabb3" class="tab tab-inactive" onclick="showTab(3)" data-i18n="settings.tab3.title">FTP</div>
-						<div id="tabb4" class="tab tab-inactive" onclick="showTab(4)" data-i18n="settings.tab4.title">Export</div>
-						<div id="tabb5" class="tab tab-inactive" onclick="showTab(5)" data-i18n="settings.tab5.title">Log</div>
-					</div>
+				<h2 data-i18n="settings.benefit" style="margin: 15px 0;">Export all your Homey Insights</h2>
+				
+				<div class="tabs">
+					<div id="tabb1" class="tab tab-inactive" onclick="showTab(1)" data-i18n="settings.tab1.title">SMB Settings</div>
+					<div id="tabb2" class="tab tab-inactive" onclick="showTab(2)" data-i18n="settings.tab2.title">webDAV Settings</div>
+					<div id="tabb3" class="tab tab-inactive" onclick="showTab(3)" data-i18n="settings.tab3.title">FTP</div>
+					<div id="tabb4" class="tab tab-inactive" onclick="showTab(4)" data-i18n="settings.tab4.title">Export</div>
+					<div id="tabb5" class="tab tab-inactive" onclick="showTab(5)" data-i18n="settings.tab5.title">Log</div>
 				</div>
 
 				<!-- SMB Settings panel -->
-				<div style="height:8px" class="panel"></div>
 				<div id="tab1" class="panel" style="display: none;">
-					<fieldset class="listContainer">
-						<legend data-i18n="settings.tab1.instructionsTitle">Instructions</legend>
-						<p data-i18n="settings.tab1.instructions" class="instructions">Instructions</p>
-					</fieldset>
-
-					<div class="settings-itemgroup">
-						<div class="settings-item-text">
-								<span data-i18n="settings.tab1.useSmb">Use SMB</span>
+					<p data-i18n="settings.tab1.instructions" class="instructions">Instructions</p>
+					<fieldset>
+						<legend>Settings</legend>
+						<div class="field row">
+							<label for="useSmb" data-i18n="settings.tab1.useSmb">Use SMB</label>
+							<input type="checkbox" id="useSmb">
 						</div>
-						<div class="settings-item-last">
-								<label class="form-switch">
-										<input type="checkbox" id="useSmb" checked="false">
-										<i></i>
-								</label>
+						<div class="field row">
+							<label for="smbUseSeperateFolders" data-i18n="settings.tab1.smbUseSeperateFolders">Use seperate folders</label>
+							<input type="checkbox" id="smbUseSeperateFolders" checked>
 						</div>
-					</div>
-					<div class="settings-itemgroup">
-						<div class="settings-item-text">
-							<span data-i18n="settings.tab1.smbUseSeperateFolders">Use seperate folders</span>
-						</div>
-						<div class="settings-item-last">
-							<label class="form-switch">
-									<input type="checkbox" id="smbUseSeperateFolders" checked="true">
-									<i></i>
-							</label>
-						</div>
-					</div>
-					<label class="settings-item-description" data-i18n="settings.tab1.smbShare">SMB Share</label>
-					<div class="settings-itemgroup">
+						<div class="field row">
+							<label for="smbShare" data-i18n="settings.tab1.smbShare">SMB Share</label>
 						<input id="smbShare" type="text" placeholder="e.g. //myNas/backup" value="">
-					</div>
-					<label class="settings-item-description" data-i18n="settings.tab1.smbPath">SMB Path</label>
-					<div class="settings-itemgroup">
+						</div>
+						<div class="field row">
+							<label for="smbPath" data-i18n="settings.tab1.smbPath">SMB Path</label>
 						<input id="smbPath" type="text" placeholder="e.g. homey/insights" value="">
-					</div>
-					<label class="settings-item-description" data-i18n="settings.tab1.smbDomain">SMB Domain</label>
-					<div class="settings-itemgroup">
+						</div>
+						<div class="field row">
+							<label for="smbDomain" data-i18n="settings.tab1.smbDomain">SMB Domain</label>
 						<input id="smbDomain" type="text" placeholder="e.g. DOMAIN" value="WORKGROUP">
-					</div>
-					<label class="settings-item-description" data-i18n="settings.tab1.smbPort">SMB Port</label>
-					<div class="settings-itemgroup">
+						</div>
+						<div class="field row">
+							<label for="smbPort" data-i18n="settings.tab1.smbPort">SMB Port</label>
 						<input id="smbPort" type="number" placeholder="445" value="445">
-					</div>
-					<label class="settings-item-description" data-i18n="settings.tab1.smbUsername">SMB Username</label>
-					<div class="settings-itemgroup">
+						</div>
+						<div class="field row">
+							<label for="smbUsername" data-i18n="settings.tab1.smbUsername">SMB Username</label>
 						<input id="smbUsername" type="text" value="">
-					</div>
-					<label class="settings-item-description" data-i18n="settings.tab1.smbPassword">SMB Password</label>
-					<div class="settings-itemgroup">
+						</div>
+						<div class="field row">
+							<label for="smbPassword" data-i18n="settings.tab1.smbPassword">SMB Password</label>
 						<input id="smbPassword" type="password" value="">
+						</div>
+					</fieldset>
+					<div class="panel-buttons">
+						<button id="testSmb" class="secondary" onclick="testSmb()" data-i18n="settings.tab1.testSmb">Test SMB Settings</button>
+						<button id="saveSmb" class="primary" onclick="saveSmb()" data-i18n="settings.tab1.saveSmb">Save SMB Settings</button>
 					</div>
-					<label class="settings-item-description" data-i18n="settings.tab1.testSmb">Test SMB Settings</label>
-					<button id="testSmb" class="btn" onclick="testSmb()" data-i18n="settings.tab1.testSmb">Test SMB Settings</button>
-					<label class="settings-item-description" data-i18n="settings.tab1.saveSmb">Save SMB Settings</label>
-					<button id="saveSmb" class="btn" onclick="saveSmb()" data-i18n="settings.tab1.saveSmb">Save SMB Settings</button>
 				</div>
 
 				<!-- WebDAV Settings panel -->
-				<div style="height:8px" class="panel"></div>
 				<div id="tab2" class="panel" style="display: none;">
-					<fieldset class="listContainer">
-						<legend data-i18n="settings.tab2.instructionsTitle">Instructions</legend>
-						<p data-i18n="settings.tab2.instructions" class="instructions">Instructions</p>
-					</fieldset>
-
-					<div class="settings-itemgroup">
-							<div class="settings-item-text">
-									<span data-i18n="settings.tab2.useWebdav">Use WebDAV</span>
-							</div>
-							<div class="settings-item-last">
-									<label class="form-switch">
-											<input type="checkbox" id="useWebdav" checked="false">
-											<i></i>
-									</label>
-							</div>
-					</div>
-					<div class="settings-itemgroup">
-						<div class="settings-item-text">
-							<span data-i18n="settings.tab2.webdavUseSeperateFolders">Use seperate folders</span>
+					<p data-i18n="settings.tab2.instructions" class="instructions">Instructions</p>
+					<fieldset>
+						<legend>Settings</legend>
+						<div class="field row">
+							<label for="useWebdav" data-i18n="settings.tab2.useWebdav">Use WebDAV</label>
+							<input type="checkbox" id="useWebdav">
 						</div>
-						<div class="settings-item-last">
-							<label class="form-switch">
-									<input type="checkbox" id="webdavUseSeperateFolders" checked="true">
-									<i></i>
-							</label>
+						<div class="field row">
+							<label for="webdavUseSeperateFolders" data-i18n="settings.tab2.webdavUseSeperateFolders">Use seperate folders</label>
+							<input type="checkbox" id="webdavUseSeperateFolders" checked>
 						</div>
-					</div>
-					<label class="settings-item-description" data-i18n="settings.tab2.webdavUrl">WebDAV Url</label>
-					<div class="settings-itemgroup">
+						<div class="field row">
+							<label for="webdavUrl" data-i18n="settings.tab2.webdavUrl">WebDAV Url</label>
 						<input id="webdavUrl" type="text" placeholder="e.g. https://mynas/webdav/Backup" value="">
-					</div>
-					<label class="settings-item-description" data-i18n="settings.tab2.webdavUsername">WebDAV Username</label>
-					<div class="settings-itemgroup">
+						</div>
+						<div class="field row">
+							<label for="webdavUsername" data-i18n="settings.tab2.webdavUsername">WebDAV Username</label>
 						<input id="webdavUsername" type="text" value="">
-					</div>
-					<label class="settings-item-description" data-i18n="settings.tab2.webdavPassword">WebDAV Password</label>
-					<div class="settings-itemgroup">
+						</div>
+						<div class="field row">
+							<label for="webdavPassword" data-i18n="settings.tab2.webdavPassword">WebDAV Password</label>
 						<input id="webdavPassword" type="password" value="">
+						</div>
+					</fieldset>
+					<div class="panel-buttons">
+						<button id="testWebdav" class="secondary" onclick="testWebdav()" data-i18n="settings.tab2.testWebdav">Test WebDAV Settings</button>
+						<button id="saveWebdav" class="primary" onclick="saveWebdav()" data-i18n="settings.tab2.saveWebdav">Save WebDAV Settings</button>
 					</div>
-					<label class="settings-item-description" data-i18n="settings.tab2.testWebdav">Test WebDAV Settings</label>
-					<button id="testWebdav" class="btn" onclick="testWebdav()" data-i18n="settings.tab2.testWebdav">Test WebDAV Settings</button>
-					<label class="settings-item-description" data-i18n="settings.tab2.saveWebdav">Save WebDAV Settings</label>
-					<button id="saveWebdav" class="btn" onclick="saveWebdav()" data-i18n="settings.tab2.saveWebdav">Save WebDAV Settings</button>
 				</div>
 
 				<!-- FTP Settings panel -->
-				<div style="height:8px" class="panel"></div>
 				<div id="tab3" class="panel" style="display: none;">
-					<fieldset class="listContainer">
-						<legend data-i18n="settings.tab3.instructionsTitle">Instructions</legend>
-						<p data-i18n="settings.tab3.instructions" class="instructions">Instructions</p>
-					</fieldset>
-					<div class="settings-itemgroup">
-							<div class="settings-item-text">
-									<span data-i18n="settings.tab3.useFTP">Use FTP</span>
-							</div>
-							<div class="settings-item-last">
-									<label class="form-switch">
-											<input type="checkbox" id="useFTP" checked="false">
-											<i></i>
-									</label>
-							</div>
-					</div>
-					<div class="settings-itemgroup">
-						<div class="settings-item-text">
-								<span data-i18n="settings.tab3.protocol">Protocol</span>
+					<p data-i18n="settings.tab3.instructions" class="instructions">Instructions</p>
+					<fieldset>
+						<legend>Settings</legend>
+						<div class="field row">
+							<label for="useFTP" data-i18n="settings.tab3.useFTP">Use FTP</label>
+							<input type="checkbox" id="useFTP">
 						</div>
-						<div class="settings-item-last">
+						<div class="field row">
+							<label for="FTPProtocol" data-i18n="settings.tab3.protocol">Protocol</label>
 								<select id="FTPProtocol" onchange="ftpProtocolChanged()">
 									<option value="ftp">FTP</option>
 									<option value="ftps">FTPS</option>
 									<option value="sftp">SFTP</option>
 								</select>
 						</div>
-					</div>
-					<div class="settings-itemgroup">
-						<div class="settings-item-text">
-							<span data-i18n="settings.tab3.FTPUseSeperateFolders">Use seperate folders</span>
+						<div class="field row">
+							<label for="FTPUseSeperateFolders" data-i18n="settings.tab3.FTPUseSeperateFolders">Use seperate folders</label>
+							<input type="checkbox" id="FTPUseSeperateFolders" checked>
 						</div>
-						<div class="settings-item-last">
-							<label class="form-switch">
-									<input type="checkbox" id="FTPUseSeperateFolders" checked="true">
-									<i></i>
-							</label>
-						</div>
-					</div>
-					<label class="settings-item-description" data-i18n="settings.tab3.FTPHost">FTP Host</label>
-					<div class="settings-itemgroup">
+						<div class="field row">
+							<label for="FTPHost" data-i18n="settings.tab3.FTPHost">FTP Host</label>
 						<input id="FTPHost" type="text" placeholder="e.g. ftp.drivehq.com" value="">
-					</div>
-					<label class="settings-item-description" data-i18n="settings.tab3.FTPPort">FTP Port</label>
-					<div class="settings-itemgroup">
+						</div>
+						<div class="field row">
+							<label for="FTPPort" data-i18n="settings.tab3.FTPPort">FTP Port</label>
 						<input id="FTPPort" type="number" placeholder="e.g. 21" value="21">
-					</div>
-					<label class="settings-item-description" data-i18n="settings.tab3.FTPUsername">FTP Username</label>
-					<div class="settings-itemgroup">
+						</div>
+						<div class="field row">
+							<label for="FTPUsername" data-i18n="settings.tab3.FTPUsername">FTP Username</label>
 						<input id="FTPUsername" type="text" value="">
-					</div>
-					<label class="settings-item-description" data-i18n="settings.tab3.FTPPassword">FTP Password</label>
-					<div class="settings-itemgroup">
+						</div>
+						<div class="field row">
+							<label for="FTPPassword" data-i18n="settings.tab3.FTPPassword">FTP Password</label>
 						<input id="FTPPassword" type="password" value="">
-					</div>
-					<label class="settings-item-description" data-i18n="settings.tab3.FTPFolder">FTP Folder</label>
-					<div class="settings-itemgroup">
+						</div>
+						<div class="field row">
+							<label for="FTPFolder" data-i18n="settings.tab3.FTPFolder">FTP Folder</label>
 						<input id="FTPFolder" type="text" placeholder="e.g. homey/export" value="">
+						</div>
+					</fieldset>
+					<div class="panel-buttons">
+						<button id="testFTP" class="secondary" onclick="testFTP()" data-i18n="settings.tab3.testFTP">Test FTP Settings</button>
+						<button id="saveFTP" class="primary" onclick="saveFTP()" data-i18n="settings.tab3.saveFTP">Save FTP Settings</button>
 					</div>
-					<label class="settings-item-description" data-i18n="settings.tab3.testFTP">Test FTP Settings</label>
-					<button id="testFTP" class="btn" onclick="testFTP()" data-i18n="settings.tab3.testFTP">Test FTP Settings</button>
-					<label class="settings-item-description" data-i18n="settings.tab3.saveFTP">Save FTP Settings</label>
-					<button id="saveFTP" class="btn" onclick="saveFTP()" data-i18n="settings.tab3.saveFTP">Save FTP Settings</button>
 				</div>
 
 				<!-- Export panel -->
 				<div id="tab4" class="panel" style="display: none;">
-					<fieldset class="listContainer">
-						<legend data-i18n="settings.tab4.instructionsTitle">Instructions</legend>
-						<p data-i18n="settings.tab4.instructions" class="instructions">Instructions</p>
+					<p data-i18n="settings.tab4.instructions" class="instructions">Instructions</p>
+					<fieldset>
+						<legend>Options</legend>
+						<div class="field row">
+							<label for="lowCPU" data-i18n="settings.tab4.lowCPU">Low CPU load</label>
+							<input type="checkbox" id="lowCPU" onclick="saveCPU()">
+						</div>
+						<div class="field row">
+							<label for="onlyZipWithLogs" data-i18n="settings.tab4.onlyZipWithLogs">Only create files for entities with logs</label>
+							<input type="checkbox" id="onlyZipWithLogs" onclick="saveOnlyZipWithLogs()">
+						</div>
+						<div class="field row">
+							<label for="includeLocalDateTime" data-i18n="settings.tab4.includeLocalDateTime">Include Local date and time</label>
+							<input type="checkbox" id="includeLocalDateTime" onclick="saveIncludeLocalDateTime()">
+						</div>
 					</fieldset>
-					<div class="settings-itemgroup">
-						<div class="settings-item-text">
-								<span data-i18n="settings.tab4.lowCPU"> Low CPU load</span>
+					<fieldset>
+						<legend>Export Setup</legend>
+						<div class="field row">
+							<label for="appList" data-i18n="settings.tab4.app">App</label>
+							<select id="appList" onchange="appSelected()"></select>
 						</div>
-						<div class="settings-item-last">
-								<label class="form-switch">
-										<input type="checkbox" id="lowCPU" checked="false" onclick="saveCPU()">
-										<i></i>
-								</label>
+						<div class="field row">
+							<label for="resolutionList" data-i18n="settings.tab4.resolution">Resolution</label>
+							<select id="resolutionList" onchange="resolutionSelected()"></select>
 						</div>
-					</div>
-					<!-- <div class="settings-itemgroup">
-						<div class="settings-item-text">
-								<span data-i18n="settings.tab4.waitBetweenEntities"> Wait between exporting entities (Seconds)</span>
-						</div>
-						<div class="settings-item-last">
-							<div class="settings-itemgroup">
-								<input type="numer" id="waitBetweenEntities" onchange="saveWaitBetweenEntities()" min="0" max="10">
-							</div>
-						</div>
-					</div> -->
-					<div class="settings-itemgroup">
-						<div class="settings-item-text">
-								<span data-i18n="settings.tab4.onlyZipWithLogs"> Only create files for entities with logs</span>
-						</div>
-						<div class="settings-item-last">
-								<label class="form-switch">
-										<input type="checkbox" id="onlyZipWithLogs" checked="false" onclick="saveOnlyZipWithLogs()">
-										<i></i>
-								</label>
-						</div>
-					</div>
-					<div class="settings-itemgroup">
-						<div class="settings-item-text">
-								<span data-i18n="settings.tab4.includeLocalDateTime"> Include Local date and time</span>
-						</div>
-						<div class="settings-item-last">
-								<label class="form-switch">
-										<input type="checkbox" id="includeLocalDateTime" checked="false" onclick="saveIncludeLocalDateTime()">
-										<i></i>
-								</label>
-						</div>
-					</div>
-					<div class="field row">
-						<label for="appList" data-i18n="settings.tab4.app"> App </label>
-						<select id="appList" onchange="appSelected()" > </select>
-					</div>
-					<div class="field row">
-						<label for="resolutionList" data-i18n="settings.tab4.resolution"> Resolution </label>
-						<select id="resolutionList"  onchange="resolutionSelected()" > </select>
-					</div>
-					<div class="setting">
-						<!-- <label class="settings-item-description" data-i18n="settings.tab4.export"></label> -->
-						<button id="export" class="btn" onclick="exportNow()" data-i18n="settings.tab4.export">Export now</button>
-					</div>
-					<div class="setting">
-						<!-- <label class="settings-item-description" data-i18n="settings.tab4.export"></label> -->
-						<button id="stopExport" class="btn" onclick="stopExport()" data-i18n="settings.tab4.stopExport">Stop Export</button>
+					</fieldset>
+					<div class="panel-buttons">
+						<button id="export" class="primary" onclick="exportNow()" data-i18n="settings.tab4.export">Export now</button>
+						<button id="stopExport" class="danger" onclick="stopExport()" data-i18n="settings.tab4.stopExport">Stop Export</button>
 					</div>
 				</div>
 
 				<!-- Logging panel -->
 				<div id="tab5" class="panel" style="display: none;">
-					<div class="setting">
-						<label class="settings-item-description" data-i18n="settings.tab5.deletelogs"></label>
-						<button id="deleteButton" class="btn" onclick="deleteLogs()" data-i18n="settings.tab5.deletelogs">Delete</button>
+					<div class="panel-buttons" style="margin-top: 0; margin-bottom: 15px;">
+						<button id="deleteButton" class="danger" onclick="deleteLogs()" data-i18n="settings.tab5.deletelogs">Delete Logs</button>
 					</div>
-					<div id="loglines" class="instructions"></div>
+					<div id="loglines"></div>
 				</div>
 			</div>
-		</div>
 	</body>
 </html>
