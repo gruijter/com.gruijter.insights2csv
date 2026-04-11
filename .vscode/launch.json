@@ -41,7 +41,46 @@
             "remoteRoot": "/"
         },
 
-	
+		{
+			"name": "Select HomeySat2019",
+			"type": "node",
+			"request": "launch",
+			"cwd": "${workspaceFolder}",
+			"runtimeExecutable": "homey",
+			"args": [
+				"select",
+				"-n",
+				"HomeySat2019"
+			]
+		},
+		{
+			"name": "Launch app on HomeySat2019",
+			"type": "node",
+			"request": "launch",
+			"cwd": "${workspaceFolder}",
+			"runtimeExecutable": "homey",
+			"args": [
+				"app",
+				"run",
+				"--remote"
+			],
+			"outputCapture": "std",
+			"serverReadyAction": {
+				"pattern": "Debugger listening on",
+				"action": "startDebugging",
+				"name": "Attach to HomeySat2019"
+			}
+		},
+		{
+			"name": "Attach to HomeySat2019",
+            "type": "node",
+            "request": "attach",
+            "address": "10.0.0.45",
+            "port": 9325,
+            "localRoot": "${workspaceFolder}",
+            "remoteRoot": "/"
+        },
+
 		{
 			"name": "Launch app on Docker",
 			"type": "node",

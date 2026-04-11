@@ -4,7 +4,7 @@
     "en": "Archive Insights",
     "nl": "Exporteer Insights"
   },
-  "version": "4.0.0",
+  "version": "5.0.0",
   "brandColor": "#2020df",
   "sdk": 3,
   "compatibility": ">=12.9.0",
@@ -48,17 +48,11 @@
     "en": [
       "export",
       "insights",
+      "logs",
       "backup",
       "NAS",
-      "webDAV",
-      "csv",
-      "excel"
-    ],
-    "nl": [
-      "export",
-      "insights",
-      "backup",
-      "NAS",
+      "SMB",
+      "FTP",
       "webDAV",
       "csv",
       "excel"
