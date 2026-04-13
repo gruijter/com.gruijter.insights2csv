@@ -350,9 +350,10 @@ async function loadSettings() {
 
   try {
     const cpuData = await Homey.get('CPUSettings');
-    document.getElementById('lowCPU').checked = false;
-    if (cpuData) {
+    if (cpuData && cpuData.lowCPU !== undefined) {
       document.getElementById('lowCPU').checked = !!cpuData.lowCPU;
+    } else {
+      document.getElementById('lowCPU').checked = true;
     }
   } catch (err) {
     console.error('Failed to load CPU settings:', err);

@@ -92,7 +92,11 @@ class App extends Homey.App {
       this.webdavSettings = {};
       this.smbSettings = {};
       this.FTPSettings = {};
-      this.CPUSettings = {};
+      this.CPUSettings = this.homey.settings.get('CPUSettings');
+      if (!this.CPUSettings) {
+        this.CPUSettings = { lowCPU: true };
+        this.homey.settings.set('CPUSettings', this.CPUSettings);
+      }
       this.WaitBetweenEntities = {};
       this.OnlyZipWithLogs = {};
       this.resolutionSelection = ['lastHour', 'last6Hours', 'last24Hours', 'last7Days', 'last14Days', 'last31Days',
@@ -632,6 +636,10 @@ class App extends Homey.App {
     this.smbSettings = this.homey.settings.get('smbSettings');
     this.FTPSettings = this.homey.settings.get('FTPSettings');
     this.CPUSettings = this.homey.settings.get('CPUSettings');
+    if (!this.CPUSettings) {
+      this.CPUSettings = { lowCPU: true };
+      this.homey.settings.set('CPUSettings', this.CPUSettings);
+    }
     this.timeZone = this.homey.clock.getTimezone();
     this.locale = await this.homey.i18n.getLanguage();
     this.exportStartTime = Date.now();
