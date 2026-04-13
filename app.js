@@ -84,16 +84,6 @@ class App extends Homey.App {
     try {
       if (!this.logger) this.logger = new Logger({ name: 'log', length: 200, homey: this.homey });
 
-      if (process.env.DEBUG === '1' || false) {
-        try {
-          // eslint-disable-next-line global-require, node/no-unsupported-features/node-builtins
-          require('inspector').waitForDebugger();
-        } catch (error) {
-          // eslint-disable-next-line global-require, node/no-unsupported-features/node-builtins
-          require('inspector').open(9325, '0.0.0.0', true);
-        }
-      }
-
       // generic properties
       this.homeyAPI = undefined;
       this.devices = {};
@@ -153,7 +143,8 @@ class App extends Homey.App {
         .registerArgumentAutocompleteListener(
           'selectedApp',
           async (query) => {
-            const results = this.allNames.filter((result) => { // filter for query on appId and appName
+            const allNames = await this.getAppList();
+            const results = allNames.filter((result) => { // filter for query on appId and appName
               const appIdFound = result.id.toLowerCase().indexOf(query.toLowerCase()) > -1;
               const appNameFound = result.name.toLowerCase().indexOf(query.toLowerCase()) > -1;
               return appIdFound || appNameFound;
@@ -192,7 +183,8 @@ class App extends Homey.App {
         .registerArgumentAutocompleteListener(
           'selectedApp',
           async (query) => {
-            const results = this.allNames.filter((result) => { // filter for query on appId and appName
+            const allNames = await this.getAppList();
+            const results = allNames.filter((result) => { // filter for query on appId and appName
               const appIdFound = result.id.toLowerCase().indexOf(query.toLowerCase()) > -1;
               const appNameFound = result.name.toLowerCase().indexOf(query.toLowerCase()) > -1;
               return appIdFound || appNameFound;
@@ -204,8 +196,6 @@ class App extends Homey.App {
       this.exportFinishedTrigger = this.homey.flow.getTriggerCard('export_finished');
 
       this.deleteAllFiles();
-      // Do not await this, otherwise it blocks app initialization and API requests!
-      this.initExport(new Date()).catch((err) => this.error(err));
 
       // initiate test stuff from here
       this.test();
@@ -302,8 +292,14 @@ class App extends Homey.App {
     return this.resolutionSelection;
   }
 
-  getAppList() {
-    return this.allNames;
+  async getAppList() {
+    if (this.allNames && this.allNames.length > 0) return this.allNames;
+
+    this.log('Lazy loading app list for frontend/flow...');
+    await this.loginHomeyApi();
+    await this.getAllLogs();
+    await new Promise((resolve) => setImmediate(resolve));
+    return this.getAllNames();
   }
 
   async exportAll(resolution, type, subfolder) {
@@ -373,19 +369,46 @@ class App extends Homey.App {
   // Homey API stuff here
   async loginHomeyApi() {
     if (this.homeyAPI) return this.homeyAPI;
-    // Authenticate against the current Homey.
-    this.homeyAPI = await HomeyAPI.createAppAPI({ homey: this.homey });
-    return this.homeyAPI;
+    if (this._homeyAPIPromise) return this._homeyAPIPromise;
+
+    this.log('Initializing Homey API...');
+    this._homeyAPIPromise = (async () => {
+      try {
+        const api = await HomeyAPI.createAppAPI({ homey: this.homey });
+        this.homeyAPI = api;
+        this.log('Homey API initialized successfully.');
+        return api;
+      } finally {
+        this._homeyAPIPromise = null;
+      }
+    })();
+    return this._homeyAPIPromise;
   }
 
   async getAllLogs() {
-    this.logs = Object.values(await this.homeyAPI.insights.getLogs({ $timeout: 60000 }));
-    return this.logs;
+    if (this._logsPromise) return this._logsPromise;
+    this._logsPromise = (async () => {
+      try {
+        this.logs = Object.values(await this.homeyAPI.insights.getLogs({ $timeout: 60000 }));
+        return this.logs;
+      } finally {
+        this._logsPromise = null;
+      }
+    })();
+    return this._logsPromise;
   }
 
   async getAllDevices() {
-    this.devices = await this.homeyAPI.devices.getDevices({ $timeout: 60000 });
-    return this.devices;
+    if (this._devicesPromise) return this._devicesPromise;
+    this._devicesPromise = (async () => {
+      try {
+        this.devices = await this.homeyAPI.devices.getDevices({ $timeout: 60000 });
+        return this.devices;
+      } finally {
+        this._devicesPromise = null;
+      }
+    })();
+    return this._devicesPromise;
   }
 
   // Get a list of all app names
@@ -426,15 +449,29 @@ class App extends Homey.App {
         };
         return _app;
       });
-    const uniqueList = list.filter((elem, index) => elem && index === list.findIndex((obj) => JSON.stringify(obj) === JSON.stringify(elem)));
-    return uniqueList;
+
+    const seen = new Set();
+    return list.filter((elem) => {
+      if (!elem) return false;
+      if (seen.has(elem.id)) return false;
+      seen.add(elem.id);
+      return true;
+    });
   }
 
   async getAllNames() {
-    const managerNameList = await this.getManagerNameList();
-    const appNameList = await this.getAppNameList();
-    this.allNames = appNameList.concat(managerNameList);
-    return this.allNames;
+    if (this._namesPromise) return this._namesPromise;
+    this._namesPromise = (async () => {
+      try {
+        const managerNameList = await this.getManagerNameList();
+        const appNameList = await this.getAppNameList();
+        this.allNames = appNameList.concat(managerNameList);
+        return this.allNames;
+      } finally {
+        this._namesPromise = null;
+      }
+    })();
+    return this._namesPromise;
   }
 
   async getAppRelatedLogs(appId, type) {
@@ -632,10 +669,15 @@ class App extends Homey.App {
       .replace(/-/g, '') // delete -
       .replace(/\..+/, 'Z'); // delete the dot and everything after
     await this.loginHomeyApi();
-    await Promise.all([
-      this.getAllLogs().then(() => this.getAllNames()),
-      this.getAllDevices(),
-    ]);
+
+    // Fetch sequentially to prevent blocking the event loop and causing UI timeouts
+    await this.getAllLogs();
+    await new Promise((resolve) => setImmediate(resolve));
+    await this.getAllNames();
+    await new Promise((resolve) => setImmediate(resolve));
+    await this.getAllDevices();
+    await new Promise((resolve) => setImmediate(resolve));
+
     return true;
   }
 
