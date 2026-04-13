@@ -167,6 +167,9 @@ class App extends Homey.App {
           if (args.storage === 'SMB') {
             this.smbHelper.purge(args.daysOld, args.types === 'allTypes', this.smbSettings);
           }
+          if (args.storage === 'WebDAV') {
+            this.webdavHelper.purge(args.daysOld, args.types === 'allTypes', this.webdavSettings);
+          }
           return true;
         });
 

@@ -458,6 +458,13 @@
                   "en": "NAS/SMB"
                 }
               }
+            ,
+            {
+              "id": "WebDAV",
+              "label": {
+                "en": "WebDAV"
+              }
+            }
             ]
           },
           {
