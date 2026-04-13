@@ -200,6 +200,8 @@ class App extends Homey.App {
           },
         );
 
+      this.exportFinishedTrigger = this.homey.flow.getTriggerCard('export_finished');
+
       this.deleteAllFiles();
       // Do not await this, otherwise it blocks app initialization and API requests!
       this.initExport(new Date()).catch((err) => this.error(err));
@@ -258,6 +260,17 @@ class App extends Homey.App {
     } else {
       this.queueRunning = false;
       this.log('Finshed all exports');
+
+      const durationMs = this.exportStartTime ? Date.now() - this.exportStartTime : 0;
+      const durationSec = Math.round(durationMs / 1000);
+      const status = this.abort ? 'Aborted' : 'Success';
+      this.exportFinishedTrigger.trigger({
+        duration: durationSec,
+        status,
+        resolution: this.exportResolution || '',
+        identifier: this.exportIdentifier || '',
+        timestamp: this.timestamp || '',
+      }).catch(this.error);
     }
   }
 
@@ -293,6 +306,8 @@ class App extends Homey.App {
 
   async exportAll(resolution, type, subfolder) {
     const date = new Date();
+    this.exportResolution = resolution;
+    this.exportIdentifier = 'All apps';
     await this.initExport(date);
     this.allNames.forEach((name) => {
       this.exportApp(name.id, resolution, date, false, type, subfolder);
@@ -303,7 +318,11 @@ class App extends Homey.App {
   async exportApp(appId, resolution, _date, reload, type, subfolder) {
     // date = date || new Date();
     const date = new Date();
-    if (reload !== false) await this.initExport(date);
+    if (reload !== false) {
+      this.exportResolution = resolution;
+      this.exportIdentifier = appId;
+      await this.initExport(date);
+    }
     this.enQueue({
       appId, resolution, date, type, subfolder,
     });
@@ -569,6 +588,7 @@ class App extends Homey.App {
     this.CPUSettings = this.homey.settings.get('CPUSettings');
     this.timeZone = this.homey.clock.getTimezone();
     this.locale = await this.homey.i18n.getLanguage();
+    this.exportStartTime = Date.now();
     this.localDateFormatter = new Intl.DateTimeFormat(this.locale, {
       timeZone: this.timeZone,
       // dateStyle: 'medium',

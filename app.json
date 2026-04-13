@@ -111,6 +111,57 @@
     }
   },
   "flow": {
+    "triggers": [
+      {
+        "id": "export_finished",
+        "title": {
+          "en": "Export finished",
+          "nl": "Export voltooid"
+        },
+        "tokens": [
+          {
+            "name": "duration",
+            "type": "number",
+            "title": {
+              "en": "Duration (seconds)",
+              "nl": "Duur (seconden)"
+            }
+          },
+          {
+            "name": "status",
+            "type": "string",
+            "title": {
+              "en": "Status",
+              "nl": "Status"
+            }
+          },
+          {
+            "name": "resolution",
+            "type": "string",
+            "title": {
+              "en": "Resolution",
+              "nl": "Resolutie"
+            }
+          },
+          {
+            "name": "identifier",
+            "type": "string",
+            "title": {
+              "en": "Identifier",
+              "nl": "Identificatie"
+            }
+          },
+          {
+            "name": "timestamp",
+            "type": "string",
+            "title": {
+              "en": "Timestamp",
+              "nl": "Tijdstempel"
+            }
+          }
+        ]
+      }
+    ],
     "actions": [
       {
         "id": "archive_all",
