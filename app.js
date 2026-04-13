@@ -70,7 +70,7 @@ class App extends Homey.App {
         const entry = logEntries.values[i];
         const time = JSDateToExcelDate(new Date(entry.t));
         const value = JSON.stringify(entry.v).replace('.', ',');
-        if (this.IncludeLocalDateTime.includeLocalDateTime) entry.tLocal = this.dateFormatter.format(new Date(entry.t));
+        if (this.IncludeLocalDateTime.includeLocalDateTime) entry.tLocal = this.localDateFormatter.format(new Date(entry.t));
         csv += `${time}${delimiter}${value}${this.IncludeLocalDateTime.includeLocalDateTime ? delimiter + entry.tLocal : ''}\r\n`;
       }
       return { csv, meta }; // csv is string. meta is object.
@@ -467,7 +467,7 @@ class App extends Homey.App {
       const logEntries = await this.homeyAPI.insights.getLogEntries(opts);
       if (log.type === 'boolean') {
         // const date = new Date();
-        const dateTimezoned = new Date(this.enDateFormatter.format(date));
+        const dateTimezoned = new Date(this.enLocalDateFormatter.format(date));
         const hourOffset = date.getHours() - dateTimezoned.getHours();
 
         let _dateFrom = null;
@@ -569,7 +569,7 @@ class App extends Homey.App {
     this.CPUSettings = this.homey.settings.get('CPUSettings');
     this.timeZone = this.homey.clock.getTimezone();
     this.locale = await this.homey.i18n.getLanguage();
-    this.dateFormatter = new Intl.DateTimeFormat(this.locale, {
+    this.localDateFormatter = new Intl.DateTimeFormat(this.locale, {
       timeZone: this.timeZone,
       // dateStyle: 'medium',
       // timeStyle: 'medium',
@@ -580,7 +580,7 @@ class App extends Homey.App {
       minute: '2-digit',
       second: '2-digit',
     });
-    this.enDateFormatter = new Intl.DateTimeFormat('en', {
+    this.enLocalDateFormatter = new Intl.DateTimeFormat('en', {
       timeZone: this.timeZone,
       // dateStyle: 'medium',
       // timeStyle: 'medium',
