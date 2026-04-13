@@ -64,15 +64,16 @@ class App extends Homey.App {
       if (log.ownerUri === 'homey:manager:logic') id = log.title;
 
       const header = `Zulu dateTime${delimiter}${id}${LocalDateTime}\r\n`;
-      let csv = header;
+      const lines = [header];
       for (let i = 0; i < logEntries.values.length; i += 1) {
         if (i > 0 && i % 250 === 0) await new Promise((resolve) => setImmediate(resolve));
         const entry = logEntries.values[i];
         const time = JSDateToExcelDate(new Date(entry.t));
         const value = JSON.stringify(entry.v).replace('.', ',');
         if (this.IncludeLocalDateTime.includeLocalDateTime) entry.tLocal = this.localDateFormatter.format(new Date(entry.t));
-        csv += `${time}${delimiter}${value}${this.IncludeLocalDateTime.includeLocalDateTime ? delimiter + entry.tLocal : ''}\r\n`;
+        lines.push(`${time}${delimiter}${value}${this.IncludeLocalDateTime.includeLocalDateTime ? delimiter + entry.tLocal : ''}`);
       }
+      const csv = `${lines.join('\r\n')}\r\n`;
       return { csv, meta }; // csv is string. meta is object.
     } catch (error) {
       return error;
@@ -250,28 +251,29 @@ class App extends Homey.App {
 
   async runQueue() {
     this.queueRunning = true;
-    const item = this.deQueue();
-    if (item) {
+
+    while (this.queue.length > 0) {
+      if (this.abort) break;
+      const item = this.deQueue();
       await this._exportApp(item.appId, item.resolution, item.date, item.type, item.subfolder)
         .catch(this.error);
       // wait a bit to reduce cpu and mem load?
       await setTimeoutPromise(this.CPUSettings && this.CPUSettings.lowCPU ? 10 * 1000 : 1, 'waiting is done');
-      this.runQueue();
-    } else {
-      this.queueRunning = false;
-      this.log('Finshed all exports');
-
-      const durationMs = this.exportStartTime ? Date.now() - this.exportStartTime : 0;
-      const durationSec = Math.round(durationMs / 1000);
-      const status = this.abort ? 'Aborted' : 'Success';
-      this.exportFinishedTrigger.trigger({
-        duration: durationSec,
-        status,
-        resolution: this.exportResolution || '',
-        identifier: this.exportIdentifier || '',
-        timestamp: this.timestamp || '',
-      }).catch(this.error);
     }
+
+    this.queueRunning = false;
+    this.log('Finished all exports');
+
+    const durationMs = this.exportStartTime ? Date.now() - this.exportStartTime : 0;
+    const durationSec = Math.round(durationMs / 1000);
+    const status = this.abort ? 'Aborted' : 'Success';
+    this.exportFinishedTrigger.trigger({
+      duration: durationSec,
+      status,
+      resolution: this.exportResolution || '',
+      identifier: this.exportIdentifier || '',
+      timestamp: this.timestamp || '',
+    }).catch(this.error);
   }
 
   // ============================================================
@@ -659,14 +661,32 @@ class App extends Homey.App {
         forceUTC: true, // Force ZIP file timestamps to be UTC.
       });
       archive.pipe(output); // pipe archive data to the file
-      // let written = false;
+
+      let written = false; // Using boolean flag instead of archive.pointer() for reliability
+
+      const finishPromise = new Promise((resolve, reject) => {
+        output.on('close', () => { // when zipping and storing is done...
+          this.log(`${logs.length} files zipped, ${archive.pointer()} total bytes`);
+          return resolve(fileName);
+        });
+        output.on('error', (err) => { // when storing gave an error
+          this.log('error saving zipfile');
+          return reject(err);
+        });
+        archive.on('error', (err) => { // when zipping gave an error
+          this.error(err);
+          return reject(err);
+        });
+        archive.on('warning', (warning) => this.log(warning));
+      });
+
       for (let idx = 0; idx < logs.length; idx += 1) {
         if (!this.abort) {
           const log = logs[idx];
           const entries = await this.getLogEntries(log, resolution, date);
           // eslint-disable-next-line no-continue
           if (this.OnlyZipWithLogs.onlyZipWithLogs && !entries.values.length) continue;
-          // written = true;
+          written = true;
           const data = await this.log2csv(entries, log);
           const allMeta = Object.assign(data.meta, log);
           const ids = (log.ownerUri || log.uri).split(':');
@@ -685,8 +705,8 @@ class App extends Homey.App {
           else await setTimeoutPromise(20, 'mini-waiting is done'); // relax Homey a bit...
         }
       }
-      // this.log(`${logs.length} files zipped`);
-      if (this.OnlyZipWithLogs.onlyZipWithLogs && !archive.pointer()) {
+
+      if (this.OnlyZipWithLogs.onlyZipWithLogs && !written) {
         archive.abort();
         output.close();
         fs.unlink(`/userdata/${fileName}`, (error) => {
@@ -699,24 +719,7 @@ class App extends Homey.App {
         return null;
       }
       await archive.finalize();
-
-      return new Promise((resolve, reject) => {
-        output.on('close', () => { // when zipping and storing is done...
-          this.log(`${logs.length} files zipped, ${archive.pointer()} total bytes`);
-          // this.log(`${appId} has been zipped.`);
-          return resolve(fileName);
-        });
-        output.on('error', (err) => { // when storing gave an error
-          this.log('error saving zipfile');
-          return reject(err);
-        });
-        archive.on('error', (err) => { // when zipping gave an error
-          this.error(err);
-        });
-        archive.on('warning', (warning) => {
-          this.log(warning);
-        });
-      });
+      return finishPromise;
     } catch (error) {
       return Promise.reject(error);
     }
