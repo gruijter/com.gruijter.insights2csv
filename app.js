@@ -636,6 +636,7 @@ class App extends Homey.App {
       const level = this.CPUSettings && this.CPUSettings.lowCPU ? 1 : 6;
       const archive = archiver('zip', {
         zlib: { level }, // Sets the compression level.
+        forceUTC: true, // Force ZIP file timestamps to be UTC.
       });
       archive.pipe(output); // pipe archive data to the file
       // let written = false;
@@ -657,9 +658,9 @@ class App extends Homey.App {
           const fileNameMeta = `${name}/${(log.ownerId || log.id)}_meta.json`;
           const fileNameJson = `${name}/${(log.ownerId || log.id)}.json`;
           // console.log(`zipping ${fileNameCsv} now ....`);
-          archive.append(data.csv, { name: fileNameCsv });
-          archive.append(JSON.stringify(allMeta), { name: fileNameMeta });
-          archive.append(JSON.stringify(entries), { name: fileNameJson });
+          archive.append(data.csv, { name: fileNameCsv, date });
+          archive.append(JSON.stringify(allMeta), { name: fileNameMeta, date });
+          archive.append(JSON.stringify(entries), { name: fileNameJson, date });
           if (this.CPUSettings && this.CPUSettings.lowCPU) await setTimeoutPromise(2 * 1000, 'waiting is done'); // relax Homey a bit...
           else await setTimeoutPromise(20, 'mini-waiting is done'); // relax Homey a bit...
         }
