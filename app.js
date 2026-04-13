@@ -402,7 +402,10 @@ class App extends Homey.App {
     if (this._devicesPromise) return this._devicesPromise;
     this._devicesPromise = (async () => {
       try {
-        this.devices = await this.homeyAPI.devices.getDevices({ $timeout: 60000 });
+        this.devices = await this.homeyAPI.devices.getDevices({
+          $timeout: 60000,
+          $select: 'id,name,driverId,ownerUri',
+        });
         return this.devices;
       } finally {
         this._devicesPromise = null;
@@ -413,7 +416,10 @@ class App extends Homey.App {
 
   // Get a list of all app names
   async getAppNameList() {
-    const allApps = await this.homeyAPI.apps.getApps({ $timeout: 60000 });
+    const allApps = await this.homeyAPI.apps.getApps({
+      $timeout: 60000,
+      $select: 'id,name,icon',
+    });
     const mappedArray = Object.entries(allApps).map((app) => {
       const map = {
         id: app[1].id,
