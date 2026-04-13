@@ -1,4 +1,7 @@
 {
+  "5.1.0": {
+    "en": "Added export finished flow. SMB recusrsive folder creation fix. Fix and improve purge flow card. Force UTC timestamps in ZIP. Set low cpu mode as default. Many resource and speed improvements."
+  },
   "5.0.0": {
     "en": "Add SMB NTLMv2 support. Add SFTP support. Fix FTPS support and allow implicit FTPS on port 990. Many stability and resource usage improvements. Code refactoring. Updated dependencies. Homey api@3.18.1"
   },
