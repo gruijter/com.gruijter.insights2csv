@@ -66,7 +66,7 @@ class App extends Homey.App {
       const header = `Zulu dateTime${delimiter}${id}${LocalDateTime}\r\n`;
       const lines = [header];
       for (let i = 0; i < logEntries.values.length; i += 1) {
-        if (i > 0 && i % 250 === 0) await new Promise((resolve) => setImmediate(resolve));
+        if (i > 0 && i % 250 === 0) await new Promise((resolve) => setTimeout(resolve, 2));
         const entry = logEntries.values[i];
         const time = JSDateToExcelDate(new Date(entry.t));
         const value = JSON.stringify(entry.v).replace('.', ',');
@@ -247,8 +247,8 @@ class App extends Homey.App {
       const item = this.deQueue();
       await this._exportApp(item.appId, item.resolution, item.date, item.type, item.subfolder)
         .catch(this.error);
-      // wait a bit to reduce cpu and mem load?
-      await setTimeoutPromise(this.CPUSettings && this.CPUSettings.lowCPU ? 10 * 1000 : 1, 'waiting is done');
+      // Wait 1 solid second between apps to reset the 10-second cpuwarn window and clear thread queues
+      await setTimeoutPromise(this.CPUSettings && this.CPUSettings.lowCPU ? 10 * 1000 : 1000, 'waiting is done');
     }
 
     this.queueRunning = false;
@@ -297,8 +297,9 @@ class App extends Homey.App {
 
     this.log('Lazy loading app list for frontend/flow...');
     await this.loginHomeyApi();
+    await setTimeoutPromise(200, 'breathe');
     await this.getAllLogs();
-    await new Promise((resolve) => setImmediate(resolve));
+    await setTimeoutPromise(200, 'breathe');
     return this.getAllNames();
   }
 
@@ -496,7 +497,7 @@ class App extends Homey.App {
 
     const appRelatedLogs = [];
     for (let i = 0; i < this.logs.length; i += 1) {
-      if (i > 0 && i % 1000 === 0) await new Promise((resolve) => setImmediate(resolve));
+      if (i > 0 && i % 1000 === 0) await new Promise((resolve) => setTimeout(resolve, 2));
       const log = this.logs[i];
       if (type && log.type !== type) continue;
 
@@ -676,13 +677,14 @@ class App extends Homey.App {
       .replace(/\..+/, 'Z'); // delete the dot and everything after
     await this.loginHomeyApi();
 
-    // Fetch sequentially to prevent blocking the event loop and causing UI timeouts
+    // Fetch sequentially with pauses to let the CPU breathe and prevent 'cpuwarn'
+    await setTimeoutPromise(200, 'breathe');
     await this.getAllLogs();
-    await new Promise((resolve) => setImmediate(resolve));
+    await setTimeoutPromise(200, 'breathe');
     await this.getAllNames();
-    await new Promise((resolve) => setImmediate(resolve));
+    await setTimeoutPromise(200, 'breathe');
     await this.getAllDevices();
-    await new Promise((resolve) => setImmediate(resolve));
+    await setTimeoutPromise(200, 'breathe');
 
     return true;
   }
@@ -730,6 +732,11 @@ class App extends Homey.App {
 
       for (let idx = 0; idx < logs.length; idx += 1) {
         if (!this.abort) {
+          // Periodically force the CPU to idle for 1 second to completely reset Homey's 10-second cpuwarn monitor
+          if (idx > 0 && idx % 25 === 0) {
+            await setTimeoutPromise(1000, 'cooling down CPU');
+          }
+
           const log = logs[idx];
           const entries = await this.getLogEntries(log, resolution, date);
           // eslint-disable-next-line no-continue
@@ -750,7 +757,7 @@ class App extends Homey.App {
           archive.append(JSON.stringify(allMeta), { name: fileNameMeta, date });
           archive.append(JSON.stringify(entries), { name: fileNameJson, date });
           if (this.CPUSettings && this.CPUSettings.lowCPU) await setTimeoutPromise(2 * 1000, 'waiting is done'); // relax Homey a bit...
-          else await setTimeoutPromise(20, 'mini-waiting is done'); // relax Homey a bit...
+          else await setTimeoutPromise(10, 'mini-waiting is done'); // Restore fast processing
         }
       }
 
