@@ -371,7 +371,7 @@ class App extends Homey.App {
     if (this._logsPromise) return this._logsPromise;
     this._logsPromise = (async () => {
       try {
-        this.logs = Object.values(await this.homeyAPI.insights.getLogs({ $timeout: 60000 }));
+        this.logs = Object.values(await this.homeyAPI.insights.getLogs({ $timeout: 30000 }));
         return this.logs;
       } finally {
         this._logsPromise = null;
@@ -385,7 +385,7 @@ class App extends Homey.App {
     this._devicesPromise = (async () => {
       try {
         this.devices = await this.homeyAPI.devices.getDevices({
-          $timeout: 60000,
+          $timeout: 30000,
           $select: 'id,name,driverId,ownerUri',
         });
         return this.devices;
@@ -399,7 +399,7 @@ class App extends Homey.App {
   // Get a list of all app names
   async getAppNameList() {
     const allApps = await this.homeyAPI.apps.getApps({
-      $timeout: 60000,
+      $timeout: 30000,
       $select: 'id,name,icon',
     });
     const mappedArray = Object.entries(allApps).map((app) => {
@@ -417,7 +417,7 @@ class App extends Homey.App {
   // Get a list of all logged manager names
   async getManagerNameList() {
     // eslint-disable-next-line prefer-destructuring
-    const logs = this.logs; // Object.values(await this.homeyAPI.insights.getLogs({ $timeout: 60000 }));
+    const logs = this.logs; // Object.values(await this.homeyAPI.insights.getLogs({ $timeout: 30000 }));
     const list = logs.filter((log) => {
       const uri = log.uri || log.ownerUri || '';
       return uri.startsWith('homey:manager:');
@@ -505,7 +505,7 @@ class App extends Homey.App {
       const opts = {
         uri: (log.uri || log.ownerUri),
         id: log.id,
-        $timeout: 90000,
+        $timeout: 7000,
       };
       if (log.type !== 'boolean') {
         opts.resolution = resolution;
