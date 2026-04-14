@@ -11,9 +11,9 @@
     "archiver": "^7.0.1",
     "basic-ftp": "^5.2.2",
     "fixture-stdout": "^0.2.1",
-    "homey-api": "^3.18.1",
-    "webdav": "^5.9.0",
-    "ssh2-sftp-client": "^10.0.3"
+    "homey-api": "^3.18.2",
+    "ssh2-sftp-client": "^10.0.3",
+    "webdav": "^5.9.0"
   },
   "devDependencies": {
     "@types/homey": "npm:homey-apps-sdk-v3-types@^0.3.12",
