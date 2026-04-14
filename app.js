@@ -26,6 +26,7 @@ const { HomeyAPI } = require('homey-api');
 const fs = require('fs');
 const util = require('util');
 const archiver = require('archiver');
+const { Readable } = require('stream');
 
 const SmbHelper = require('./lib/SmbHelper');
 const WebDavHelper = require('./lib/WebDavHelper');
@@ -44,41 +45,6 @@ const JSDateToExcelDate = (inDate) => {
 };
 
 class App extends Homey.App {
-
-  async log2csv(logEntries, log) {
-    try {
-      const meta = {
-        entries: logEntries.values.length,
-      };
-      Object.keys(logEntries).forEach((key) => {
-        if (key === 'values') return;
-        meta[key] = logEntries[key];
-      });
-
-      const delimiter = ';';
-      const LocalDateTime = this.IncludeLocalDateTime.includeLocalDateTime ? `${delimiter}Local datetime` : '';
-      let { id } = logEntries;
-      if (id.includes(':')) {
-        id = id.split(':').pop();
-      }
-      if (log.ownerUri === 'homey:manager:logic') id = log.title;
-
-      const header = `Zulu dateTime${delimiter}${id}${LocalDateTime}\r\n`;
-      const lines = [header];
-      for (let i = 0; i < logEntries.values.length; i += 1) {
-        if (i > 0 && i % 250 === 0) await new Promise((resolve) => setTimeout(resolve, 2));
-        const entry = logEntries.values[i];
-        const time = JSDateToExcelDate(new Date(entry.t));
-        const value = JSON.stringify(entry.v).replace('.', ',');
-        if (this.IncludeLocalDateTime.includeLocalDateTime) entry.tLocal = this.localDateFormatter.format(new Date(entry.t));
-        lines.push(`${time}${delimiter}${value}${this.IncludeLocalDateTime.includeLocalDateTime ? delimiter + entry.tLocal : ''}`);
-      }
-      const csv = `${lines.join('\r\n')}\r\n`;
-      return { csv, meta }; // csv is string. meta is object.
-    } catch (error) {
-      return error;
-    }
-  }
 
   async onInit() {
     try {
@@ -729,6 +695,8 @@ class App extends Homey.App {
       archive.pipe(output); // pipe archive data to the file
 
       let written = false; // Using boolean flag instead of archive.pointer() for reliability
+      let entriesProcessed = 0;
+      let archiveError = false;
 
       const finishPromise = new Promise((resolve, reject) => {
         output.on('close', () => { // when zipping and storing is done...
@@ -740,14 +708,16 @@ class App extends Homey.App {
           return reject(err);
         });
         archive.on('error', (err) => { // when zipping gave an error
+          archiveError = true;
           this.error(err);
           return reject(err);
         });
         archive.on('warning', (warning) => this.log(warning));
+        archive.on('entry', () => { entriesProcessed += 1; });
       });
 
       for (let idx = 0; idx < logs.length; idx += 1) {
-        if (!this.abort) {
+        if (!this.abort && !archiveError) {
           // Periodically force the CPU to idle for 1 second to completely reset Homey's 10-second cpuwarn monitor
           if (idx > 0 && idx % 25 === 0) {
             await setTimeoutPromise(1000, 'cooling down CPU');
@@ -758,8 +728,14 @@ class App extends Homey.App {
           // eslint-disable-next-line no-continue
           if (this.OnlyZipWithLogs.onlyZipWithLogs && !entries.values.length) continue;
           written = true;
-          const data = await this.log2csv(entries, log);
-          const allMeta = Object.assign(data.meta, log);
+
+          const meta = { entries: entries.values.length };
+          Object.keys(entries).forEach((key) => {
+            if (key === 'values') return;
+            meta[key] = entries[key];
+          });
+          const allMeta = Object.assign(meta, log);
+
           const ids = (log.ownerUri || log.uri).split(':');
           const id = ids.pop();
           const dev = this.devices[id];
@@ -768,10 +744,67 @@ class App extends Homey.App {
           const fileNameCsv = `${name}/${(log.ownerId || log.id)}.csv`;
           const fileNameMeta = `${name}/${(log.ownerId || log.id)}_meta.json`;
           const fileNameJson = `${name}/${(log.ownerId || log.id)}.json`;
-          // console.log(`zipping ${fileNameCsv} now ....`);
-          archive.append(data.csv, { name: fileNameCsv, date });
+
+          const delimiter = ';';
+          const includeLocal = this.IncludeLocalDateTime.includeLocalDateTime;
+          const localFormatter = this.localDateFormatter;
+          let targetId = entries.id || 'unknown';
+          if (targetId.includes(':')) targetId = targetId.split(':').pop();
+          if (log.ownerUri === 'homey:manager:logic') targetId = log.title;
+
+          const csvStream = Readable.from((async function* () {
+            const localTimeStr = includeLocal ? `${delimiter}Local datetime` : '';
+            yield `Zulu dateTime${delimiter}${targetId}${localTimeStr}\r\n`;
+            for (let i = 0; i < entries.values.length; i += 1) {
+              if (i > 0 && i % 250 === 0) await new Promise((res) => setTimeout(res, 2));
+              const entry = entries.values[i];
+              const time = JSDateToExcelDate(new Date(entry.t));
+              const value = JSON.stringify(entry.v).replace('.', ',');
+              let tLocal = '';
+              if (includeLocal) {
+                if (!entry.tLocal) entry.tLocal = localFormatter.format(new Date(entry.t));
+                tLocal = delimiter + entry.tLocal;
+              }
+              yield `${time}${delimiter}${value}${tLocal}\r\n`;
+            }
+          })());
+
+          const jsonStream = Readable.from((async function* () {
+            yield '{';
+            const keys = Object.keys(entries).filter(k => k !== 'values');
+            for (const key of keys) {
+              yield `"${key}":${JSON.stringify(entries[key])},`;
+            }
+            yield '"values":[';
+            for (let i = 0; i < entries.values.length; i += 1) {
+              if (i > 0 && i % 250 === 0) await new Promise((res) => setTimeout(res, 2));
+              const entry = entries.values[i];
+              if (includeLocal && !entry.tLocal) {
+                entry.tLocal = localFormatter.format(new Date(entry.t));
+              }
+              yield (i === 0 ? '' : ',') + JSON.stringify(entry);
+            }
+            yield ']}';
+          })());
+
+          const expectedEntries = entriesProcessed + 3;
+          archive.append(csvStream, { name: fileNameCsv, date });
           archive.append(JSON.stringify(allMeta), { name: fileNameMeta, date });
-          archive.append(JSON.stringify(entries), { name: fileNameJson, date });
+          archive.append(jsonStream, { name: fileNameJson, date });
+
+          // Wait for archiver to consume streams to prevent RAM overload
+          let waitCycles = 0;
+          while (entriesProcessed < expectedEntries) {
+            if (this.abort || archiveError) break;
+            await new Promise((res) => setTimeout(res, 25));
+            waitCycles += 1;
+            if (waitCycles > 12000) { // 5 mins max wait per file
+              this.error(`Archiver timeout waiting for entries for ${fileNameCsv}`);
+              archiveError = true;
+              break;
+            }
+          }
+
           if (this.CPUSettings && this.CPUSettings.lowCPU) await setTimeoutPromise(2 * 1000, 'waiting is done'); // relax Homey a bit...
           else await setTimeoutPromise(10, 'mini-waiting is done'); // Restore fast processing
         }
