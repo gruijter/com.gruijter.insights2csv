@@ -786,9 +786,15 @@ class App extends Homey.App {
           const csvLines = [`Zulu dateTime${delimiter}${targetId}${localTimeStr}`];
           for (let i = 0; i < entries.values.length; i += 1) {
             const entry = entries.values[i];
+            const entryValue = entry.v;
             const time = JSDateToExcelDate(new Date(entry.t));
-            const value = JSON.stringify(entry.v).replace('.', ',');
             let tLocal = '';
+            let value;
+            if (typeof entryValue === 'number') {
+              value = String(entryValue).replace('.', ',');
+            } else {
+              value = JSON.stringify(entryValue);
+            }
             if (includeLocal) {
               if (!entry.tLocal) entry.tLocal = localFormatter.format(new Date(entry.t));
               tLocal = delimiter + entry.tLocal;
