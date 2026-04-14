@@ -719,7 +719,7 @@ class App extends Homey.App {
       for (let idx = 0; idx < logs.length; idx += 1) {
         if (!this.abort && !archiveError) {
           // Periodically force the CPU to idle for 1 second to completely reset Homey's 10-second cpuwarn monitor
-          if (idx > 0 && idx % 25 === 0) {
+          if (idx > 0 && idx % 10 === 0) {
             await setTimeoutPromise(1000, 'cooling down CPU');
           }
 
@@ -752,45 +752,30 @@ class App extends Homey.App {
           if (targetId.includes(':')) targetId = targetId.split(':').pop();
           if (log.ownerUri === 'homey:manager:logic') targetId = log.title;
 
-          const csvStream = Readable.from((async function* () {
-            const localTimeStr = includeLocal ? `${delimiter}Local datetime` : '';
-            yield `Zulu dateTime${delimiter}${targetId}${localTimeStr}\r\n`;
-            for (let i = 0; i < entries.values.length; i += 1) {
-              if (i > 0 && i % 250 === 0) await new Promise((res) => setTimeout(res, 2));
-              const entry = entries.values[i];
-              const time = JSDateToExcelDate(new Date(entry.t));
-              const value = JSON.stringify(entry.v).replace('.', ',');
-              let tLocal = '';
-              if (includeLocal) {
-                if (!entry.tLocal) entry.tLocal = localFormatter.format(new Date(entry.t));
-                tLocal = delimiter + entry.tLocal;
-              }
-              yield `${time}${delimiter}${value}${tLocal}\r\n`;
+          const localTimeStr = includeLocal ? `${delimiter}Local datetime` : '';
+          const csvLines = [`Zulu dateTime${delimiter}${targetId}${localTimeStr}`];
+          for (let i = 0; i < entries.values.length; i += 1) {
+            const entry = entries.values[i];
+            const time = JSDateToExcelDate(new Date(entry.t));
+            const value = JSON.stringify(entry.v).replace('.', ',');
+            let tLocal = '';
+            if (includeLocal) {
+              if (!entry.tLocal) entry.tLocal = localFormatter.format(new Date(entry.t));
+              tLocal = delimiter + entry.tLocal;
             }
-          })());
-
-          const jsonStream = Readable.from((async function* () {
-            yield '{';
-            const keys = Object.keys(entries).filter(k => k !== 'values');
-            for (const key of keys) {
-              yield `"${key}":${JSON.stringify(entries[key])},`;
+            csvLines.push(`${time}${delimiter}${value}${tLocal}`);
+            
+            // Brief pause to keep the event loop responsive and avoid CPUwarns
+            if (i > 0 && i % 500 === 0) {
+              await new Promise((res) => setTimeout(res, 2));
             }
-            yield '"values":[';
-            for (let i = 0; i < entries.values.length; i += 1) {
-              if (i > 0 && i % 250 === 0) await new Promise((res) => setTimeout(res, 2));
-              const entry = entries.values[i];
-              if (includeLocal && !entry.tLocal) {
-                entry.tLocal = localFormatter.format(new Date(entry.t));
-              }
-              yield (i === 0 ? '' : ',') + JSON.stringify(entry);
-            }
-            yield ']}';
-          })());
+          }
+          const csvString = csvLines.join('\r\n') + '\r\n';
 
           const expectedEntries = entriesProcessed + 3;
-          archive.append(csvStream, { name: fileNameCsv, date });
+          archive.append(csvString, { name: fileNameCsv, date });
           archive.append(JSON.stringify(allMeta), { name: fileNameMeta, date });
-          archive.append(jsonStream, { name: fileNameJson, date });
+          archive.append(JSON.stringify(entries), { name: fileNameJson, date });
 
           // Wait for archiver to consume streams to prevent RAM overload
           let waitCycles = 0;
@@ -805,8 +790,17 @@ class App extends Homey.App {
             }
           }
 
-          if (this.CPUSettings && this.CPUSettings.lowCPU) await setTimeoutPromise(2 * 1000, 'waiting is done'); // relax Homey a bit...
-          else await setTimeoutPromise(10, 'mini-waiting is done'); // Restore fast processing
+          // Force memory release of the massive dataset to assist Garbage Collection
+          if (entries && entries.values) {
+            entries.values.length = 0;
+            entries.values = null;
+          }
+
+          if (this.CPUSettings && this.CPUSettings.lowCPU) {
+            await setTimeoutPromise(2 * 1000, 'waiting is done'); // relax Homey a bit...
+          } else {
+            await setTimeoutPromise(150, 'mini-waiting is done'); // Minor pause to allow V8 GC to flush memory
+          }
         }
       }
 
