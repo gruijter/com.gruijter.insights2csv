@@ -1,4 +1,5 @@
 {
+  "_comment": "This file is generated. Please edit .homeycompose/app.json instead.",
   "id": "com.gruijter.insights2csv",
   "name": {
     "en": "Archive Insights",
@@ -292,217 +293,6 @@
         ]
       },
       {
-        "id": "archive_app",
-        "title": {
-          "en": "Export insights of app",
-          "nl": "Exporteer insights van app"
-        },
-        "titleFormatted": {
-          "en": "Export all insights of [[selectedApp]] from [[resolution]]",
-          "nl": "Exporteer alle insights van [[selectedApp]] van [[resolution]]"
-        },
-        "args": [
-          {
-            "name": "selectedApp",
-            "type": "autocomplete",
-            "title": {
-              "en": "App",
-              "nl": "App"
-            }
-          },
-          {
-            "name": "resolution",
-            "type": "dropdown",
-            "title": {
-              "en": "Resolution",
-              "nl": "Resolutie"
-            },
-            "values": [
-              {
-                "id": "lastHour",
-                "label": {
-                  "en": "last hour",
-                  "nl": "laatse uur"
-                }
-              },
-              {
-                "id": "last6Hours",
-                "label": {
-                  "en": "last 6 hours",
-                  "nl": "afgelopen 6 uur"
-                }
-              },
-              {
-                "id": "last24Hours",
-                "label": {
-                  "en": "last 24 hours",
-                  "nl": "afgelopen 24 uur"
-                }
-              },
-              {
-                "id": "last7Days",
-                "label": {
-                  "en": "last 7 days",
-                  "nl": "afgelopen 7 dagen"
-                }
-              },
-              {
-                "id": "last14Days",
-                "label": {
-                  "en": "last 14 days",
-                  "nl": "afgelopen 14 dagen"
-                }
-              },
-              {
-                "id": "last31Days",
-                "label": {
-                  "en": "last 31 days",
-                  "nl": "afgelopen 31 dagen"
-                }
-              },
-              {
-                "id": "today",
-                "label": {
-                  "en": "today",
-                  "nl": "vandaag"
-                }
-              },
-              {
-                "id": "yesterday",
-                "label": {
-                  "en": "yesterday",
-                  "nl": "gisteren"
-                }
-              },
-              {
-                "id": "thisWeek",
-                "label": {
-                  "en": "this week",
-                  "nl": "deze week"
-                }
-              },
-              {
-                "id": "lastWeek",
-                "label": {
-                  "en": "last week",
-                  "nl": "vorige week"
-                }
-              },
-              {
-                "id": "thisMonth",
-                "label": {
-                  "en": "this month",
-                  "nl": "deze maand"
-                }
-              },
-              {
-                "id": "lastMonth",
-                "label": {
-                  "en": "last month",
-                  "nl": "vorige maand"
-                }
-              },
-              {
-                "id": "thisYear",
-                "label": {
-                  "en": "this year",
-                  "nl": "dit jaar"
-                }
-              },
-              {
-                "id": "lastYear",
-                "label": {
-                  "en": "last year",
-                  "nl": "afgelopen jaar"
-                }
-              },
-              {
-                "id": "last2Years",
-                "label": {
-                  "en": "last 2 years",
-                  "nl": "afgelopen 2 jaar"
-                }
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "purge",
-        "title": {
-          "en": "Purge old files and folders",
-          "nl": "Verwijder oude bestanden en mappen"
-        },
-        "titleFormatted": {
-          "en": "Purge [[types]] older then [[daysOld]] days on [[storage]]",
-          "nl": "Verwijder [[types]] ouder dan [[daysOld]] dagen op [[storage]]"
-        },
-        "args": [
-          {
-            "name": "storage",
-            "type": "dropdown",
-            "title": {
-              "en": "Storage",
-              "nl": "Opslagmedium"
-            },
-            "values": [
-              {
-                "id": "FTP",
-                "label": {
-                  "en": "FTP"
-                }
-              },
-              {
-                "id": "SMB",
-                "label": {
-                  "en": "NAS/SMB"
-                }
-              }
-            ,
-            {
-              "id": "WebDAV",
-              "label": {
-                "en": "WebDAV"
-              }
-            }
-            ]
-          },
-          {
-            "name": "types",
-            "type": "dropdown",
-            "title": {
-              "en": "Types",
-              "nl": "Types"
-            },
-            "values": [
-              {
-                "id": "onlyZip",
-                "label": {
-                  "en": "only ZIP files",
-                  "nl": "alleen ZIP files"
-                }
-              },
-              {
-                "id": "allTypes",
-                "label": {
-                  "en": "all files and folders",
-                  "nl": "alle bestanden en folders"
-                }
-              }
-            ]
-          },
-          {
-            "name": "daysOld",
-            "type": "number",
-            "min": 1,
-            "placeholder": {
-              "en": "number of days",
-              "nl": "aantal dagen"
-            }
-          }
-        ]
-      },
-      {
         "id": "archive_all_type_folder",
         "title": {
           "en": "Export insights of type (into subfolder)",
@@ -667,6 +457,142 @@
               "en": "Subfolder",
               "nl": "Subfolder"
             }
+          }
+        ]
+      },
+      {
+        "id": "archive_app",
+        "title": {
+          "en": "Export insights of app",
+          "nl": "Exporteer insights van app"
+        },
+        "titleFormatted": {
+          "en": "Export all insights of [[selectedApp]] from [[resolution]]",
+          "nl": "Exporteer alle insights van [[selectedApp]] van [[resolution]]"
+        },
+        "args": [
+          {
+            "name": "selectedApp",
+            "type": "autocomplete",
+            "title": {
+              "en": "App",
+              "nl": "App"
+            }
+          },
+          {
+            "name": "resolution",
+            "type": "dropdown",
+            "title": {
+              "en": "Resolution",
+              "nl": "Resolutie"
+            },
+            "values": [
+              {
+                "id": "lastHour",
+                "label": {
+                  "en": "last hour",
+                  "nl": "laatse uur"
+                }
+              },
+              {
+                "id": "last6Hours",
+                "label": {
+                  "en": "last 6 hours",
+                  "nl": "afgelopen 6 uur"
+                }
+              },
+              {
+                "id": "last24Hours",
+                "label": {
+                  "en": "last 24 hours",
+                  "nl": "afgelopen 24 uur"
+                }
+              },
+              {
+                "id": "last7Days",
+                "label": {
+                  "en": "last 7 days",
+                  "nl": "afgelopen 7 dagen"
+                }
+              },
+              {
+                "id": "last14Days",
+                "label": {
+                  "en": "last 14 days",
+                  "nl": "afgelopen 14 dagen"
+                }
+              },
+              {
+                "id": "last31Days",
+                "label": {
+                  "en": "last 31 days",
+                  "nl": "afgelopen 31 dagen"
+                }
+              },
+              {
+                "id": "today",
+                "label": {
+                  "en": "today",
+                  "nl": "vandaag"
+                }
+              },
+              {
+                "id": "yesterday",
+                "label": {
+                  "en": "yesterday",
+                  "nl": "gisteren"
+                }
+              },
+              {
+                "id": "thisWeek",
+                "label": {
+                  "en": "this week",
+                  "nl": "deze week"
+                }
+              },
+              {
+                "id": "lastWeek",
+                "label": {
+                  "en": "last week",
+                  "nl": "vorige week"
+                }
+              },
+              {
+                "id": "thisMonth",
+                "label": {
+                  "en": "this month",
+                  "nl": "deze maand"
+                }
+              },
+              {
+                "id": "lastMonth",
+                "label": {
+                  "en": "last month",
+                  "nl": "vorige maand"
+                }
+              },
+              {
+                "id": "thisYear",
+                "label": {
+                  "en": "this year",
+                  "nl": "dit jaar"
+                }
+              },
+              {
+                "id": "lastYear",
+                "label": {
+                  "en": "last year",
+                  "nl": "afgelopen jaar"
+                }
+              },
+              {
+                "id": "last2Years",
+                "label": {
+                  "en": "last 2 years",
+                  "nl": "afgelopen 2 jaar"
+                }
+              }
+            ]
           }
         ]
       },
@@ -842,6 +768,80 @@
             "title": {
               "en": "App",
               "nl": "App"
+            }
+          }
+        ]
+      },
+      {
+        "id": "purge",
+        "title": {
+          "en": "Purge old files and folders",
+          "nl": "Verwijder oude bestanden en mappen"
+        },
+        "titleFormatted": {
+          "en": "Purge [[types]] older then [[daysOld]] days on [[storage]]",
+          "nl": "Verwijder [[types]] ouder dan [[daysOld]] dagen op [[storage]]"
+        },
+        "args": [
+          {
+            "name": "storage",
+            "type": "dropdown",
+            "title": {
+              "en": "Storage",
+              "nl": "Opslagmedium"
+            },
+            "values": [
+              {
+                "id": "FTP",
+                "label": {
+                  "en": "FTP"
+                }
+              },
+              {
+                "id": "SMB",
+                "label": {
+                  "en": "NAS/SMB"
+                }
+              },
+              {
+                "id": "WebDAV",
+                "label": {
+                  "en": "WebDAV"
+                }
+              }
+            ]
+          },
+          {
+            "name": "types",
+            "type": "dropdown",
+            "title": {
+              "en": "Types",
+              "nl": "Types"
+            },
+            "values": [
+              {
+                "id": "onlyZip",
+                "label": {
+                  "en": "only ZIP files",
+                  "nl": "alleen ZIP files"
+                }
+              },
+              {
+                "id": "allTypes",
+                "label": {
+                  "en": "all files and folders",
+                  "nl": "alle bestanden en folders"
+                }
+              }
+            ]
+          },
+          {
+            "name": "daysOld",
+            "type": "number",
+            "min": 1,
+            "placeholder": {
+              "en": "number of days",
+              "nl": "aantal dagen"
             }
           }
         ]

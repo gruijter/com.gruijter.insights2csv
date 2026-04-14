@@ -1,0 +1,113 @@
+{
+  "id": "com.gruijter.insights2csv",
+  "name": {
+    "en": "Archive Insights",
+    "nl": "Exporteer Insights"
+  },
+  "version": "5.1.1",
+  "brandColor": "#2020df",
+  "sdk": 3,
+  "compatibility": ">=12.9.0",
+  "author": {
+    "name": "Robin de Gruijter",
+    "email": "gruijter@hotmail.com"
+  },
+  "copyright": "Robin de Gruijter (gruijter@hotmail.com)",
+  "license": "GPL-3.0-or-later",
+  "contributors": {
+    "developers": [
+      {
+        "name": "Robin de Gruijter",
+        "email": "gruijter@hotmail.com"
+      },
+      {
+        "name": "Arie J. Godschalk",
+        "email": "arie@qluster-it.nl"
+      }
+    ]
+  },
+  "contributing": {
+    "donate": {
+      "paypal": {
+        "username": "gruijter"
+      }
+    }
+  },
+  "bugs": {
+    "url": "https://github.com/gruijter/com.gruijter.insights2csv/issues"
+  },
+  "homeyCommunityTopicId": 10976,
+  "category": [
+    "tools"
+  ],
+  "description": {
+    "en": "Make backups of all insights",
+    "nl": "Maak backups van alle insights"
+  },
+  "tags": {
+    "en": [
+      "export",
+      "insights",
+      "logs",
+      "backup",
+      "NAS",
+      "SMB",
+      "FTP",
+      "webDAV",
+      "csv",
+      "excel"
+    ]
+  },
+  "images": {
+    "large": "./assets/images/large.jpg",
+    "small": "./assets/images/small.jpg"
+  },
+  "permissions": [
+    "homey:manager:api"
+  ],
+  "platforms": [
+    "local"
+  ],
+  "api": {
+    "getLogs": {
+      "method": "GET",
+      "path": "/getlogs"
+    },
+    "deleteLogs": {
+      "method": "GET",
+      "path": "/deletelogs"
+    },
+    "getResolutions": {
+      "method": "GET",
+      "path": "/getResolutions"
+    },
+    "getAppList": {
+      "method": "GET",
+      "path": "/getAppList"
+    },
+    "stopExport": {
+      "method": "GET",
+      "path": "/stopExport"
+    },
+    "exportAll": {
+      "method": "POST",
+      "path": "/exportAll"
+    },
+    "exportApp": {
+      "method": "POST",
+      "path": "/exportApp"
+    },
+    "testSmb": {
+      "method": "POST",
+      "path": "/testSmb"
+    },
+    "testFTP": {
+      "method": "POST",
+      "path": "/testFTP"
+    },
+    "testWebdav": {
+      "method": "POST",
+      "path": "/testWebdav"
+    }
+  }
+}

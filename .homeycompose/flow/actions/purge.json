@@ -1,0 +1,74 @@
+{
+  "id": "purge",
+  "title": {
+    "en": "Purge old files and folders",
+    "nl": "Verwijder oude bestanden en mappen"
+  },
+  "titleFormatted": {
+    "en": "Purge [[types]] older then [[daysOld]] days on [[storage]]",
+    "nl": "Verwijder [[types]] ouder dan [[daysOld]] dagen op [[storage]]"
+  },
+  "args": [
+    {
+      "name": "storage",
+      "type": "dropdown",
+      "title": {
+        "en": "Storage",
+        "nl": "Opslagmedium"
+      },
+      "values": [
+        {
+          "id": "FTP",
+          "label": {
+            "en": "FTP"
+          }
+        },
+        {
+          "id": "SMB",
+          "label": {
+            "en": "NAS/SMB"
+          }
+        },
+        {
+          "id": "WebDAV",
+          "label": {
+            "en": "WebDAV"
+          }
+        }
+      ]
+    },
+    {
+      "name": "types",
+      "type": "dropdown",
+      "title": {
+        "en": "Types",
+        "nl": "Types"
+      },
+      "values": [
+        {
+          "id": "onlyZip",
+          "label": {
+            "en": "only ZIP files",
+            "nl": "alleen ZIP files"
+          }
+        },
+        {
+          "id": "allTypes",
+          "label": {
+            "en": "all files and folders",
+            "nl": "alle bestanden en folders"
+          }
+        }
+      ]
+    },
+    {
+      "name": "daysOld",
+      "type": "number",
+      "min": 1,
+      "placeholder": {
+        "en": "number of days",
+        "nl": "aantal dagen"
+      }
+    }
+  ]
+}
