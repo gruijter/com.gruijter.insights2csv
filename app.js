@@ -59,7 +59,7 @@ class App extends Homey.App {
       this.FTPSettings = {};
       this.CPUSettings = this.homey.settings.get('CPUSettings');
       if (!this.CPUSettings) {
-        this.CPUSettings = { lowCPU: true };
+        this.CPUSettings = { lowCPU: false };
         this.homey.settings.set('CPUSettings', this.CPUSettings);
       }
       this.WaitBetweenEntities = {};
@@ -639,7 +639,7 @@ class App extends Homey.App {
     this.FTPSettings = this.homey.settings.get('FTPSettings');
     this.CPUSettings = this.homey.settings.get('CPUSettings');
     if (!this.CPUSettings) {
-      this.CPUSettings = { lowCPU: true };
+      this.CPUSettings = { lowCPU: false };
       this.homey.settings.set('CPUSettings', this.CPUSettings);
     }
     this.timeZone = this.homey.clock.getTimezone();
