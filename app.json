@@ -5,7 +5,7 @@
     "en": "Archive Insights",
     "nl": "Exporteer Insights"
   },
-  "version": "5.1.1",
+  "version": "5.2.0",
   "brandColor": "#2020df",
   "sdk": 3,
   "compatibility": ">=12.9.0",

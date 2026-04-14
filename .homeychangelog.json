@@ -1,4 +1,7 @@
 {
+  "5.2.0": {
+    "en": "Significant MEM footprint reduction. Fix FTP concurrency and stability. Fix error handling in flow cards. Fix handling corrupt insights data. Migration to Homey Compose. homey-api@3.18.2"
+  },
   "5.1.0": {
     "en": "Added export finished flow. SMB recusrsive folder creation fix. Fix and improve purge flow card. Force UTC timestamps in ZIP. Set low cpu mode as default. Many resource and speed improvements."
   },

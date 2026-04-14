@@ -505,7 +505,7 @@ class App extends Homey.App {
       const opts = {
         uri: (log.uri || log.ownerUri),
         id: log.id,
-        $timeout: 7000,
+        $timeout: 5000,
       };
       if (log.type !== 'boolean') {
         opts.resolution = resolution;
@@ -754,9 +754,15 @@ class App extends Homey.App {
           }
 
           const log = logs[idx];
-          const entries = await this.getLogEntries(log, resolution, date);
+          let entries;
+          try {
+            entries = await this.getLogEntries(log, resolution, date);
+          } catch (err) {
+            this.error(`Skipping log ${log.id} due to error: ${err.message}`);
+            continue;
+          }
           // eslint-disable-next-line no-continue
-          if (this.OnlyZipWithLogs.onlyZipWithLogs && !entries.values.length) continue;
+          if (this.OnlyZipWithLogs.onlyZipWithLogs && (!entries || !entries.values.length)) continue;
           written = true;
 
           const meta = { entries: entries.values.length };
