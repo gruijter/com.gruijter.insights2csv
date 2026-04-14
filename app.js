@@ -26,7 +26,6 @@ const { HomeyAPI } = require('homey-api');
 const fs = require('fs');
 const util = require('util');
 const archiver = require('archiver');
-const { Readable } = require('stream');
 
 const SmbHelper = require('./lib/SmbHelper');
 const WebDavHelper = require('./lib/WebDavHelper');
@@ -148,14 +147,18 @@ class App extends Homey.App {
       archiveAllTypeFolderAction
         .registerRunListener(async (args) => {
           this.log(`Exporting all insights ${args.resolution} of type ${args.type} into subfolder ${args.subfolder} `);
-          await this.exportAll(args.resolution, args.type === 'all' ? undefined : args.type, args.subfolder && args.subfolder !== 'undefined' ? args.subfolder : undefined);
+          const type = args.type === 'all' ? undefined : args.type;
+          const subfolder = args.subfolder && args.subfolder !== 'undefined' ? args.subfolder : undefined;
+          await this.exportAll(args.resolution, type, subfolder);
           return true;
         });
 
       const archiveAppTypeFolderAction = this.homey.flow.getActionCard('archive_app_type_folder');
       archiveAppTypeFolderAction
         .registerRunListener(async (args) => {
-          await this.exportApp(args.selectedApp.id, args.resolution, null, true, args.type === 'all' ? undefined : args.type, args.subfolder && args.subfolder !== 'undefined' ? args.subfolder : undefined);
+          const type = args.type === 'all' ? undefined : args.type;
+          const subfolder = args.subfolder && args.subfolder !== 'undefined' ? args.subfolder : undefined;
+          await this.exportApp(args.selectedApp.id, args.resolution, null, true, type, subfolder);
           return true;
         })
         .registerArgumentAutocompleteListener(
@@ -507,7 +510,13 @@ class App extends Homey.App {
       if (log.type !== 'boolean') {
         opts.resolution = resolution;
       }
+
       const logEntries = await this.homeyAPI.insights.getLogEntries(opts);
+
+      if (!logEntries || !Array.isArray(logEntries.values)) {
+        this.error(`Corrupt or unexpected API response for logEntries for ${log.id} (${log.type}). Expected array, got: ${JSON.stringify(logEntries).substring(0, 200)}...`);
+        throw new Error('Unexpected API response format for log entries.');
+      }
       if (log.type === 'boolean') {
         // const date = new Date();
         const dateTimezoned = new Date(this.enLocalDateFormatter.format(date));
@@ -581,20 +590,39 @@ class App extends Homey.App {
             throw new Error(`invalid resolution: ${resolution}`);
         }
 
-        logEntries.values = logEntries.values.filter((x) => {
+        // Enhanced check for potentially corrupt individual entries
+        if (logEntries.values.some((entry) => typeof entry.t === 'undefined' || typeof entry.v === 'undefined')) {
+          const corruptSample = logEntries.values
+            .filter((entry) => typeof entry.t === 'undefined' || typeof entry.v === 'undefined')
+            .slice(0, 5);
+          this.error(`Corrupt individual entries found in boolean log for ${log.id} (${log.type}). Sample: ${JSON.stringify(corruptSample)}`);
+          // You might choose to filter these out or throw an error. For now, we'll continue.
+        }
+
+        // In-place filter to prevent Array duplication memory spikes
+        let writeIndex = 0;
+        const { values } = logEntries;
+        const len = values.length;
+        for (let i = 0; i < len; i += 1) {
+          const x = values[i];
           const t = new Date(x.t).getTime();
-          if (_dateFrom && t < _dateFrom.getTime()) return false;
+          let keep = true;
+          if (_dateFrom && t < _dateFrom.getTime()) keep = false;
           if (_dateTo) {
-            if (exclusiveEnd && t >= _dateTo.getTime()) return false;
-            if (!exclusiveEnd && t > _dateTo.getTime()) return false;
+            if (exclusiveEnd && t >= _dateTo.getTime()) keep = false;
+            if (!exclusiveEnd && t > _dateTo.getTime()) keep = false;
           }
-          return true;
-        });
+          if (keep) {
+            values[writeIndex] = x;
+            writeIndex += 1;
+          }
+        }
+        values.length = writeIndex; // Instantly shrink array in-place
       }
+
       if (logEntries.values.length > 2925) {
-        this.error(`Insights data is corrupt and will be truncated to the first 2925 records for ${log.uri || log.ownerUri} ${logEntries.id}.`);
-        //  ${logEntries.uri}`);
-        logEntries.values = logEntries.values.slice(0, 2925);
+        this.error(`Insights data is massive (${logEntries.values.length} entries) and will be truncated to the first 2925 records for ${log.uri || log.ownerUri} ${logEntries.id}.`);
+        logEntries.values.length = 2925; // Truncate in-place instead of .slice()
         await setTimeoutPromise(this.CPUSettings && this.CPUSettings.lowCPU ? 10 * 1000 : 1, 'waiting is done');
       }
       return logEntries;
@@ -713,7 +741,9 @@ class App extends Homey.App {
           return reject(err);
         });
         archive.on('warning', (warning) => this.log(warning));
-        archive.on('entry', () => { entriesProcessed += 1; });
+        archive.on('entry', () => {
+          entriesProcessed += 1;
+        });
       });
 
       for (let idx = 0; idx < logs.length; idx += 1) {
@@ -764,18 +794,20 @@ class App extends Homey.App {
               tLocal = delimiter + entry.tLocal;
             }
             csvLines.push(`${time}${delimiter}${value}${tLocal}`);
-            
+
             // Brief pause to keep the event loop responsive and avoid CPUwarns
             if (i > 0 && i % 500 === 0) {
               await new Promise((res) => setTimeout(res, 2));
             }
           }
-          const csvString = csvLines.join('\r\n') + '\r\n';
+          const csvString = `${csvLines.join('\r\n')}\r\n`;
 
           const expectedEntries = entriesProcessed + 3;
           archive.append(csvString, { name: fileNameCsv, date });
           archive.append(JSON.stringify(allMeta), { name: fileNameMeta, date });
-          archive.append(JSON.stringify(entries), { name: fileNameJson, date });
+
+          const jsonString = JSON.stringify(entries);
+          archive.append(jsonString, { name: fileNameJson, date });
 
           // Wait for archiver to consume streams to prevent RAM overload
           let waitCycles = 0;
