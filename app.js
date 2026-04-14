@@ -134,14 +134,14 @@ class App extends Homey.App {
       archiveAllAction
         .registerRunListener(async (args) => {
           this.log(`Exporting all insights ${args.resolution}`);
-          this.exportAll(args.resolution);
+          await this.exportAll(args.resolution);
           return true;
         });
 
       const archiveAppAction = this.homey.flow.getActionCard('archive_app');
       archiveAppAction
         .registerRunListener(async (args) => {
-          this.exportApp(args.selectedApp.id, args.resolution);
+          await this.exportApp(args.selectedApp.id, args.resolution);
           return true;
         })
         .registerArgumentAutocompleteListener(
@@ -159,16 +159,21 @@ class App extends Homey.App {
 
       const purgeAction = this.homey.flow.getActionCard('purge');
       purgeAction
-        .registerRunListener((args) => {
+        .registerRunListener(async (args) => {
           this.log(`Deleting old data on ${args.storage}`);
-          if (args.storage === 'FTP') {
-            this.ftpHelper.purge(args.daysOld, args.types === 'allTypes', this.FTPSettings);
-          }
-          if (args.storage === 'SMB') {
-            this.smbHelper.purge(args.daysOld, args.types === 'allTypes', this.smbSettings);
-          }
-          if (args.storage === 'WebDAV') {
-            this.webdavHelper.purge(args.daysOld, args.types === 'allTypes', this.webdavSettings);
+          try {
+            if (args.storage === 'FTP') {
+              await this.ftpHelper.purge(args.daysOld, args.types === 'allTypes', this.FTPSettings);
+            }
+            if (args.storage === 'SMB') {
+              await this.smbHelper.purge(args.daysOld, args.types === 'allTypes', this.smbSettings);
+            }
+            if (args.storage === 'WebDAV') {
+              await this.webdavHelper.purge(args.daysOld, args.types === 'allTypes', this.webdavSettings);
+            }
+          } catch (err) {
+            this.error('Purge error:', err.message);
+            throw err;
           }
           return true;
         });
@@ -177,14 +182,14 @@ class App extends Homey.App {
       archiveAllTypeFolderAction
         .registerRunListener(async (args) => {
           this.log(`Exporting all insights ${args.resolution} of type ${args.type} into subfolder ${args.subfolder} `);
-          this.exportAll(args.resolution, args.type === 'all' ? undefined : args.type, args.subfolder && args.subfolder !== 'undefined' ? args.subfolder : undefined);
+          await this.exportAll(args.resolution, args.type === 'all' ? undefined : args.type, args.subfolder && args.subfolder !== 'undefined' ? args.subfolder : undefined);
           return true;
         });
 
       const archiveAppTypeFolderAction = this.homey.flow.getActionCard('archive_app_type_folder');
       archiveAppTypeFolderAction
         .registerRunListener(async (args) => {
-          this.exportApp(args.selectedApp.id, args.resolution, null, true, args.type === 'all' ? undefined : args.type, args.subfolder && args.subfolder !== 'undefined' ? args.subfolder : undefined);
+          await this.exportApp(args.selectedApp.id, args.resolution, null, true, args.type === 'all' ? undefined : args.type, args.subfolder && args.subfolder !== 'undefined' ? args.subfolder : undefined);
           return true;
         })
         .registerArgumentAutocompleteListener(
