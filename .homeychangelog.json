@@ -1,4 +1,7 @@
 {
+  "5.2.1": {
+    "en": "Fix export finished flow trigger. Fix boolean timezone. Implement safe purge. Stability fixes. Upgrade dependencies."
+  },
   "5.2.0": {
     "en": "Significant MEM footprint reduction. Fix FTP concurrency and stability. Fix error handling in flow cards. Fix handling corrupt insights data. Migration to Homey Compose. homey-api@3.18.2"
   },
