@@ -226,7 +226,21 @@ class App extends Homey.App {
     while (this.queue.length > 0) {
       if (this.abort) break;
       const item = this.deQueue();
-      await this._exportApp(item.appId, item.resolution, item.date, item.type, item.subfolder)
+
+      if (item.isTrigger) {
+        const durationMs = item.startTime ? Date.now() - item.startTime : 0;
+        const durationSec = Math.round(durationMs / 1000);
+        this.exportFinishedTrigger.trigger({
+          duration: durationSec,
+          status: 'Success',
+          resolution: item.resolution || '',
+          identifier: item.identifier || '',
+          timestamp: item.timestamp || '',
+        }).catch(this.error);
+        continue;
+      }
+
+      await this._exportApp(item.appId, item.resolution, item.date, item.type, item.subfolder, item.timestamp)
         .catch(this.error);
       // Wait 1 solid second between apps to reset the 10-second cpuwarn window and clear thread queues
       await setTimeoutPromise(this.CPUSettings && this.CPUSettings.lowCPU ? 10 * 1000 : 1000, 'waiting is done');
@@ -234,17 +248,6 @@ class App extends Homey.App {
 
     this.queueRunning = false;
     this.log('Finished all exports');
-
-    const durationMs = this.exportStartTime ? Date.now() - this.exportStartTime : 0;
-    const durationSec = Math.round(durationMs / 1000);
-    const status = this.abort ? 'Aborted' : 'Success';
-    this.exportFinishedTrigger.trigger({
-      duration: durationSec,
-      status,
-      resolution: this.exportResolution || '',
-      identifier: this.exportIdentifier || '',
-      timestamp: this.timestamp || '',
-    }).catch(this.error);
   }
 
   // ============================================================
@@ -286,32 +289,75 @@ class App extends Homey.App {
 
   async exportAll(resolution, type, subfolder) {
     const date = new Date();
-    this.exportResolution = resolution;
-    this.exportIdentifier = 'All apps';
+    const startTime = Date.now();
+    const timestamp = date.toISOString()
+      .replace(/:/g, '') // delete :
+      .replace(/-/g, '') // delete -
+      .replace(/\..+/, 'Z'); // delete the dot and everything after
+
     await this.initExport(date);
+
     this.allNames.forEach((name) => {
-      this.exportApp(name.id, resolution, date, false, type, subfolder);
+      this.exportApp(name.id, resolution, date, false, type, subfolder, timestamp);
     });
+
+    this.enQueue({
+      isTrigger: true,
+      resolution,
+      identifier: 'All apps',
+      timestamp,
+      startTime,
+    });
+
     return true;
   }
 
-  async exportApp(appId, resolution, _date, reload, type, subfolder) {
-    // date = date || new Date();
+  async exportApp(appId, resolution, _date, reload, type, subfolder, passedTimestamp) {
     const date = new Date();
+    const startTime = Date.now();
+    const timestamp = passedTimestamp || date.toISOString()
+      .replace(/:/g, '') // delete :
+      .replace(/-/g, '') // delete -
+      .replace(/\..+/, 'Z'); // delete the dot and everything after
+
     if (reload !== false) {
-      this.exportResolution = resolution;
-      this.exportIdentifier = appId;
       await this.initExport(date);
     }
+
     this.enQueue({
-      appId, resolution, date, type, subfolder,
+      appId, resolution, date, type, subfolder, timestamp,
     });
+
+    if (reload !== false) {
+      this.enQueue({
+        isTrigger: true,
+        resolution,
+        identifier: appId,
+        timestamp,
+        startTime,
+      });
+    }
+
     return true;
   }
 
   stopExport() {
     if (this.queueRunning) this.log('aborting export');
     this.abort = true;
+
+    // Fire aborted triggers for any remaining jobs in the queue
+    this.queue.filter((item) => item.isTrigger).forEach((item) => {
+      const durationMs = item.startTime ? Date.now() - item.startTime : 0;
+      const durationSec = Math.round(durationMs / 1000);
+      this.exportFinishedTrigger.trigger({
+        duration: durationSec,
+        status: 'Aborted',
+        resolution: item.resolution || '',
+        identifier: item.identifier || '',
+        timestamp: item.timestamp || '',
+      }).catch(this.error);
+    });
+
     this.flushQueue();
     return true;
   }
@@ -644,7 +690,6 @@ class App extends Homey.App {
     }
     this.timeZone = this.homey.clock.getTimezone();
     this.locale = await this.homey.i18n.getLanguage();
-    this.exportStartTime = Date.now();
     this.localDateFormatter = new Intl.DateTimeFormat(this.locale, {
       timeZone: this.timeZone,
       // dateStyle: 'medium',
@@ -681,10 +726,6 @@ class App extends Homey.App {
     }
 
     if (this.CPUSettings && this.CPUSettings.lowCPU) this.log('Low CPU load selected for export');
-    this.timestamp = date.toISOString()
-      .replace(/:/g, '') // delete :
-      .replace(/-/g, '') // delete -
-      .replace(/\..+/, 'Z'); // delete the dot and everything after
     await this.loginHomeyApi();
 
     // Fetch sequentially with pauses to let the CPU breathe and prevent 'cpuwarn'
@@ -867,19 +908,19 @@ class App extends Homey.App {
     }
   }
 
-  async _exportApp(appId, resolution, _date, type, subfolder) {
+  async _exportApp(appId, resolution, _date, type, subfolder, timestamp) {
     try {
       const date = new Date();
       const fileName = await this.zipAppLogs(appId, resolution, date, type);
       if (!fileName) return false;
       if (this.smbSettings && this.smbSettings.useSmb) {
-        await this.smbHelper.save(fileName, subfolder, this.smbSettings, this.timestamp);
+        await this.smbHelper.save(fileName, subfolder, this.smbSettings, timestamp);
       }
       if (this.webdavSettings && this.webdavSettings.useWebdav) {
-        await this.webdavHelper.save(fileName, subfolder, this.webdavSettings, this.timestamp);
+        await this.webdavHelper.save(fileName, subfolder, this.webdavSettings, timestamp);
       }
       if (this.FTPSettings && this.FTPSettings.useFTP) {
-        await this.ftpHelper.save(fileName, subfolder, this.FTPSettings, this.timestamp);
+        await this.ftpHelper.save(fileName, subfolder, this.FTPSettings, timestamp);
       }
       this.deleteFile(fileName);
       // this.log(`Export of ${appId} finished`);
