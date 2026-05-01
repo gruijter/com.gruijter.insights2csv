@@ -78,11 +78,6 @@ class App extends Homey.App {
 
       // register some listeners
       this.homey
-        .on('unload', () => {
-          this.log('app unload called');
-          // save logs to persistant storage
-          this.logger.saveLogs();
-        })
         .on('memwarn', () => {
           this.log('memwarn!');
           // global.gc();
@@ -184,6 +179,15 @@ class App extends Homey.App {
       this.log('ExportInsights App is running!');
     } catch (error) {
       this.error(error);
+    }
+  }
+
+  async onUninit() {
+    this.log('App uninit called');
+    if (this.logger) {
+      this.logger.saveLogs();
+      this.logger.releaseStdOut();
+      this.logger.releaseStdErr();
     }
   }
 
