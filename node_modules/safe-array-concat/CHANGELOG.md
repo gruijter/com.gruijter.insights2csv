@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.1.4](https://github.com/ljharb/safe-array-concat/compare/v1.1.3...v1.1.4) - 2026-04-19
+
+### Commits
+
+- [actions] update workflows [`6747b8f`](https://github.com/ljharb/safe-array-concat/commit/6747b8fb6b6ffe374b4421de5a36d012d7971f7f)
+- [Dev Deps] update `@arethetypeswrong/cli`, `@ljharb/eslint-config`, `@ljharb/tsconfig`, `@types/isarray`, `@types/tape`, `eslint`, `npmignore` [`aa30c94`](https://github.com/ljharb/safe-array-concat/commit/aa30c941d4ebda29ec4dfa0e9592e44fbd145342)
+- [types] improve types [`21276eb`](https://github.com/ljharb/safe-array-concat/commit/21276eb73f9ec5ed1119655382f38cf79030c9dd)
+- [Deps] update `call-bound`, `get-intrinsic` [`efb5138`](https://github.com/ljharb/safe-array-concat/commit/efb513816ab84c1bebc0852d4aca68e5bcd27ff8)
+- [Deps] update `call-bind` [`dbe4255`](https://github.com/ljharb/safe-array-concat/commit/dbe42554607a0143e0b4c720266f81c7ecb712fb)
+- [Dev Deps] update `@ljharb/eslint-config` [`470988c`](https://github.com/ljharb/safe-array-concat/commit/470988cb3edfe1ffa7313cdb6d1e89101ed1dd15)
+- [Dev Deps] update `@ljharb/eslint-config` [`8a8f4ec`](https://github.com/ljharb/safe-array-concat/commit/8a8f4ec87aca0eca53f31d537dd523f2d60803cb)
+
 ## [v1.1.3](https://github.com/ljharb/safe-array-concat/compare/v1.1.2...v1.1.3) - 2024-12-11
 
 ### Commits

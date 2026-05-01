@@ -9,17 +9,17 @@
   "dependencies": {
     "@tryjsky/v9u-smb2": "^1.1.0",
     "archiver": "^7.0.1",
-    "basic-ftp": "^5.2.2",
+    "basic-ftp": "^6.0.0",
     "fixture-stdout": "^0.2.1",
-    "homey-api": "^3.18.2",
-    "ssh2-sftp-client": "^10.0.3",
+    "homey-api": "^3.18.3",
+    "ssh2-sftp-client": "^12.1.1",
     "webdav": "^5.9.0"
   },
   "devDependencies": {
     "@types/homey": "npm:homey-apps-sdk-v3-types@^0.3.12",
-    "eslint": "^7.32.0",
+    "eslint": "^10.2.1",
     "eslint-config-athom": "^3.1.5",
-    "eslint-plugin-homey-app": "^1.0.2"
+    "eslint-plugin-homey-app": "^2.0.0"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
