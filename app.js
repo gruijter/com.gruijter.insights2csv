@@ -62,7 +62,6 @@ class App extends Homey.App {
         this.CPUSettings = { lowCPU: false };
         this.homey.settings.set('CPUSettings', this.CPUSettings);
       }
-      this.WaitBetweenEntities = {};
       this.OnlyZipWithLogs = {};
       this.resolutionSelection = ['lastHour', 'last6Hours', 'last24Hours', 'last7Days', 'last14Days', 'last31Days',
         'last2Years', 'today', 'thisWeek', 'thisMonth', 'thisYear', 'yesterday', 'lastWeek', 'lastMonth', 'lastYear'];
@@ -80,7 +79,6 @@ class App extends Homey.App {
       this.homey
         .on('memwarn', () => {
           this.log('memwarn!');
-          // global.gc();
         })
         .on('cpuwarn', () => {
           this.log('cpuwarn!');
@@ -195,10 +193,6 @@ class App extends Homey.App {
   // do the stuff from here
   async test() {
     try {
-      // await this.exportApp('weather', 'lastHour');
-      // await this.exportApp('com.gruijter.enelogic', 'last24Hours');
-      // await this.exportAll('last2Years');
-      // this.purgeSMB();
     } catch (error) {
       this.error(error);
     }
@@ -240,12 +234,12 @@ class App extends Homey.App {
           resolution: item.resolution || '',
           identifier: item.identifier || '',
           timestamp: item.timestamp || '',
-        }).catch(this.error);
+      }).catch(err => this.error(err));
         continue;
       }
 
-      await this._exportApp(item.appId, item.resolution, item.date, item.type, item.subfolder, item.timestamp)
-        .catch(this.error);
+    await this._exportApp(item.appId, item.resolution, item.date, item.type, item.subfolder, item.timestamp)
+      .catch(err => this.error(err));
       // Wait 1 solid second between apps to reset the 10-second cpuwarn window and clear thread queues
       await setTimeoutPromise(this.CPUSettings && this.CPUSettings.lowCPU ? 10 * 1000 : 1000, 'waiting is done');
     }
@@ -359,7 +353,7 @@ class App extends Homey.App {
         resolution: item.resolution || '',
         identifier: item.identifier || '',
         timestamp: item.timestamp || '',
-      }).catch(this.error);
+      }).catch(err => this.error(err));
     });
 
     this.flushQueue();
@@ -393,7 +387,6 @@ class App extends Homey.App {
       if (error) {
         this.log(error);
       }
-      // else { this.log(`deleted ${filename}`); }
     });
   }
 
@@ -467,7 +460,7 @@ class App extends Homey.App {
   // Get a list of all logged manager names
   async getManagerNameList() {
     // eslint-disable-next-line prefer-destructuring
-    const logs = this.logs; // Object.values(await this.homeyAPI.insights.getLogs({ $timeout: 30000 }));
+    const logs = this.logs;
     const list = logs.filter((log) => {
       const uri = log.uri || log.ownerUri || '';
       return uri.startsWith('homey:manager:');
@@ -568,9 +561,10 @@ class App extends Homey.App {
         throw new Error('Unexpected API response format for log entries.');
       }
       if (log.type === 'boolean') {
-        // const date = new Date();
         const dateTimezoned = new Date(this.enLocalDateFormatter.format(date));
-        const hourOffset = date.getHours() - dateTimezoned.getHours();
+        let hourOffset = date.getHours() - dateTimezoned.getHours();
+        if (hourOffset <= -12) hourOffset += 24;
+        if (hourOffset > 12) hourOffset -= 24;
 
         let _dateFrom = null;
         let _dateTo = new Date(date);
@@ -696,8 +690,6 @@ class App extends Homey.App {
     this.locale = await this.homey.i18n.getLanguage();
     this.localDateFormatter = new Intl.DateTimeFormat(this.locale, {
       timeZone: this.timeZone,
-      // dateStyle: 'medium',
-      // timeStyle: 'medium',
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
@@ -707,8 +699,6 @@ class App extends Homey.App {
     });
     this.enLocalDateFormatter = new Intl.DateTimeFormat('en', {
       timeZone: this.timeZone,
-      // dateStyle: 'medium',
-      // timeStyle: 'medium',
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
@@ -748,7 +738,6 @@ class App extends Homey.App {
   // ZIP handling here
   // zip all log entries from one app as promise; resolves zipfilename
   async zipAppLogs(appId, resolution, date, type) {
-    // this.log(`Zipping all logs for ${appId}`);
     try {
       const logs = await this.getAppRelatedLogs(appId, type);
       if (this.OnlyZipWithLogs.onlyZipWithLogs && !logs.length) return null;
@@ -927,7 +916,6 @@ class App extends Homey.App {
         await this.ftpHelper.save(fileName, subfolder, this.FTPSettings, timestamp);
       }
       this.deleteFile(fileName);
-      // this.log(`Export of ${appId} finished`);
       return Promise.resolve(true);
     } catch (error) {
       return Promise.reject(error);
