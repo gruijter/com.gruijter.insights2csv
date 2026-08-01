@@ -58,13 +58,13 @@
 			"resolution": "Resolution",
 			"lowCPU": "Low CPU load",
 			"export": "Export now",
-			"confirmExport": "Are you sure? Exporting Insights can take more then 10 minutes!",
+			"confirmExport": "Are you sure? Exporting Insights can take more than 10 minutes!",
 			"stopExport": "Cancel export",
 			"confirmStopExport": "Cancel running export?",
 			"exportStopped": "Running export is canceled",
 			"backupInitiated": "Insights export has started.",
-			"onlyZipWithLogs":"Only create files for entities with logs",
-			"includeLocalDateTime":"Include Local date and time in csv"
+			"onlyZipWithLogs": "Only create files for entities with logs",
+			"includeLocalDateTime": "Include Local date and time in csv"
 		},
 		"tab5": {
 			"title": "Logs",
