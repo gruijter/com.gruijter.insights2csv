@@ -104,7 +104,9 @@ class App extends Homey.App {
       // register some listeners
       this.homey
         .on('memwarn', () => {
-          this.log('memwarn!');
+          this.log('memwarn! Reclaiming memory...');
+          if (this.logger) this.logger.trim(50);
+          this.clearCache();
         })
         .on('cpuwarn', () => {
           this.log('cpuwarn!');
@@ -278,11 +280,36 @@ class App extends Homey.App {
     }
 
     this.queueRunning = false;
+    this.clearCache();
     this.log('Finished all exports');
   }
 
   // ============================================================
   // stuff for frontend API here
+  clearCache() {
+    this.devices = {};
+    this.logs = [];
+    this.allNames = [];
+    if (!this.queueRunning) {
+      this.homeyAPI = null;
+      this._homeyAPIPromise = null;
+      this._logsPromise = null;
+      this._devicesPromise = null;
+      this._namesPromise = null;
+    }
+    if (this.ftpHelper) {
+      try { this.ftpHelper.close(); } catch (e) { /* ignore */ }
+      this.ftpHelper = null;
+    }
+    if (this.smbHelper) {
+      try { this.smbHelper.close(); } catch (e) { /* ignore */ }
+      this.smbHelper = null;
+    }
+    if (this.webdavHelper) {
+      this.webdavHelper = null;
+    }
+  }
+
   deleteLogs() {
     return this.logger.deleteLogs();
   }
@@ -917,14 +944,18 @@ class App extends Homey.App {
               await new Promise((res) => setTimeout(res, 2));
             }
           }
-          const csvString = `${csvLines.join('\r\n')}\r\n`;
+          let csvString = `${csvLines.join('\r\n')}\r\n`;
+          csvLines.length = 0;
 
           const expectedEntries = entriesProcessed + 3;
           archive.append(csvString, { name: fileNameCsv, date });
+          csvString = null;
+
           archive.append(JSON.stringify(allMeta), { name: fileNameMeta, date });
 
-          const jsonString = JSON.stringify(entries);
+          let jsonString = JSON.stringify(entries);
           archive.append(jsonString, { name: fileNameJson, date });
+          jsonString = null;
 
           // Wait for archiver to consume streams to prevent RAM overload
           let waitCycles = 0;
