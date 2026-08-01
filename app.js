@@ -45,6 +45,30 @@ const JSDateToExcelDate = (inDate) => {
 
 class App extends Homey.App {
 
+  log(...args) {
+    try {
+      if (this.homey && this.homey.app) {
+        super.log(...args);
+      } else {
+        console.log(...args);
+      }
+    } catch (e) {
+      console.log(...args);
+    }
+  }
+
+  error(...args) {
+    try {
+      if (this.homey && this.homey.app) {
+        super.error(...args);
+      } else {
+        console.error(...args);
+      }
+    } catch (e) {
+      console.error(...args);
+    }
+  }
+
   async onInit() {
     try {
       if (!this.logger) this.logger = new Logger({ name: 'log', length: 200, homey: this.homey });
@@ -169,7 +193,7 @@ class App extends Homey.App {
 
       this.exportFinishedTrigger = this.homey.flow.getTriggerCard('export_finished');
 
-      this.deleteAllFiles();
+      this.deleteAllFiles().catch((err) => this.error(err));
 
       // initiate test stuff from here
       this.test();
@@ -181,11 +205,18 @@ class App extends Homey.App {
   }
 
   async onUninit() {
-    this.log('App uninit called');
+    this.abort = true;
+    this.flushQueue();
     if (this.logger) {
       this.logger.saveLogs();
       this.logger.releaseStdOut();
       this.logger.releaseStdErr();
+    }
+    if (this.ftpHelper) {
+      try { this.ftpHelper.close(); } catch (e) { /* ignore */ }
+    }
+    if (this.smbHelper) {
+      try { this.smbHelper.close(); } catch (e) { /* ignore */ }
     }
   }
 
@@ -363,22 +394,29 @@ class App extends Homey.App {
   // ============================================================
   // Local file handling in app userdata folder
   deleteAllFiles() {
-    fs.readdir('/userdata/', (err, res) => {
-      if (err) {
-        return this.log(err);
-      }
-      res.forEach((elem) => {
-        if (elem !== 'log.json') {
-          fs.unlink(`/userdata/${elem}`, (error) => {
-            if (error) {
-              this.log(error);
-            } else {
-              this.log(`deleted ${elem}`);
-            }
-          });
+    return new Promise((resolve) => {
+      fs.readdir('/userdata/', (err, res) => {
+        if (err) {
+          this.log(err);
+          return resolve();
         }
+        const unlinkPromises = res
+          .filter((elem) => elem !== 'log.json')
+          .map((elem) => new Promise((resUnlink) => {
+            fs.unlink(`/userdata/${elem}`, (error) => {
+              if (error) {
+                this.log(error);
+              } else {
+                this.log(`deleted ${elem}`);
+              }
+              resUnlink();
+            });
+          }));
+        Promise.all(unlinkPromises).then(() => {
+          this.log('all local files deleted');
+          resolve();
+        });
       });
-      return this.log('all local files deleted');
     });
   }
 
@@ -678,6 +716,7 @@ class App extends Homey.App {
 
   async initExport(date) {
     this.abort = false;
+    await this.deleteAllFiles();
     this.webdavSettings = this.homey.settings.get('webdavSettings');
     this.smbSettings = this.homey.settings.get('smbSettings');
     this.FTPSettings = this.homey.settings.get('FTPSettings');
@@ -738,6 +777,9 @@ class App extends Homey.App {
   // ZIP handling here
   // zip all log entries from one app as promise; resolves zipfilename
   async zipAppLogs(appId, resolution, date, type) {
+    let fileName = null;
+    let output = null;
+    let archive = null;
     try {
       const logs = await this.getAppRelatedLogs(appId, type);
       if (this.OnlyZipWithLogs.onlyZipWithLogs && !logs.length) return null;
@@ -747,10 +789,10 @@ class App extends Homey.App {
         .replace(/:/g, '') // delete :
         .replace(/-/g, '') // delete -
         .replace(/\..+/, ''); // delete the dot and everything after
-      const fileName = `${appId}_${timeStamp}Z_${resolution}.zip`;
-      const output = fs.createWriteStream(`/userdata/${fileName}`);
+      fileName = `${appId}_${timeStamp}Z_${resolution}.zip`;
+      output = fs.createWriteStream(`/userdata/${fileName}`);
       const level = this.CPUSettings && this.CPUSettings.lowCPU ? 1 : 6;
-      const archive = archiver('zip', {
+      archive = archiver('zip', {
         zlib: { level }, // Sets the compression level.
         forceUTC: true, // Force ZIP file timestamps to be UTC.
       });
@@ -766,7 +808,8 @@ class App extends Homey.App {
           return resolve(fileName);
         });
         output.on('error', (err) => { // when storing gave an error
-          this.log('error saving zipfile');
+          this.error(`error saving zipfile: ${err.message}`);
+          archiveError = true;
           return reject(err);
         });
         archive.on('error', (err) => { // when zipping gave an error
@@ -883,28 +926,38 @@ class App extends Homey.App {
       }
 
       if (this.OnlyZipWithLogs.onlyZipWithLogs && !written) {
-        archive.abort();
-        output.close();
-        fs.unlink(`/userdata/${fileName}`, (error) => {
-          if (error) {
-            this.log(error);
-          } else {
-            this.log(`deleted /userdata/${fileName}`);
-          }
-        });
+        if (archive) {
+          try { archive.abort(); } catch (e) { /* ignore */ }
+        }
+        if (output) {
+          try { output.close(); } catch (e) { /* ignore */ }
+        }
+        if (fileName) {
+          this.deleteFile(fileName);
+        }
         return null;
       }
       await archive.finalize();
-      return finishPromise;
+      return await finishPromise;
     } catch (error) {
+      if (archive) {
+        try { archive.abort(); } catch (e) { /* ignore */ }
+      }
+      if (output) {
+        try { output.destroy(); } catch (e) { /* ignore */ }
+      }
+      if (fileName) {
+        this.deleteFile(fileName);
+      }
       return Promise.reject(error);
     }
   }
 
   async _exportApp(appId, resolution, _date, type, subfolder, timestamp) {
+    let fileName = null;
     try {
       const date = new Date();
-      const fileName = await this.zipAppLogs(appId, resolution, date, type);
+      fileName = await this.zipAppLogs(appId, resolution, date, type);
       if (!fileName) return false;
       if (this.smbSettings && this.smbSettings.useSmb) {
         await this.smbHelper.save(fileName, subfolder, this.smbSettings, timestamp);
@@ -915,10 +968,13 @@ class App extends Homey.App {
       if (this.FTPSettings && this.FTPSettings.useFTP) {
         await this.ftpHelper.save(fileName, subfolder, this.FTPSettings, timestamp);
       }
-      this.deleteFile(fileName);
       return Promise.resolve(true);
     } catch (error) {
       return Promise.reject(error);
+    } finally {
+      if (fileName) {
+        this.deleteFile(fileName);
+      }
     }
   }
 
