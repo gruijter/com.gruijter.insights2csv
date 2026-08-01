@@ -22,7 +22,6 @@ with com.gruijter.insights2csv. If not, see <http://www.gnu.org/licenses/>.
 'use strict';
 
 const Homey = require('homey');
-const { HomeyAPI } = require('homey-api');
 const fs = require('fs');
 const util = require('util');
 const Logger = require('./lib/captureLogs');
@@ -464,6 +463,7 @@ class App extends Homey.App {
     this.log('Initializing Homey API...');
     this._homeyAPIPromise = (async () => {
       try {
+        const { HomeyAPI } = require('homey-api');
         const api = await HomeyAPI.createAppAPI({ homey: this.homey });
         this.homeyAPI = api;
         this.log('Homey API initialized successfully.');
