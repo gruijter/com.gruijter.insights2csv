@@ -41,6 +41,12 @@ const JSDateToExcelDate = (inDate) => {
 class App extends Homey.App {
 
   log(...args) {
+    if (this.logger) {
+      try {
+        const msg = args.map((a) => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ');
+        this.logger.addLog('log', msg);
+      } catch (e) { /* ignore */ }
+    }
     try {
       if (this.homey && this.homey.app) {
         super.log(...args);
@@ -53,6 +59,12 @@ class App extends Homey.App {
   }
 
   error(...args) {
+    if (this.logger) {
+      try {
+        const msg = args.map((a) => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ');
+        this.logger.addLog('error', msg);
+      } catch (e) { /* ignore */ }
+    }
     try {
       if (this.homey && this.homey.app) {
         super.error(...args);
