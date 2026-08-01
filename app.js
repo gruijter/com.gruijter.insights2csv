@@ -25,7 +25,7 @@ const Homey = require('homey');
 const { HomeyAPI } = require('homey-api');
 const fs = require('fs');
 const util = require('util');
-const archiver = require('archiver');
+const { ZipArchive } = require('archiver');
 
 const SmbHelper = require('./lib/SmbHelper');
 const WebDavHelper = require('./lib/WebDavHelper');
@@ -792,7 +792,7 @@ class App extends Homey.App {
       fileName = `${appId}_${timeStamp}Z_${resolution}.zip`;
       output = fs.createWriteStream(`/userdata/${fileName}`);
       const level = this.CPUSettings && this.CPUSettings.lowCPU ? 1 : 6;
-      archive = archiver('zip', {
+      archive = new ZipArchive({
         zlib: { level }, // Sets the compression level.
         forceUTC: true, // Force ZIP file timestamps to be UTC.
       });
