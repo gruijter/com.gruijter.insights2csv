@@ -25,11 +25,6 @@ const Homey = require('homey');
 const { HomeyAPI } = require('homey-api');
 const fs = require('fs');
 const util = require('util');
-const { ZipArchive } = require('archiver');
-
-const SmbHelper = require('./lib/SmbHelper');
-const WebDavHelper = require('./lib/WebDavHelper');
-const FtpHelper = require('./lib/FtpHelper');
 const Logger = require('./lib/captureLogs');
 
 const setTimeoutPromise = util.promisify(setTimeout);
@@ -90,10 +85,6 @@ class App extends Homey.App {
       this.resolutionSelection = ['lastHour', 'last6Hours', 'last24Hours', 'last7Days', 'last14Days', 'last31Days',
         'last2Years', 'today', 'thisWeek', 'thisMonth', 'thisYear', 'yesterday', 'lastWeek', 'lastMonth', 'lastYear'];
 
-      this.smbHelper = new SmbHelper(this);
-      this.webdavHelper = new WebDavHelper(this);
-      this.ftpHelper = new FtpHelper(this);
-
       // queue properties
       this.abort = false;
       this.queue = [];
@@ -145,13 +136,13 @@ class App extends Homey.App {
           this.log(`Deleting old data on ${args.storage}`);
           try {
             if (args.storage === 'FTP') {
-              await this.ftpHelper.purge(args.daysOld, args.types === 'allTypes', this.FTPSettings);
+              await this.getFtpHelper().purge(args.daysOld, args.types === 'allTypes', this.FTPSettings);
             }
             if (args.storage === 'SMB') {
-              await this.smbHelper.purge(args.daysOld, args.types === 'allTypes', this.smbSettings);
+              await this.getSmbHelper().purge(args.daysOld, args.types === 'allTypes', this.smbSettings);
             }
             if (args.storage === 'WebDAV') {
-              await this.webdavHelper.purge(args.daysOld, args.types === 'allTypes', this.webdavSettings);
+              await this.getWebDavHelper().purge(args.daysOld, args.types === 'allTypes', this.webdavSettings);
             }
           } catch (err) {
             this.error('Purge error:', err.message);
@@ -289,16 +280,40 @@ class App extends Homey.App {
     return this.logger.logArray;
   }
 
+  getSmbHelper() {
+    if (!this.smbHelper) {
+      const SmbHelper = require('./lib/SmbHelper');
+      this.smbHelper = new SmbHelper(this);
+    }
+    return this.smbHelper;
+  }
+
+  getWebDavHelper() {
+    if (!this.webdavHelper) {
+      const WebDavHelper = require('./lib/WebDavHelper');
+      this.webdavHelper = new WebDavHelper(this);
+    }
+    return this.webdavHelper;
+  }
+
+  getFtpHelper() {
+    if (!this.ftpHelper) {
+      const FtpHelper = require('./lib/FtpHelper');
+      this.ftpHelper = new FtpHelper(this);
+    }
+    return this.ftpHelper;
+  }
+
   async testSmb(smbSettings) {
-    return this.smbHelper.test(smbSettings);
+    return this.getSmbHelper().test(smbSettings);
   }
 
   async testWebdav(webdavSettings) {
-    return this.webdavHelper.test(webdavSettings);
+    return this.getWebDavHelper().test(webdavSettings);
   }
 
   async testFTP(FTPSettings) {
-    return this.ftpHelper.test(FTPSettings);
+    return this.getFtpHelper().test(FTPSettings);
   }
 
   getResolutions() {
@@ -791,6 +806,7 @@ class App extends Homey.App {
         .replace(/\..+/, ''); // delete the dot and everything after
       fileName = `${appId}_${timeStamp}Z_${resolution}.zip`;
       output = fs.createWriteStream(`/userdata/${fileName}`);
+      const { ZipArchive } = require('archiver');
       const level = this.CPUSettings && this.CPUSettings.lowCPU ? 1 : 6;
       archive = new ZipArchive({
         zlib: { level }, // Sets the compression level.
@@ -960,13 +976,13 @@ class App extends Homey.App {
       fileName = await this.zipAppLogs(appId, resolution, date, type);
       if (!fileName) return false;
       if (this.smbSettings && this.smbSettings.useSmb) {
-        await this.smbHelper.save(fileName, subfolder, this.smbSettings, timestamp);
+        await this.getSmbHelper().save(fileName, subfolder, this.smbSettings, timestamp);
       }
       if (this.webdavSettings && this.webdavSettings.useWebdav) {
-        await this.webdavHelper.save(fileName, subfolder, this.webdavSettings, timestamp);
+        await this.getWebDavHelper().save(fileName, subfolder, this.webdavSettings, timestamp);
       }
       if (this.FTPSettings && this.FTPSettings.useFTP) {
-        await this.ftpHelper.save(fileName, subfolder, this.FTPSettings, timestamp);
+        await this.getFtpHelper().save(fileName, subfolder, this.FTPSettings, timestamp);
       }
       return Promise.resolve(true);
     } catch (error) {
