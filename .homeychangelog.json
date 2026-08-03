@@ -1,4 +1,7 @@
 {
+  "5.3.1": {
+    "en": "Stability fixes."
+  },
   "5.3.0": {
     "en": "Fix for crash when Homey is shutting down or restarting. Stability fixes. Upgrade dependencies."
   },
