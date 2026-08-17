@@ -3,3 +3,6 @@ env.json
 roadmap.txt
 /.homeybuild/
 /node_modules/
+.claude/
+.github/
+AGENTS.md
