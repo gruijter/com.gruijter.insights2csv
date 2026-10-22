@@ -97,15 +97,17 @@ class App extends Homey.App {
         'last2Years', 'today', 'thisWeek', 'thisMonth', 'thisYear', 'yesterday', 'lastWeek', 'lastMonth', 'lastYear'];
 
       this.abort = false;
+      this.stopCount = 0;
       this.queue = [];
       this.queueRunning = false;
+      this.queuePromise = null;
+      this.cacheLoads = 0;
 
       this.homey
         .on('memwarn', () => {
           this.log('memwarn! Reclaiming memory...');
           if (this.logger) this.logger.trim(50);
-          // a running export still needs the cached logs, devices and storage helpers
-          if (!this.queueRunning) this.clearCache();
+          if (!this.cacheInUse()) this.clearCache();
         })
         .on('cpuwarn', () => {
           this.log('cpuwarn!');
@@ -145,15 +147,17 @@ class App extends Homey.App {
       purgeAction
         .registerRunListener(async (args) => {
           this.log(`Deleting old data on ${args.storage}`);
+          // read fresh: the cached copies are only loaded by an export
+          const allTypes = args.types === 'allTypes';
           try {
             if (args.storage === 'FTP') {
-              await this.getFtpHelper().purge(args.daysOld, args.types === 'allTypes', this.FTPSettings);
+              await this.getFtpHelper().purge(args.daysOld, allTypes, this.homey.settings.get('FTPSettings') || {});
             }
             if (args.storage === 'SMB') {
-              await this.getSmbHelper().purge(args.daysOld, args.types === 'allTypes', this.smbSettings);
+              await this.getSmbHelper().purge(args.daysOld, allTypes, this.homey.settings.get('smbSettings') || {});
             }
             if (args.storage === 'WebDAV') {
-              await this.getWebDavHelper().purge(args.daysOld, args.types === 'allTypes', this.webdavSettings);
+              await this.getWebDavHelper().purge(args.daysOld, allTypes, this.homey.settings.get('webdavSettings') || {});
             }
           } catch (err) {
             this.error('Purge error:', err.message);
@@ -177,7 +181,7 @@ class App extends Homey.App {
         .registerRunListener(async (args) => {
           const type = args.type === 'all' ? undefined : args.type;
           const subfolder = args.subfolder && args.subfolder !== 'undefined' ? args.subfolder : undefined;
-          await this.exportApp(args.selectedApp.id, args.resolution, null, true, type, subfolder);
+          await this.exportApp(args.selectedApp.id, args.resolution, type, subfolder);
           return true;
         })
         .registerArgumentAutocompleteListener(
@@ -227,10 +231,7 @@ class App extends Homey.App {
     this.queue.push(item);
     if (!this.queueRunning) {
       this.queueRunning = true;
-      this.runQueue().catch((err) => {
-        this.queueRunning = false;
-        this.error(err);
-      });
+      this.queuePromise = this.runQueue().catch((err) => this.error(err));
     }
   }
 
@@ -240,52 +241,54 @@ class App extends Homey.App {
 
   flushQueue() {
     this.queue = [];
-    this.queueRunning = false;
     this.log('Export queue is flushed');
   }
 
+  // the cache is in use from initExport/getAppList until the queue loop has exited
+  cacheInUse() {
+    return this.queueRunning || this.cacheLoads > 0;
+  }
+
   async runQueue() {
-    this.queueRunning = true;
+    try {
+      while (this.queue.length > 0 && !this.abort) {
+        const item = this.deQueue();
 
-    while (this.queue.length > 0) {
-      if (this.abort) break;
-      const item = this.deQueue();
+        if (item.isTrigger) {
+          const durationMs = item.startTime ? Date.now() - item.startTime : 0;
+          const durationSec = Math.round(durationMs / 1000);
+          this.exportFinishedTrigger.trigger({
+            duration: durationSec,
+            status: 'Success',
+            resolution: item.resolution || '',
+            identifier: item.identifier || '',
+            timestamp: item.timestamp || '',
+          }).catch((err) => this.error(err));
+          continue;
+        }
 
-      if (item.isTrigger) {
-        const durationMs = item.startTime ? Date.now() - item.startTime : 0;
-        const durationSec = Math.round(durationMs / 1000);
-        this.exportFinishedTrigger.trigger({
-          duration: durationSec,
-          status: 'Success',
-          resolution: item.resolution || '',
-          identifier: item.identifier || '',
-          timestamp: item.timestamp || '',
-        }).catch((err) => this.error(err));
-        continue;
+        await this._exportApp(item.appId, item.resolution, item.date, item.type, item.subfolder, item.timestamp)
+          .catch((err) => this.error(err));
+        if (this.abort) break;
+        // 1 s idle resets Homey's 10 s cpuwarn window
+        await setTimeoutPromise(this.CPUSettings && this.CPUSettings.lowCPU ? 10 * 1000 : 1000, 'waiting is done');
       }
-
-      await this._exportApp(item.appId, item.resolution, item.date, item.type, item.subfolder, item.timestamp)
-        .catch((err) => this.error(err));
-      // 1 s idle resets Homey's 10 s cpuwarn window
-      await setTimeoutPromise(this.CPUSettings && this.CPUSettings.lowCPU ? 10 * 1000 : 1000, 'waiting is done');
+    } finally {
+      this.queueRunning = false;
+      if (!this.cacheInUse()) this.clearCache();
+      this.log('Finished all exports');
     }
-
-    this.queueRunning = false;
-    this.clearCache();
-    this.log('Finished all exports');
   }
 
   clearCache() {
     this.devices = {};
     this.logs = [];
     this.allNames = [];
-    if (!this.queueRunning) {
-      this.homeyAPI = null;
-      this._homeyAPIPromise = null;
-      this._logsPromise = null;
-      this._devicesPromise = null;
-      this._namesPromise = null;
-    }
+    this.homeyAPI = null;
+    this._homeyAPIPromise = null;
+    this._logsPromise = null;
+    this._devicesPromise = null;
+    this._namesPromise = null;
     if (this.ftpHelper) {
       try {
         this.ftpHelper.close();
@@ -358,13 +361,23 @@ class App extends Homey.App {
     if (this.allNames && this.allNames.length > 0) return this.allNames;
 
     this.log('Lazy loading app list for frontend/flow...');
-    await this.loginHomeyApi();
-    await setTimeoutPromise(200, 'breathe');
-    await this.getAllLogs();
-    await setTimeoutPromise(200, 'breathe');
-    await this.getAllDevices();
-    await setTimeoutPromise(200, 'breathe');
-    return this.getAllNames();
+    return this.loadCache();
+  }
+
+  async loadCache() {
+    this.cacheLoads += 1;
+    try {
+      await this.loginHomeyApi();
+      // sequential with pauses to prevent cpuwarn
+      await setTimeoutPromise(200, 'breathe');
+      await this.getAllLogs();
+      await setTimeoutPromise(200, 'breathe');
+      await this.getAllDevices();
+      await setTimeoutPromise(200, 'breathe');
+      return await this.getAllNames();
+    } finally {
+      this.cacheLoads -= 1;
+    }
   }
 
   async exportAll(resolution, type, subfolder) {
@@ -375,7 +388,7 @@ class App extends Homey.App {
       .replace(/-/g, '')
       .replace(/\..+/, 'Z');
 
-    await this.initExport(date);
+    if (!await this.initExport()) return false;
 
     // enqueue synchronously so the queue cannot drain (and clear the cache) halfway
     this.allNames.forEach((name) => {
@@ -395,31 +408,27 @@ class App extends Homey.App {
     return true;
   }
 
-  async exportApp(appId, resolution, _date, reload, type, subfolder, passedTimestamp) {
+  async exportApp(appId, resolution, type, subfolder) {
     const date = new Date();
     const startTime = Date.now();
-    const timestamp = passedTimestamp || date.toISOString()
+    const timestamp = date.toISOString()
       .replace(/:/g, '')
       .replace(/-/g, '')
       .replace(/\..+/, 'Z');
 
-    if (reload !== false) {
-      await this.initExport(date);
-    }
+    if (!await this.initExport()) return false;
 
     this.enQueue({
       appId, resolution, date, type, subfolder, timestamp,
     });
 
-    if (reload !== false) {
-      this.enQueue({
-        isTrigger: true,
-        resolution,
-        identifier: appId,
-        timestamp,
-        startTime,
-      });
-    }
+    this.enQueue({
+      isTrigger: true,
+      resolution,
+      identifier: appId,
+      timestamp,
+      startTime,
+    });
 
     return true;
   }
@@ -427,6 +436,7 @@ class App extends Homey.App {
   stopExport() {
     if (this.queueRunning) this.log('aborting export');
     this.abort = true;
+    this.stopCount += 1;
 
     this.queue.filter((item) => item.isTrigger).forEach((item) => {
       const durationMs = item.startTime ? Date.now() - item.startTime : 0;
@@ -517,10 +527,17 @@ class App extends Homey.App {
     if (this._devicesPromise) return this._devicesPromise;
     this._devicesPromise = (async () => {
       try {
-        this.devices = await this.homeyAPI.devices.getDevices({
-          $timeout: 30000,
-          $select: 'id,name,driverId,ownerUri',
+        // homey-api has no $select; keep only the fields used, the full Device objects are large
+        const allDevices = await this.homeyAPI.devices.getDevices({ $timeout: 30000 });
+        const devices = {};
+        Object.values(allDevices).forEach(({
+          id, name, driverId, ownerUri,
+        }) => {
+          devices[id] = {
+            id, name, driverId, ownerUri,
+          };
         });
+        this.devices = devices;
         return this.devices;
       } finally {
         this._devicesPromise = null;
@@ -530,10 +547,7 @@ class App extends Homey.App {
   }
 
   async getAppNameList() {
-    const allApps = await this.homeyAPI.apps.getApps({
-      $timeout: 30000,
-      $select: 'id,name,icon',
-    });
+    const allApps = await this.homeyAPI.apps.getApps({ $timeout: 30000 });
     const mappedArray = Object.entries(allApps).map((app) => {
       const map = {
         id: app[1].id,
@@ -553,8 +567,10 @@ class App extends Homey.App {
     this.logs.forEach((log) => {
       if (log.ownerUri && log.ownerUri.startsWith('homey:manager:')) ownerUris.add(log.ownerUri);
     });
+    // getAppRelatedLogs only resolves app and manager owners
     Object.values(this.devices).forEach((device) => {
-      if (device.ownerUri) ownerUris.add(device.ownerUri);
+      const uri = device.ownerUri;
+      if (uri && (uri.startsWith('homey:app:') || uri.startsWith('homey:manager:'))) ownerUris.add(uri);
     });
 
     const seen = new Set();
@@ -597,7 +613,7 @@ class App extends Homey.App {
     const relatedDeviceUris = new Set();
     Object.keys(this.devices).forEach((key) => {
       const device = this.devices[key];
-      if (device.ownerUri === appUri || device.ownerUri === managerUri || (device.driverId && device.driverId.startsWith(appUri))) {
+      if (device.ownerUri === appUri || device.ownerUri === managerUri || (device.driverId && device.driverId.startsWith(`${appUri}:`))) {
         relatedDeviceUris.add(`homey:device:${device.id}`);
       }
     });
@@ -619,8 +635,8 @@ class App extends Homey.App {
 
   async getLogEntries(log, resolution, date) {
     try {
+      // homey-api derives uri from id
       const opts = {
-        uri: log.ownerUri,
         id: log.id,
         $timeout: 5000,
       };
@@ -648,7 +664,8 @@ class App extends Homey.App {
         const y = dateTimezoned.getFullYear();
         const m = dateTimezoned.getMonth();
         const d = dateTimezoned.getDate();
-        const day = dateTimezoned.getDay();
+        // getDay() is 0 on Sunday
+        const daysSinceMonday = (dateTimezoned.getDay() + 6) % 7;
 
         switch (resolution) {
           case 'lastHour':
@@ -678,11 +695,11 @@ class App extends Homey.App {
             exclusiveEnd = true;
             break;
           case 'thisWeek':
-            _dateFrom = applyOffset(new Date(y, m, d - (day - 1)));
+            _dateFrom = applyOffset(new Date(y, m, d - daysSinceMonday));
             break;
           case 'lastWeek':
-            _dateFrom = applyOffset(new Date(y, m, d - (day - 1) - 7));
-            _dateTo = applyOffset(new Date(y, m, d - (day - 1)));
+            _dateFrom = applyOffset(new Date(y, m, d - daysSinceMonday - 7));
+            _dateTo = applyOffset(new Date(y, m, d - daysSinceMonday));
             exclusiveEnd = true;
             break;
           case 'thisMonth':
@@ -748,9 +765,15 @@ class App extends Homey.App {
     }
   }
 
-  async initExport(date) {
+  // resolves false when the export was stopped while initializing
+  async initExport() {
+    const { stopCount } = this;
+    // a stopped queue loop may still be finishing its current app
+    if (this.queueRunning && this.abort) await this.queuePromise;
+    if (stopCount !== this.stopCount) return false;
     this.abort = false;
-    await this.deleteAllFiles();
+    // a running export is still writing its zips; new items join its queue
+    if (!this.queueRunning) await this.deleteAllFiles();
     this.webdavSettings = this.homey.settings.get('webdavSettings');
     this.smbSettings = this.homey.settings.get('smbSettings');
     this.FTPSettings = this.homey.settings.get('FTPSettings');
@@ -793,24 +816,31 @@ class App extends Homey.App {
     }
 
     if (this.CPUSettings && this.CPUSettings.lowCPU) this.log('Low CPU load selected for export');
-    await this.loginHomeyApi();
+    await this.loadCache();
 
-    // sequential with pauses to prevent cpuwarn
-    await setTimeoutPromise(200, 'breathe');
-    await this.getAllLogs();
-    await setTimeoutPromise(200, 'breathe');
-    await this.getAllDevices();
-    await setTimeoutPromise(200, 'breathe');
-    await this.getAllNames();
-    await setTimeoutPromise(200, 'breathe');
-
-    return true;
+    // the caller enqueues synchronously after this, so no memwarn can clear the cache in between
+    return stopCount === this.stopCount;
   }
 
   async zipAppLogs(appId, resolution, date, type) {
     let fileName = null;
     let output = null;
     let archive = null;
+    const discard = () => {
+      if (archive) {
+        try {
+          archive.abort();
+        } catch { /* ignore */ }
+      }
+      if (output) {
+        try {
+          output.destroy();
+        } catch { /* ignore */ }
+      }
+      if (fileName) {
+        this.deleteFile(fileName);
+      }
+    };
     try {
       const logs = await this.getAppRelatedLogs(appId, type);
       if (this.OnlyZipWithLogs.onlyZipWithLogs && !logs.length) return null;
@@ -832,7 +862,7 @@ class App extends Homey.App {
 
       let written = false;
       let entriesProcessed = 0;
-      let archiveError = false;
+      let archiveError = null;
 
       const finishPromise = new Promise((resolve, reject) => {
         output.on('close', () => {
@@ -841,11 +871,11 @@ class App extends Homey.App {
         });
         output.on('error', (err) => {
           this.error(`error saving zipfile: ${err.message}`);
-          archiveError = true;
+          archiveError = err;
           return reject(err);
         });
         archive.on('error', (err) => {
-          archiveError = true;
+          archiveError = err;
           this.error(err);
           return reject(err);
         });
@@ -854,6 +884,8 @@ class App extends Homey.App {
           entriesProcessed += 1;
         });
       });
+      // awaited only on success; errors are handled through archiveError
+      finishPromise.catch(() => {});
 
       for (let idx = 0; idx < logs.length; idx += 1) {
         if (!this.abort && !archiveError) {
@@ -940,8 +972,8 @@ class App extends Homey.App {
             await setTimeoutPromise(25);
             waitCycles += 1;
             if (waitCycles > 12000) { // 5 mins max wait per file
-              this.error(`Archiver timeout waiting for entries for ${fileNameCsv}`);
-              archiveError = true;
+              archiveError = new Error(`Archiver timeout waiting for entries for ${fileNameCsv}`);
+              this.error(archiveError.message);
               break;
             }
           }
@@ -960,46 +992,24 @@ class App extends Homey.App {
         }
       }
 
-      if (this.OnlyZipWithLogs.onlyZipWithLogs && !written) {
-        if (archive) {
-          try {
-            archive.abort();
-          } catch { /* ignore */ }
-        }
-        if (output) {
-          try {
-            output.close();
-          } catch { /* ignore */ }
-        }
-        if (fileName) {
-          this.deleteFile(fileName);
-        }
+      // finalize() waits for the archive 'end', which may never come once the output stream failed
+      if (archiveError) throw archiveError;
+      // an aborted export would otherwise upload a truncated zip
+      if (this.abort || (this.OnlyZipWithLogs.onlyZipWithLogs && !written)) {
+        discard();
         return null;
       }
       await archive.finalize();
       return await finishPromise;
     } catch (error) {
-      if (archive) {
-        try {
-          archive.abort();
-        } catch { /* ignore */ }
-      }
-      if (output) {
-        try {
-          output.destroy();
-        } catch { /* ignore */ }
-      }
-      if (fileName) {
-        this.deleteFile(fileName);
-      }
+      discard();
       return Promise.reject(error);
     }
   }
 
-  async _exportApp(appId, resolution, _date, type, subfolder, timestamp) {
+  async _exportApp(appId, resolution, date, type, subfolder, timestamp) {
     let fileName = null;
     try {
-      const date = new Date();
       fileName = await this.zipAppLogs(appId, resolution, date, type);
       if (!fileName) return false;
       if (this.smbSettings && this.smbSettings.useSmb) {

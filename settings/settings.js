@@ -178,8 +178,10 @@ async function fillDropdown() {
 async function stopExportNoConfirm() {
   try {
     await Homey.api('GET', '/stopExport');
+    return true;
   } catch (error) {
     Homey.alert(error.message || error, 'error');
+    return false;
   }
 }
 
@@ -188,8 +190,7 @@ function stopExport() {
     if (!result) {
       return;
     }
-    await stopExportNoConfirm();
-    Homey.alert(Homey.__('settings.tab4.exportStopped'), 'info');
+    if (await stopExportNoConfirm()) Homey.alert(Homey.__('settings.tab4.exportStopped'), 'info');
   });
 }
 
@@ -231,7 +232,7 @@ function exportNow() {
     if (!r) {
       return;
     }
-    await stopExportNoConfirm();
+    if (!await stopExportNoConfirm()) return;
     try {
       if (appId === '') {
         await Homey.api('POST', '/exportAll', { resolution });
