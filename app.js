@@ -106,7 +106,8 @@ class App extends Homey.App {
         .on('memwarn', () => {
           this.log('memwarn! Reclaiming memory...');
           if (this.logger) this.logger.trim(50);
-          this.clearCache();
+          // a running export still needs the cached logs, devices and storage helpers
+          if (!this.queueRunning) this.clearCache();
         })
         .on('cpuwarn', () => {
           this.log('cpuwarn!');
@@ -366,6 +367,8 @@ class App extends Homey.App {
     await setTimeoutPromise(200, 'breathe');
     await this.getAllLogs();
     await setTimeoutPromise(200, 'breathe');
+    await this.getAllDevices();
+    await setTimeoutPromise(200, 'breathe');
     return this.getAllNames();
   }
 
@@ -549,45 +552,40 @@ class App extends Homey.App {
     return mappedArray;
   }
 
-  // Get a list of all logged manager names
-  async getManagerNameList() {
-    // eslint-disable-next-line prefer-destructuring
-    const logs = this.logs;
-    const list = logs.filter((log) => {
-      const uri = log.uri || log.ownerUri || '';
-      return uri.startsWith('homey:manager:');
-    })
-      .map((log) => {
-        const uri = log.uri || log.ownerUri || '';
-        const ids = uri.split(':');
-        const id = ids.pop();
-
-        const name = id ? id.charAt(0).toUpperCase() + id.slice(1) : 'Unknown';
-        if (!name) return null;
-        const _app = {
-          id,
-          name,
-          icon: '',
-          type: ids[1] || 'manager',
-        };
-        return _app;
-      });
+  // Get a list of all logged manager names, plus owners of devices that are not an installed app (e.g. Matter, Energy Dongle)
+  async getManagerNameList(appNameList) {
+    const appIds = new Set(appNameList.map((app) => app.id));
+    const ownerUris = new Set();
+    this.logs.forEach((log) => {
+      if (log.ownerUri && log.ownerUri.startsWith('homey:manager:')) ownerUris.add(log.ownerUri);
+    });
+    Object.values(this.devices).forEach((device) => {
+      if (device.ownerUri) ownerUris.add(device.ownerUri);
+    });
 
     const seen = new Set();
-    return list.filter((elem) => {
-      if (!elem) return false;
-      if (seen.has(elem.id)) return false;
-      seen.add(elem.id);
-      return true;
+    const list = [];
+    ownerUris.forEach((uri) => {
+      const ids = uri.split(':');
+      const id = ids.pop();
+      if (!id || appIds.has(id) || seen.has(id)) return;
+      seen.add(id);
+      list.push({
+        id,
+        name: id.charAt(0).toUpperCase() + id.slice(1),
+        icon: '',
+        type: ids[1] || 'manager',
+      });
     });
+    return list;
   }
 
   async getAllNames() {
     if (this._namesPromise) return this._namesPromise;
     this._namesPromise = (async () => {
       try {
-        const managerNameList = await this.getManagerNameList();
         const appNameList = await this.getAppNameList();
+        const managerNameList = await this.getManagerNameList(appNameList);
         this.allNames = appNameList.concat(managerNameList);
         return this.allNames;
       } finally {
@@ -606,7 +604,7 @@ class App extends Homey.App {
     Object.keys(this.devices).forEach((key) => {
       const device = this.devices[key];
       // Use driverId instead of the deprecated driverUri
-      if (device.ownerUri === appUri || (device.driverId && device.driverId.startsWith(appUri))) {
+      if (device.ownerUri === appUri || device.ownerUri === managerUri || (device.driverId && device.driverId.startsWith(appUri))) {
         relatedDeviceUris.add(`homey:device:${device.id}`);
       }
     });
@@ -617,10 +615,8 @@ class App extends Homey.App {
       const log = this.logs[i];
       if (type && log.type !== type) continue;
 
-      const uri = log.uri || log.ownerUri;
+      const uri = log.ownerUri;
       if (uri === appUri || uri === managerUri || relatedDeviceUris.has(uri)) {
-        appRelatedLogs.push(log);
-      } else if (log.ownerUri && (log.ownerUri === appUri || log.ownerUri === managerUri || relatedDeviceUris.has(log.ownerUri))) {
         appRelatedLogs.push(log);
       }
     }
@@ -638,7 +634,7 @@ class App extends Homey.App {
   async getLogEntries(log, resolution, date) {
     try {
       const opts = {
-        uri: (log.uri || log.ownerUri),
+        uri: log.ownerUri,
         id: log.id,
         $timeout: 5000,
       };
@@ -757,7 +753,7 @@ class App extends Homey.App {
       }
 
       if (logEntries.values.length > 2925) {
-        this.error(`Insights data is massive (${logEntries.values.length} entries) and will be truncated to the first 2925 records for ${log.uri || log.ownerUri} ${logEntries.id}.`);
+        this.error(`Insights data is massive (${logEntries.values.length} entries) and will be truncated to the first 2925 records for ${log.ownerUri} ${logEntries.id}.`);
         logEntries.values.length = 2925; // Truncate in-place instead of .slice()
         await setTimeoutPromise(this.CPUSettings && this.CPUSettings.lowCPU ? 10 * 1000 : 1, 'waiting is done');
       }
@@ -819,9 +815,9 @@ class App extends Homey.App {
     await setTimeoutPromise(200, 'breathe');
     await this.getAllLogs();
     await setTimeoutPromise(200, 'breathe');
-    await this.getAllNames();
-    await setTimeoutPromise(200, 'breathe');
     await this.getAllDevices();
+    await setTimeoutPromise(200, 'breathe');
+    await this.getAllNames();
     await setTimeoutPromise(200, 'breathe');
 
     return true;
@@ -904,7 +900,7 @@ class App extends Homey.App {
           });
           const allMeta = Object.assign(meta, log);
 
-          const ids = (log.ownerUri || log.uri).split(':');
+          const ids = log.ownerUri.split(':');
           const id = ids.pop();
           const dev = this.devices[id];
           const app = dev ? null : this.allNames.find((x) => x.id === id);
