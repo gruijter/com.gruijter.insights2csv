@@ -1,4 +1,7 @@
 {
+  "5.4.0": {
+    "en": "Fix stop and restart of a running export. Fix WebDAV separate folders. Fix week periods on Sunday. Fix purge before first export. Reduced memory use. Stability fixes. Upgrade dependencies."
+  },
   "5.3.1": {
     "en": "Stability fixes."
   },
