@@ -7,8 +7,6 @@
 let resolution = 'lastHour';
 let appId = '';
 
-// tab 1
-
 async function testSmb() {
   const testData = {
     useSmb: document.getElementById('useSmb').checked,
@@ -47,8 +45,6 @@ async function saveSmb() {
   }
 }
 
-// tab 2
-
 async function testWebdav() {
   const testData = {
     useWebdav: document.getElementById('useWebdav').checked,
@@ -80,8 +76,6 @@ async function saveWebdav() {
     Homey.alert(err.message || err, 'error');
   }
 }
-
-// tab 3
 
 async function testFTP() {
   const testData = {
@@ -131,8 +125,6 @@ function ftpProtocolChanged() {
   }
 }
 
-// tab 4
-
 function resolutionSelected() {
   resolution = document.getElementById('resolutionList').value;
 }
@@ -141,7 +133,6 @@ function appSelected() {
   appId = document.getElementById('appList').value;
 }
 
-// function to populate the dropdown list
 async function fillDropdown() {
   const dropDown = document.getElementById('resolutionList');
   while (dropDown.length > 0) {
@@ -254,8 +245,6 @@ function exportNow() {
   });
 }
 
-// tab 5
-
 function displayLogs(lines) {
   document.getElementById('loglines').innerHTML = lines;
 }
@@ -288,8 +277,6 @@ function deleteLogs() {
     }
   });
 }
-
-// generic
 
 async function loadSettings() {
   try {
@@ -407,10 +394,8 @@ function showTab(tab) {
 }
 
 function onHomeyReady(homey) {
-  // The 'homey' object is passed by /homey.js and is ready to use.
-  // We assign it to the global Homey variable so all other functions can access it.
   Homey = homey;
-  Homey.ready(); // Signal that the settings page is ready.
+  Homey.ready();
   // eslint-disable-next-line homey-app/global-timers
   setTimeout(() => {
     showTab(1);
