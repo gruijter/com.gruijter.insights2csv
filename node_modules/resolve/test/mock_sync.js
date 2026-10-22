@@ -141,7 +141,7 @@ test('symlinked', function (t) {
 });
 
 test('readPackageSync', function (t) {
-    t.plan(3);
+    t.plan(4);
 
     var files = {};
     files[path.resolve('/foo/node_modules/bar/something-else.js')] = 'beep';
@@ -209,6 +209,26 @@ test('readPackageSync', function (t) {
             function () { resolve.sync('bar', options); },
             TypeError,
             'errors when both readFile and readPackage are provided'
+        );
+    });
+
+    t.test('readPackageSync error propagates correctly', function (st) {
+        st.plan(1);
+
+        var readPackageError = new Error('read package error');
+
+        function failReadPackageSync() {
+            throw readPackageError;
+        }
+
+        var options = opts('/foo');
+        delete options.readFileSync;
+        options.readPackageSync = failReadPackageSync;
+
+        st.throws(
+            function () { resolve.sync('bar', options); },
+            readPackageError,
+            'readPackageSync error is thrown'
         );
     });
 });

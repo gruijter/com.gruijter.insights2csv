@@ -9,16 +9,15 @@
   "dependencies": {
     "@tryjsky/v9u-smb2": "^1.1.0",
     "archiver": "^8.0.0",
-    "basic-ftp": "^6.0.2",
-    "homey-api": "^3.19.2",
+    "basic-ftp": "^6.2.3",
+    "homey-api": "^3.21.0",
     "ssh2-sftp-client": "^12.1.1",
-    "webdav": "^5.10.0"
+    "webdav": "^5.11.0"
   },
   "devDependencies": {
-    "@types/homey": "npm:homey-apps-sdk-v3-types@^0.3.12",
-    "eslint": "^10.2.1",
-    "eslint-config-athom": "^3.1.5",
-    "eslint-plugin-homey-app": "^2.0.0"
+    "@types/homey": "npm:homey-apps-sdk-v3-types@beta",
+    "eslint": "^8.57.1",
+    "eslint-config-athom": "^4.0.2"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

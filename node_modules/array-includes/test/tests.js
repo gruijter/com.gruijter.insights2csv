@@ -82,6 +82,21 @@ module.exports = function (includes, t) {
 		ft.end();
 	});
 
+	t.test('empty array-like with undefined search', function (st) {
+		st.equal(false, includes({ length: 0 }, undefined), 'empty array-like does not include undefined');
+		st.equal(false, includes([], NaN), 'empty array does not include NaN');
+		st.end();
+	});
+
+	t.test('slow path iteration', function (st) {
+		st.equal(false, includes([1, 2, 3], undefined), '[1, 2, 3] does not include undefined via slow path');
+		st.equal(false, includes([1, 2, 3], NaN), '[1, 2, 3] does not include NaN when not present');
+		st.equal(true, includes([1, NaN, 3], NaN), '[1, NaN, 3] includes NaN via slow path iteration');
+		st.equal(false, includes('abc', undefined), 'string does not include undefined via slow path');
+		st.equal(false, includes(Object('abc'), undefined), 'boxed string does not include undefined via slow path');
+		st.end();
+	});
+
 	t.test('strings', function (st) {
 		st.equal(true, includes('abc', 'c'), 'string includes one of its chars');
 		st.equal(false, includes('abc', 'd'), 'string does not include a char it should not');
@@ -91,4 +106,24 @@ module.exports = function (includes, t) {
 
 		st.end();
 	});
+
+	t.test(
+		'exotic objects: uses Get, not HasProperty, unlike indexOf',
+		{ skip: typeof Proxy !== 'function' },
+		function (st) {
+			var target = [1, 2, 3, 4, 5];
+			var proxy = new Proxy(target, {
+				has: function () { return false; },
+				get: function (targ, k, r) { return Reflect.get(targ, k, r); }
+			});
+
+			st.equal(
+				true,
+				includes(proxy, 3),
+				'a lying `has` trap does not stop an element visible via `get` from being found'
+			);
+
+			st.end();
+		}
+	);
 };

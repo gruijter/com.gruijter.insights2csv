@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v3.2.0](https://github.com/es-shims/array-includes/compare/v3.1.9...v3.2.0) - 2026-09-09
+
+### Commits
+
+- [Dev Deps] update `eslint` [`08a42b9`](https://github.com/es-shims/array-includes/commit/08a42b9f077495519ec16c8413c6440a76036ca7)
+- [actions] update workflows [`62cae6d`](https://github.com/es-shims/array-includes/commit/62cae6dbce61b042b3c3b8917fc26877445e6c3b)
+- [New] add TypeScript type declarations [`fd446bc`](https://github.com/es-shims/array-includes/commit/fd446bcde2d8921973482f3f83b3f0bc99ae4518)
+- [Fix] avoid relying on `indexOf`'s `HasProperty`+`Get` semantics, unlike `includes`'s bare `Get` [`70ef118`](https://github.com/es-shims/array-includes/commit/70ef118938cae446b88160020d30a76a6613904d)
+- [Tests] add some passing tests [`50a2f40`](https://github.com/es-shims/array-includes/commit/50a2f404945918078dd5056cfeb9a379734cd9c2)
+- [Dev Deps] update `@ljharb/eslint-config`, `auto-changelog`, `eslint`, `epickvalmd`, `npmignore`, `tape` [`a8702dc`](https://github.com/es-shims/array-includes/commit/a8702dc30a6c63f0bfd10580773c57b7d2a5fba5)
+- [Fix] add `includes` to `Array.prototype[Symbol.unscopables]` [`205cd61`](https://github.com/es-shims/array-includes/commit/205cd618fc75d8976bef2b14429fcb14f7f0743d)
+- [Dev Deps] update `@arethetypeswrong/cli`, `@es-shims/api`, `@ljharb/eslint-config`, `auto-changelog`, `eslint`, `hasown` [`4cb3dec`](https://github.com/es-shims/array-includes/commit/4cb3dec22908adbc129339d22e163fc730d5d7d2)
+- [Deps] update `call-bind`, `es-abstract`, `es-object-atoms` [`5b4468e`](https://github.com/es-shims/array-includes/commit/5b4468e6ef19324ae58e2d6cf63dfbaea8ef6adb)
+- [Refactor] use `math-intrinsics/max` directly, instead of `get-intrinsic` [`e50a7ff`](https://github.com/es-shims/array-includes/commit/e50a7ffebabda86902c1f36f8ef4d20adc588b31)
+- [readme] replace runkit CI badge with shields.io check-runs badge [`5aed2b7`](https://github.com/es-shims/array-includes/commit/5aed2b790d4a4cfeeeefc5f640897221bafd2612)
+- [Dev Deps] update `@ljharb/eslint-config` [`2b23666`](https://github.com/es-shims/array-includes/commit/2b23666ceed52c18eec52a10c96a8ef03c08a844)
+
 ## [v3.1.9](https://github.com/es-shims/array-includes/compare/v3.1.8...v3.1.9) - 2025-06-01
 
 ### Commits

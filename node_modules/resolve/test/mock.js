@@ -239,7 +239,7 @@ test('symlinked', function (t) {
 });
 
 test('readPackage', function (t) {
-    t.plan(3);
+    t.plan(4);
 
     var files = {};
     files[path.resolve('/foo/node_modules/bar/something-else.js')] = 'beep';
@@ -311,5 +311,43 @@ test('readPackage', function (t) {
         resolve('bar', options, function (err) {
             st.throws(function () { throw err; }, TypeError, 'errors when both readFile and readPackage are provided');
         });
+    });
+
+    t.test('readPackage error in loadpkg does not invoke callback twice', function (st) {
+        st.plan(1);
+
+        var callCount = 0;
+        var readPackageError = new Error('read package error');
+
+        function failReadPackage(rf, file, cb) {
+            cb(readPackageError);
+        }
+
+        var relFiles = {};
+        relFiles[path.resolve('/foo/bar/baz.js')] = 'beep';
+        relFiles[path.resolve('/foo/bar/package.json')] = '{}';
+
+        var relDirs = {};
+        relDirs[path.resolve('/foo/bar')] = true;
+
+        resolve('./baz', {
+            basedir: path.resolve('/foo/bar'),
+            isFile: function (file, cb) {
+                cb(null, Object.prototype.hasOwnProperty.call(relFiles, path.resolve(file)));
+            },
+            isDirectory: function (dir, cb) {
+                cb(null, !!relDirs[path.resolve(dir)]);
+            },
+            readPackage: failReadPackage,
+            realpath: function (file, cb) {
+                cb(null, file);
+            }
+        }, function () {
+            callCount += 1;
+        });
+
+        setTimeout(function () {
+            st.equal(callCount, 1, 'callback is invoked exactly once');
+        }, 50);
     });
 });

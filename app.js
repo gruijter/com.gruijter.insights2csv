@@ -44,15 +44,17 @@ class App extends Homey.App {
       try {
         const msg = args.map((a) => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ');
         this.logger.addLog('log', msg);
-      } catch (e) { /* ignore */ }
+      } catch { /* ignore */ }
     }
     try {
       if (this.homey && this.homey.app) {
         super.log(...args);
       } else {
+        // eslint-disable-next-line no-console
         console.log(...args);
       }
-    } catch (e) {
+    } catch {
+      // eslint-disable-next-line no-console
       console.log(...args);
     }
   }
@@ -62,15 +64,17 @@ class App extends Homey.App {
       try {
         const msg = args.map((a) => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' ');
         this.logger.addLog('error', msg);
-      } catch (e) { /* ignore */ }
+      } catch { /* ignore */ }
     }
     try {
       if (this.homey && this.homey.app) {
         super.error(...args);
       } else {
+        // eslint-disable-next-line no-console
         console.error(...args);
       }
-    } catch (e) {
+    } catch {
+      // eslint-disable-next-line no-console
       console.error(...args);
     }
   }
@@ -200,9 +204,6 @@ class App extends Homey.App {
 
       this.deleteAllFiles().catch((err) => this.error(err));
 
-      // initiate test stuff from here
-      this.test();
-
       this.log('ExportInsights App is running!');
     } catch (error) {
       this.error(error);
@@ -218,29 +219,27 @@ class App extends Homey.App {
       this.logger.releaseStdErr();
     }
     if (this.ftpHelper) {
-      try { this.ftpHelper.close(); } catch (e) { /* ignore */ }
+      try {
+        this.ftpHelper.close();
+      } catch { /* ignore */ }
     }
     if (this.smbHelper) {
-      try { this.smbHelper.close(); } catch (e) { /* ignore */ }
-    }
-  }
-
-  // ============================================================
-  // do the stuff from here
-  async test() {
-    try {
-    } catch (error) {
-      this.error(error);
+      try {
+        this.smbHelper.close();
+      } catch { /* ignore */ }
     }
   }
 
   // ============================================================
   // stuff for queue handling here
-  async enQueue(item) {
+  enQueue(item) {
     this.queue.push(item);
     if (!this.queueRunning) {
       this.queueRunning = true;
-      this.runQueue();
+      this.runQueue().catch((err) => {
+        this.queueRunning = false;
+        this.error(err);
+      });
     }
   }
 
@@ -270,12 +269,12 @@ class App extends Homey.App {
           resolution: item.resolution || '',
           identifier: item.identifier || '',
           timestamp: item.timestamp || '',
-      }).catch(err => this.error(err));
+        }).catch((err) => this.error(err));
         continue;
       }
 
-    await this._exportApp(item.appId, item.resolution, item.date, item.type, item.subfolder, item.timestamp)
-      .catch(err => this.error(err));
+      await this._exportApp(item.appId, item.resolution, item.date, item.type, item.subfolder, item.timestamp)
+        .catch((err) => this.error(err));
       // Wait 1 solid second between apps to reset the 10-second cpuwarn window and clear thread queues
       await setTimeoutPromise(this.CPUSettings && this.CPUSettings.lowCPU ? 10 * 1000 : 1000, 'waiting is done');
     }
@@ -299,11 +298,15 @@ class App extends Homey.App {
       this._namesPromise = null;
     }
     if (this.ftpHelper) {
-      try { this.ftpHelper.close(); } catch (e) { /* ignore */ }
+      try {
+        this.ftpHelper.close();
+      } catch { /* ignore */ }
       this.ftpHelper = null;
     }
     if (this.smbHelper) {
-      try { this.smbHelper.close(); } catch (e) { /* ignore */ }
+      try {
+        this.smbHelper.close();
+      } catch { /* ignore */ }
       this.smbHelper = null;
     }
     if (this.webdavHelper) {
@@ -321,6 +324,7 @@ class App extends Homey.App {
 
   getSmbHelper() {
     if (!this.smbHelper) {
+      // eslint-disable-next-line global-require
       const SmbHelper = require('./lib/SmbHelper');
       this.smbHelper = new SmbHelper(this);
     }
@@ -329,6 +333,7 @@ class App extends Homey.App {
 
   getWebDavHelper() {
     if (!this.webdavHelper) {
+      // eslint-disable-next-line global-require
       const WebDavHelper = require('./lib/WebDavHelper');
       this.webdavHelper = new WebDavHelper(this);
     }
@@ -337,6 +342,7 @@ class App extends Homey.App {
 
   getFtpHelper() {
     if (!this.ftpHelper) {
+      // eslint-disable-next-line global-require
       const FtpHelper = require('./lib/FtpHelper');
       this.ftpHelper = new FtpHelper(this);
     }
@@ -382,8 +388,11 @@ class App extends Homey.App {
 
     await this.initExport(date);
 
+    // enqueue synchronously so the queue cannot drain (and clear the cache) halfway
     this.allNames.forEach((name) => {
-      this.exportApp(name.id, resolution, date, false, type, subfolder, timestamp);
+      this.enQueue({
+        appId: name.id, resolution, date, type, subfolder, timestamp,
+      });
     });
 
     this.enQueue({
@@ -440,7 +449,7 @@ class App extends Homey.App {
         resolution: item.resolution || '',
         identifier: item.identifier || '',
         timestamp: item.timestamp || '',
-      }).catch(err => this.error(err));
+      }).catch((err) => this.error(err));
     });
 
     this.flushQueue();
@@ -454,7 +463,8 @@ class App extends Homey.App {
       fs.readdir('/userdata/', (err, res) => {
         if (err) {
           this.log(err);
-          return resolve();
+          resolve();
+          return;
         }
         const unlinkPromises = res
           .filter((elem) => elem !== 'log.json')
@@ -468,10 +478,10 @@ class App extends Homey.App {
               resUnlink();
             });
           }));
-        Promise.all(unlinkPromises).then(() => {
-          this.log('all local files deleted');
-          resolve();
-        });
+        Promise.all(unlinkPromises)
+          .then(() => this.log('all local files deleted'))
+          .catch((error) => this.error(error))
+          .finally(resolve);
       });
     });
   }
@@ -493,6 +503,7 @@ class App extends Homey.App {
     this.log('Initializing Homey API...');
     this._homeyAPIPromise = (async () => {
       try {
+        // eslint-disable-next-line global-require
         const { HomeyAPI } = require('homey-api');
         const api = await HomeyAPI.createAppAPI({ homey: this.homey });
         this.homeyAPI = api;
@@ -611,7 +622,7 @@ class App extends Homey.App {
 
     const appRelatedLogs = [];
     for (let i = 0; i < this.logs.length; i += 1) {
-      if (i > 0 && i % 1000 === 0) await new Promise((resolve) => setTimeout(resolve, 2));
+      if (i > 0 && i % 1000 === 0) await setTimeoutPromise(2);
       const log = this.logs[i];
       if (type && log.type !== type) continue;
 
@@ -841,6 +852,7 @@ class App extends Homey.App {
         .replace(/\..+/, ''); // delete the dot and everything after
       fileName = `${appId}_${timeStamp}Z_${resolution}.zip`;
       output = fs.createWriteStream(`/userdata/${fileName}`);
+      // eslint-disable-next-line global-require
       const { ZipArchive } = require('archiver');
       const level = this.CPUSettings && this.CPUSettings.lowCPU ? 1 : 6;
       archive = new ZipArchive({
@@ -937,7 +949,7 @@ class App extends Homey.App {
 
             // Brief pause to keep the event loop responsive and avoid CPUwarns
             if (i > 0 && i % 500 === 0) {
-              await new Promise((res) => setTimeout(res, 2));
+              await setTimeoutPromise(2);
             }
           }
           let csvString = `${csvLines.join('\r\n')}\r\n`;
@@ -957,7 +969,7 @@ class App extends Homey.App {
           let waitCycles = 0;
           while (entriesProcessed < expectedEntries) {
             if (this.abort || archiveError) break;
-            await new Promise((res) => setTimeout(res, 25));
+            await setTimeoutPromise(25);
             waitCycles += 1;
             if (waitCycles > 12000) { // 5 mins max wait per file
               this.error(`Archiver timeout waiting for entries for ${fileNameCsv}`);
@@ -982,10 +994,14 @@ class App extends Homey.App {
 
       if (this.OnlyZipWithLogs.onlyZipWithLogs && !written) {
         if (archive) {
-          try { archive.abort(); } catch (e) { /* ignore */ }
+          try {
+            archive.abort();
+          } catch { /* ignore */ }
         }
         if (output) {
-          try { output.close(); } catch (e) { /* ignore */ }
+          try {
+            output.close();
+          } catch { /* ignore */ }
         }
         if (fileName) {
           this.deleteFile(fileName);
@@ -996,10 +1012,14 @@ class App extends Homey.App {
       return await finishPromise;
     } catch (error) {
       if (archive) {
-        try { archive.abort(); } catch (e) { /* ignore */ }
+        try {
+          archive.abort();
+        } catch { /* ignore */ }
       }
       if (output) {
-        try { output.destroy(); } catch (e) { /* ignore */ }
+        try {
+          output.destroy();
+        } catch { /* ignore */ }
       }
       if (fileName) {
         this.deleteFile(fileName);

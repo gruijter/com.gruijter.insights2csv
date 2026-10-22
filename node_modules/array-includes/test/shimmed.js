@@ -5,6 +5,7 @@ var orig = Array.prototype.includes;
 require('../auto');
 
 var test = require('tape');
+var hasOwn = require('hasown');
 var defineProperties = require('define-properties');
 var callBind = require('call-bind');
 var isEnumerable = Object.prototype.propertyIsEnumerable;
@@ -30,6 +31,12 @@ test('shimmed', function (t) {
 	t.test('bad array/this value', { skip: !supportsStrictMode }, function (st) {
 		st['throws'](function () { return Array.prototype.includes.call(undefined, 'a'); }, TypeError, 'undefined is not an object');
 		st['throws'](function () { return Array.prototype.includes.call(null, 'a'); }, TypeError, 'null is not an object');
+		st.end();
+	});
+
+	t.test('Symbol.unscopables', { skip: typeof Symbol !== 'function' || typeof Symbol.unscopables !== 'symbol' }, function (st) {
+		st.ok(hasOwn(Array.prototype[Symbol.unscopables], 'includes'), 'Array.prototype[Symbol.unscopables] has own `includes` property');
+		st.equal(Array.prototype[Symbol.unscopables].includes, true, 'Array.prototype[Symbol.unscopables].includes is true');
 		st.end();
 	});
 

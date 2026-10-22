@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-/* eslint-disable no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable no-undef */
 
 'use strict';
@@ -193,11 +193,11 @@ async function stopExportNoConfirm() {
 }
 
 function stopExport() {
-  Homey.confirm(Homey.__('settings.tab4.confirmStopExport'), 'warning', (err, result) => {
+  Homey.confirm(Homey.__('settings.tab4.confirmStopExport'), 'warning', async (err, result) => {
     if (!result) {
       return;
     }
-    stopExportNoConfirm();
+    await stopExportNoConfirm();
     Homey.alert(Homey.__('settings.tab4.exportStopped'), 'info');
   });
 }
@@ -240,7 +240,7 @@ function exportNow() {
     if (!r) {
       return;
     }
-    stopExportNoConfirm();
+    await stopExportNoConfirm();
     try {
       if (appId === '') {
         await Homey.api('POST', '/exportAll', { resolution });
@@ -281,7 +281,7 @@ function deleteLogs() {
       try {
         await Homey.api('GET', '/deletelogs');
         Homey.alert(Homey.__('settings.tab5.deleted'), 'info');
-        updateLogs();
+        await updateLogs();
       } catch (err) {
         Homey.alert(err.message || err, 'error');
       }
@@ -382,7 +382,7 @@ async function loadSettings() {
     Homey.alert(`Could not load IncludeLocalDateTime settings: ${err.message || err}`, 'error');
   }
 
-  fillDropdown();
+  await fillDropdown();
 }
 
 function showTab(tab) {
@@ -402,8 +402,8 @@ function showTab(tab) {
   if (activePanel) {
     activePanel.style.display = 'block';
   }
-  if (tab === 5) updateLogs();
-  if (tab !== 5) loadSettings();
+  if (tab === 5) updateLogs().catch(console.error);
+  if (tab !== 5) loadSettings().catch(console.error);
 }
 
 function onHomeyReady(homey) {
@@ -411,6 +411,7 @@ function onHomeyReady(homey) {
   // We assign it to the global Homey variable so all other functions can access it.
   Homey = homey;
   Homey.ready(); // Signal that the settings page is ready.
+  // eslint-disable-next-line homey-app/global-timers
   setTimeout(() => {
     showTab(1);
   }, 50);

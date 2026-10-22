@@ -45,5 +45,16 @@ test('getConditionsForCategory', function (t) {
 		});
 	});
 
+	t.deepEqual(
+		getConditionsForCategory('pattern-trailers-no-node-addons'),
+		['import', 'node', 'require', 'default'],
+		'`pattern-trailers-no-node-addons` omits the `node-addons` condition'
+	);
+	t.deepEqual(
+		getConditionsForCategory('pattern-trailers'),
+		['import', 'node-addons', 'node', 'require', 'default'],
+		'`pattern-trailers` includes the `node-addons` condition'
+	);
+
 	t.end();
 });

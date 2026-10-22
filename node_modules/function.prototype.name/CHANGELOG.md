@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.2.0](https://github.com/es-shims/Function.prototype.name/compare/v1.1.8...v1.2.0) - 2026-06-11
+
+### Commits
+
+- [New] add types [`2536496`](https://github.com/es-shims/Function.prototype.name/commit/2536496734512e81d8c3d127ebe2c3fddbe2e211)
+- [Dev Deps] update `eslint` [`fa6890a`](https://github.com/es-shims/Function.prototype.name/commit/fa6890a58d9fe84c90091b2fb54178b0a5476f70)
+- [Refactor] use `is-document.all` [`7fe6fc3`](https://github.com/es-shims/Function.prototype.name/commit/7fe6fc3ac677b9e8f5f73661e15c7c8e5f453743)
+- [Refactor] better support cjs-module-lexer [`1552d61`](https://github.com/es-shims/Function.prototype.name/commit/1552d61bcd8d01b31cf51da58f2d241da11c76f0)
+- [Dev Deps] update `@ljharb/eslint-config`, `auto-changelog`, `eslint`, `for-each`, `has-strict-mode`, `make-generator-function`, `npmignore`, `tape` [`dc47ed5`](https://github.com/es-shims/Function.prototype.name/commit/dc47ed5a539e5f3c289c4f8f3e88d4556115b1d2)
+- [Robustness] use `es-errors`, `es-define-property` [`ef06a13`](https://github.com/es-shims/Function.prototype.name/commit/ef06a13351b4e3b4db514fde7ab46977c90d9200)
+- [Deps] update `call-bind`, `call-bound`, `hasown` [`2f4d6f9`](https://github.com/es-shims/Function.prototype.name/commit/2f4d6f962980bbe01ef69ea2fcbed26088a51a79)
+- [actions] update workflows [`204f04f`](https://github.com/es-shims/Function.prototype.name/commit/204f04fe080278ba21199b6a8d9662d3678313f5)
+
 ## [v1.1.8](https://github.com/es-shims/Function.prototype.name/compare/v1.1.7...v1.1.8) - 2024-12-19
 
 ### Commits

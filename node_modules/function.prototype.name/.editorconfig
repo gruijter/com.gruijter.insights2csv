@@ -17,6 +17,11 @@ indent_size = 2
 indent_style = space
 indent_size = 2
 
+[*.{d.ts,{,m}js}]
+block_comment_start = /*
+block_comment = *
+block_comment_end = */
+
 [*.json]
 max_line_length = off
 

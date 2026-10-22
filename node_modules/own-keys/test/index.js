@@ -68,5 +68,15 @@ test('ownKeys', function (t) {
 		st.end();
 	});
 
+	t.test('preserves insertion order of enumerable string keys', function (st) {
+		st.deepEqual(
+			ownKeys({ d: 1, a: 2, c: 3, b: 4 }),
+			['d', 'a', 'c', 'b'],
+			'enumerable string keys are returned in insertion order'
+		);
+
+		st.end();
+	});
+
 	t.end();
 });

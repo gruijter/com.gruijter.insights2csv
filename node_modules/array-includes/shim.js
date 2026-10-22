@@ -1,6 +1,8 @@
 'use strict';
 
 var define = require('define-properties');
+var shimUnscopables = require('es-shim-unscopables');
+
 var getPolyfill = require('./polyfill');
 
 module.exports = function shimArrayPrototypeIncludes() {
@@ -10,5 +12,8 @@ module.exports = function shimArrayPrototypeIncludes() {
 		{ includes: polyfill },
 		{ includes: function () { return Array.prototype.includes !== polyfill; } }
 	);
+
+	shimUnscopables('includes');
+
 	return polyfill;
 };

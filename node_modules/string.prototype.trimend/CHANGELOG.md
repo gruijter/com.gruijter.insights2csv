@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.0.10](https://github.com/es-shims/String.prototype.trimEnd/compare/v1.0.9...v1.0.10) - 2026-06-05
+
+### Commits
+
+- [Fix] avoid quadratic runtime trimming strings with large internal whitespace runs [`14ee151`](https://github.com/es-shims/String.prototype.trimEnd/commit/14ee1516d13537c2c63afa56c85048ead5f2e7c8)
+- [actions] update workflows [`867fda8`](https://github.com/es-shims/String.prototype.trimEnd/commit/867fda84fa544487659ed49407ab53986cf67897)
+- [Dev Deps] update `@ljharb/eslint-config`, `auto-changelog`, `eslint`, `has-strict-mode`, `npmignore` [`c1dad08`](https://github.com/es-shims/String.prototype.trimEnd/commit/c1dad08e7b3410f7cf37d0031452db166a671b3f)
+- [Deps] update `call-bind`, `call-bound`, `es-object-atoms` [`9f23631`](https://github.com/es-shims/String.prototype.trimEnd/commit/9f23631ac981b82d3f769b20538c3b429dc86e93)
+- [readme] remove dead badges [`5156bc8`](https://github.com/es-shims/String.prototype.trimEnd/commit/5156bc89dfaceb0bbfb48c553517db9242a5c09a)
+- [readme] replace runkit CI badge with shields.io check-runs badge [`79f9686`](https://github.com/es-shims/String.prototype.trimEnd/commit/79f96868928b28ce477bcbd01d8d4b55e60753e6)
+
 ## [v1.0.9](https://github.com/es-shims/String.prototype.trimEnd/compare/v1.0.8...v1.0.9) - 2024-12-11
 
 ### Commits

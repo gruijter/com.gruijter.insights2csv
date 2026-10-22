@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.0.2](https://github.com/ljharb/own-keys/compare/v1.0.1...v1.0.2) - 2026-07-21
+
+### Commits
+
+- [Fix] preserve own-key insertion order when the platform's key enumeration does not [`29950ec`](https://github.com/ljharb/own-keys/commit/29950ecffbfe74a94ccfdcfe5066e19206078d52)
+- [Dev Deps] update `@arethetypeswrong/cli`, `@ljharb/eslint-config`, `@ljharb/tsconfig`, `@types/eslint`, `@types/has-property-descriptors`, `auto-changelog`, `eslint`, `evalmd`, `npmignore`, `tape` [`431250c`](https://github.com/ljharb/own-keys/commit/431250cb85e78ca8deba28875edd59e0c11149ef)
+- [Deps] update `get-intrinsic` [`d1c3396`](https://github.com/ljharb/own-keys/commit/d1c3396801f0d976f13b2c4fb323c95ca5c214e3)
+- [types] fix an error TS v6 ignores but v7 fails on [`ae0c7fe`](https://github.com/ljharb/own-keys/commit/ae0c7fe3f8a871f50f9b7daf46298f0ef33cc75c)
+- [readme] replace runkit CI badge with shields.io check-runs badge [`5caf6ed`](https://github.com/ljharb/own-keys/commit/5caf6edb73d4ff65ecd491521ef7094c08805061)
+
 ## [v1.0.1](https://github.com/ljharb/own-keys/compare/v1.0.0...v1.0.1) - 2024-12-29
 
 ### Commits
