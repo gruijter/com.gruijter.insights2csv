@@ -9,7 +9,7 @@
   "dependencies": {
     "@tryjsky/v9u-smb2": "^1.1.0",
     "archiver": "^8.0.0",
-    "basic-ftp": "^6.2.3",
+    "basic-ftp": "^6.2.4",
     "homey-api": "^3.21.0",
     "ssh2-sftp-client": "^12.1.1",
     "webdav": "^5.11.0"
